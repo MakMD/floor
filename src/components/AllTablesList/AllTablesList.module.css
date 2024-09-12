@@ -1,0 +1,101 @@
+/* AllTablesList.module.css */
+
+.tablesContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.tablesList {
+  list-style-type: none;
+  padding: 0;
+}
+
+.tableItem {
+  background-color: #3a7bd5;
+  color: white;
+  padding: 15px;
+  margin-bottom: 10px;
+  font-size: 18px;
+  text-align: center;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.tableItem:hover {
+  background-color: #357ab8;
+}
+/* AllTablesList.module.css */
+
+.tablesContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.createTableForm {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.inputField {
+  width: 300px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  margin-right: 10px;
+}
+
+.createTableButton {
+  padding: 10px 20px;
+  background-color: #3a7bd5;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.createTableButton:hover {
+  background-color: #357ab8;
+}
+
+.tablesList {
+  list-style-type: none;
+  padding: 0;
+}
+
+.tableItem {
+  background-color: #3a7bd5;
+  color: white;
+  padding: 15px;
+  margin-bottom: 10px;
+  font-size: 18px;
+  text-align: center;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.tableItem:hover {
+  background-color: #357ab8;
+}
