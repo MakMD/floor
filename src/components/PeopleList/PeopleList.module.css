@@ -1,0 +1,29 @@
+.peopleListContainer {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.peopleList {
+  list-style-type: none;
+  padding: 0;
+}
+
+.personItem {
+  background-color: #f1f1f1;
+  border: 1px solid #ccc;
+  padding: 15px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.personItem:hover {
+  background-color: #e9ecef;
+}
+
+.personItem h3 {
+  margin: 0;
+  font-size: 18px;
+}

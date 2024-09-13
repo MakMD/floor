@@ -1,0 +1,65 @@
+.personPage {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.invoiceList {
+  list-style-type: none;
+  padding: 0;
+}
+
+.invoiceItem {
+  background-color: #f1f1f1;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+.addInvoiceForm {
+  margin-top: 20px;
+}
+
+.addInvoiceForm input {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.addInvoiceForm button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.addInvoiceForm button:hover {
+  background-color: #0056b3;
+}
+
+/* Стилі для кнопки "Назад" */
+.backButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.backButton:hover {
+  background-color: #0056b3;
+}
