@@ -1,29 +1,46 @@
-.peopleListContainer {
+.peopleContainer {
   padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
+  background-color: #f0f8ff;
 }
 
 .peopleList {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
 }
 
 .personItem {
-  background-color: #f1f1f1;
-  border: 1px solid #ccc;
-  padding: 15px;
+  padding: 10px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
   margin-bottom: 10px;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s;
 }
 
 .personItem:hover {
-  background-color: #e9ecef;
+  background-color: #e0f7fa;
 }
 
-.personItem h3 {
-  margin: 0;
-  font-size: 18px;
+.addTableForm {
+  margin-top: 20px;
+}
+
+.inputField {
+  padding: 10px;
+  width: 200px;
+  margin-right: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.addTableButton {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.addTableButton:hover {
+  background-color: #0056b3;
 }
