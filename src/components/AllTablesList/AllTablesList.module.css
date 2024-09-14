@@ -1,8 +1,8 @@
 /* AllTablesList.module.css */
 
 .tablesContainer {
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 300px;
+
   padding: 20px;
   font-family: Arial, sans-serif;
 }
@@ -37,8 +37,7 @@
 /* AllTablesList.module.css */
 
 .tablesContainer {
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 300px;
   padding: 20px;
   font-family: Arial, sans-serif;
 }

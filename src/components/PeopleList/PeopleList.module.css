@@ -1,46 +1,64 @@
 .peopleContainer {
+  max-width: 800px;
+  margin: 0 auto;
   padding: 20px;
-  background-color: #f0f8ff;
+  font-family: Arial, sans-serif;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .peopleList {
-  list-style: none;
+  list-style-type: none;
   padding: 0;
 }
 
 .personItem {
-  padding: 10px;
-  background-color: #ffffff;
-  border: 1px solid #ddd;
+  background-color: #3a7bd5;
+  max-width: 300px;
+  color: white;
+  padding: 15px;
   margin-bottom: 10px;
+  font-size: 18px;
+  text-align: center;
+  border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .personItem:hover {
-  background-color: #e0f7fa;
+  background-color: #357ab8;
 }
 
-.addTableForm {
-  margin-top: 20px;
+.createPersonForm {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
 }
 
 .inputField {
+  width: 300px;
   padding: 10px;
-  width: 200px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
   margin-right: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
 }
 
-.addTableButton {
+.createPersonButton {
   padding: 10px 20px;
-  background-color: #007bff;
-  color: #fff;
+  background-color: #3a7bd5;
+  color: white;
   border: none;
-  border-radius: 4px;
   cursor: pointer;
+  border-radius: 5px;
+  font-size: 16px;
 }
 
-.addTableButton:hover {
-  background-color: #0056b3;
+.createPersonButton:hover {
+  background-color: #357ab8;
 }

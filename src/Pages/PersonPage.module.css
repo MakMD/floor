@@ -1,63 +1,88 @@
 .personPage {
-  padding: 20px;
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.tableList {
+  list-style-type: none;
+  padding: 0;
+}
+
+.tableItem {
+  background-color: #3a7bd5;
+  color: white;
+  padding: 15px;
+  margin-bottom: 10px;
+  font-size: 18px;
+  text-align: center;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.tableItem:hover {
+  background-color: #357ab8;
 }
 
 .invoiceList {
   list-style-type: none;
   padding: 0;
-}
-
-.invoiceItem {
-  background-color: #f1f1f1;
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 4px;
-}
-
-.addInvoiceForm {
   margin-top: 20px;
 }
 
-.addInvoiceForm input {
-  display: block;
-  width: 100%;
-  padding: 10px;
+.invoiceItem {
+  background-color: #f4f4f4;
+  padding: 15px;
   margin-bottom: 10px;
-  font-size: 16px;
+  border-radius: 5px;
+}
+
+.addInvoiceForm {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.inputField {
+  width: 300px;
+  padding: 10px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 5px;
+  font-size: 16px;
+  margin-right: 10px;
 }
 
-.addInvoiceForm button {
+.addInvoiceButton {
   padding: 10px 20px;
-  background-color: #007bff;
+  background-color: #3a7bd5;
   color: white;
   border: none;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  border-radius: 5px;
+  font-size: 16px;
 }
 
-.addInvoiceForm button:hover {
-  background-color: #0056b3;
+.addInvoiceButton:hover {
+  background-color: #357ab8;
 }
 
-/* Стилі для кнопки "Назад" */
 .backButton {
+  padding: 10px 20px;
   background-color: #007bff;
   color: white;
   border: none;
-  padding: 10px 20px;
-  margin-bottom: 20px;
+  border-radius: 5px;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  margin-bottom: 20px;
 }
 
 .backButton:hover {
