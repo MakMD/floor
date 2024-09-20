@@ -1,0 +1,24 @@
+.companyListContainer {
+  margin-top: 20px;
+}
+
+.companyList {
+  list-style-type: none;
+  padding: 0;
+}
+
+.companyItem {
+  background-color: #3a7bd5;
+  color: white;
+  padding: 15px;
+  margin-bottom: 10px;
+  font-size: 18px;
+  text-align: center;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.companyItem:hover {
+  background-color: #357ab8;
+}

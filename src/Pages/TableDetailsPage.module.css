@@ -1,0 +1,116 @@
+.invoicePage {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9; /* Легкий фон, щоб виділити документ */
+}
+
+.document {
+  border: 1px solid #000;
+  padding: 20px;
+  background-color: #fff;
+  margin-bottom: 40px; /* Відокремлює таблицю від форми */
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.invoiceHeader {
+  margin-bottom: 20px;
+}
+
+.invoiceHeader h2 {
+  margin: 0;
+}
+
+.invoiceHeader p {
+  margin: 5px 0;
+}
+
+.invoiceTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 30px;
+}
+
+.invoiceTable th,
+.invoiceTable td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.invoiceTable th {
+  background-color: #3a7bd5;
+  color: white;
+}
+
+.addInvoiceForm {
+  margin-top: 40px; /* Великий відступ для відокремлення форми */
+  padding: 20px;
+  background-color: #f1f1f1;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.inputField {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+}
+
+.addInvoiceButton {
+  padding: 10px 20px;
+  background-color: #3a7bd5;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  display: block;
+  margin-top: 10px;
+}
+
+.addInvoiceButton:hover {
+  background-color: #357ab8;
+}
+
+.backButton {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.backButton:hover {
+  background-color: #0056b3;
+}
+
+/* Друк документа */
+@media print {
+  .addInvoiceForm,
+  .backButton {
+    display: none; /* Не друкувати форму та кнопку повернення */
+  }
+
+  .invoicePage {
+    padding: 0;
+    border: none;
+  }
+
+  .document {
+    border: none;
+    padding: 0;
+  }
+
+  .invoiceTable th,
+  .invoiceTable td {
+    padding: 5px;
+  }
+}

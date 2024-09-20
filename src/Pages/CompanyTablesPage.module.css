@@ -1,0 +1,43 @@
+.companyTablesPage {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.tableList {
+  list-style-type: none;
+  padding: 0;
+}
+
+.tableItem {
+  background-color: #f9f9f9;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.addTableForm {
+  margin-top: 30px;
+}
+
+.inputField {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.addTableButton {
+  padding: 10px 20px;
+  background-color: #3a7bd5;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.addTableButton:hover {
+  background-color: #357ab8;
+}
