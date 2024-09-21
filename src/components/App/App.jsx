@@ -9,7 +9,9 @@ import CompanyTablesPage from "../../Pages/CompanyTablesPage"; // Список �
 import TableDetailsPage from "../../Pages/TableDetailsPage"; // Сторінка деталей таблиці
 import PersonTablesPage from "../../Pages/PersonTablesPage"; // Список таблиць для людини
 import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage"; // Сторінка деталей таблиці людини
-import logo from "../../../public/Flooring.Boss.svg";
+import LoginModal from "../LoginModal/LoginModal"; // Модальне вікно для логіну
+import logo from "../../../public/Flooring.Boss.svg"; // Лого
+
 const App = () => {
   const [people, setPeople] = useState([]);
   const [companies] = useState([
@@ -20,6 +22,8 @@ const App = () => {
     { name: "amazon" },
     { name: "norseman" },
   ]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Стан логіну
+  // const [password, setPassword] = useState(""); // Для пароля
 
   useEffect(() => {
     const fetchPeople = async () => {
@@ -35,13 +39,16 @@ const App = () => {
     fetchPeople();
   }, []);
 
-  const handlePersonCreated = (newPerson) => {
-    setPeople((prevPeople) => [...prevPeople, newPerson]);
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true); // Змінюємо стан на логін
   };
 
   return (
     <Router>
       <div>
+        {/* Показуємо модальне вікно, якщо не увійшли */}
+        {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
+
         {/* Іконка на верху сторінки */}
         <header style={{ textAlign: "center", padding: "10px" }}>
           <a href="https://flooringboss.ca/index">
@@ -52,47 +59,57 @@ const App = () => {
             />
           </a>
         </header>
+
         {/* Головна сторінка */}
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <div>
-                {/* Список компаній */}
-                <CompanyList companies={companies} />
+        {isLoggedIn && (
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <div>
+                  {/* Список компаній */}
+                  <CompanyList companies={companies} />
 
-                {/* Список людей */}
-                <PeopleList people={people} />
+                  {/* Список людей */}
+                  <PeopleList people={people} />
 
-                {/* Форма для додавання нової людини */}
-                <CreatePersonForm onPersonCreated={handlePersonCreated} />
-              </div>
-            }
-          />
+                  {/* Форма для додавання нової людини */}
+                  <CreatePersonForm
+                    onPersonCreated={(newPerson) =>
+                      setPeople((prev) => [...prev, newPerson])
+                    }
+                  />
+                </div>
+              }
+            />
 
-          {/* Сторінка для конкретної компанії */}
-          <Route path="/company/:companyName" element={<CompanyTablesPage />} />
+            {/* Сторінка для конкретної компанії */}
+            <Route
+              path="/company/:companyName"
+              element={<CompanyTablesPage />}
+            />
 
-          {/* Сторінка для конкретної таблиці компанії */}
-          <Route
-            path="/company/:companyName/table/:tableId"
-            element={<TableDetailsPage />}
-          />
+            {/* Сторінка для конкретної таблиці компанії */}
+            <Route
+              path="/company/:companyName/table/:tableId"
+              element={<TableDetailsPage />}
+            />
 
-          {/* Сторінка для конкретної людини */}
-          <Route path="/person/:personId" element={<PersonPage />} />
-          {/* Сторінка для таблиць людини */}
-          <Route
-            path="/person/:personId/tables"
-            element={<PersonTablesPage />}
-          />
+            {/* Сторінка для конкретної людини */}
+            <Route path="/person/:personId" element={<PersonPage />} />
+            {/* Сторінка для таблиць людини */}
+            <Route
+              path="/person/:personId/tables"
+              element={<PersonTablesPage />}
+            />
 
-          {/* Сторінка для деталей таблиці людини */}
-          <Route
-            path="/person/:personId/tables/:tableId"
-            element={<PersonTableDetailsPage />}
-          />
-        </Routes>
+            {/* Сторінка для деталей таблиці людини */}
+            <Route
+              path="/person/:personId/tables/:tableId"
+              element={<PersonTableDetailsPage />}
+            />
+          </Routes>
+        )}
       </div>
     </Router>
   );
