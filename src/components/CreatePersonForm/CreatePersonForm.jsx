@@ -15,7 +15,7 @@ const CreatePersonForm = ({ onPersonCreated }) => {
     try {
       // Створюємо нову людину з порожнім масивом таблиць
       const newPerson = {
-        name,
+        name: name.trim(), // Очищаємо пробіли на початку і в кінці
         tables: [], // Порожній масив таблиць при створенні нової людини
       };
 
@@ -24,7 +24,13 @@ const CreatePersonForm = ({ onPersonCreated }) => {
         newPerson
       );
 
-      onPersonCreated(response.data); // Передаємо нову людину в батьківський компонент
+      // Переконуємося, що відповідь містить правильні дані
+      if (response.data) {
+        onPersonCreated(response.data); // Передаємо нову людину в батьківський компонент
+      } else {
+        setError("Unexpected response structure from API.");
+      }
+
       setName("");
       setError("");
     } catch (error) {

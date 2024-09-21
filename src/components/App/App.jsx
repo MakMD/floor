@@ -35,6 +35,10 @@ const App = () => {
     fetchPeople();
   }, []);
 
+  const handlePersonCreated = (newPerson) => {
+    setPeople((prevPeople) => [...prevPeople, newPerson]);
+  };
+
   return (
     <Router>
       <div>
@@ -51,7 +55,7 @@ const App = () => {
                 <PeopleList people={people} />
 
                 {/* Форма для додавання нової людини */}
-                <CreatePersonForm />
+                <CreatePersonForm onPersonCreated={handlePersonCreated} />
               </div>
             }
           />

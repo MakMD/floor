@@ -1,30 +1,15 @@
 .tableDetailsContainer {
   padding: 20px;
-  background-color: #f9f9f9;
+  font-family: Arial, sans-serif;
 }
 
 .backButton {
-  background-color: #007bff;
+  background-color: #4caf50;
   color: white;
-  border: none;
   padding: 10px 20px;
+  border: none;
   cursor: pointer;
   margin-bottom: 20px;
-  border-radius: 5px;
-}
-
-.backButton:hover {
-  background-color: #0056b3;
-}
-
-.error {
-  color: red;
-  margin-top: 10px;
-}
-
-.tableTitle {
-  margin-bottom: 20px;
-  font-size: 24px;
 }
 
 .invoiceTable {
@@ -37,14 +22,38 @@
 .invoiceTable td {
   border: 1px solid #ddd;
   padding: 8px;
-}
-
-.invoiceTable th {
-  background-color: #f2f2f2;
   text-align: left;
 }
 
-.loading {
-  font-size: 18px;
-  color: #555;
+.invoiceTable th {
+  background-color: #4caf50;
+  color: white;
+}
+
+.invoiceTable tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.totalRow {
+  font-weight: bold;
+  background-color: #e0e0e0;
+}
+
+.addInvoiceForm {
+  margin-top: 20px;
+}
+
+.inputField {
+  padding: 8px;
+  margin: 10px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.addInvoiceButton {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
 }
