@@ -5,89 +5,61 @@ import styles from "./PersonTablesPage.module.css"; // Підключаємо с
 
 const PersonTablesPage = () => {
   const { personId } = useParams(); // Отримуємо ID людини з URL
-  const [person, setPerson] = useState(null); // Стан для зберігання даних людини
-  const [newTable, setNewTable] = useState(""); // Для нової таблиці
-  const navigate = useNavigate(); // Для навігації назад
+  const navigate = useNavigate(); // Для навігації на нову сторінку
+  const [person, setPerson] = useState(null); // Данні про людину
+  const [error, setError] = useState(""); // Для помилок
 
   useEffect(() => {
-    const fetchPerson = async () => {
+    const fetchPersonTables = async () => {
       try {
         const response = await axios.get(
           `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`
         );
-        setPerson(response.data); // Зберігаємо дані про людину
+        setPerson(response.data); // Оновлюємо стан людини та її таблиць
       } catch (error) {
-        console.error("Error fetching person data:", error);
+        setError("Error fetching tables");
+        console.error("Error fetching person tables:", error);
       }
     };
 
-    fetchPerson();
+    fetchPersonTables();
   }, [personId]);
 
-  const handleAddTable = async () => {
-    if (!newTable) return;
-
-    try {
-      const updatedPerson = {
-        ...person,
-        tables: [...person.tables, { name: newTable, invoices: [] }],
-      };
-
-      await axios.put(
-        `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`,
-        updatedPerson
-      );
-
-      setPerson(updatedPerson); // Оновлюємо стан
-      setNewTable(""); // Очищаємо поле вводу
-    } catch (error) {
-      console.error("Error adding table:", error);
-    }
+  const handleTableClick = (tableId) => {
+    console.log("Table clicked with ID: ", tableId); // Лог для перевірки
+    navigate(`/person/${personId}/table/${tableId}`);
   };
 
   return (
-    <div className={styles.personTablesPage}>
+    <div className={styles.tablesContainer}>
+      <h2 className={styles.pageTitle}>
+        {person ? `${person.name}'s Tables` : "Loading..."}
+      </h2>
+
       {/* Кнопка "Назад" */}
       <button className={styles.backButton} onClick={() => navigate(-1)}>
         Back
       </button>
 
-      {person ? (
-        <>
-          <h2>{person.name} Tables</h2>
-          <ul>
-            {person.tables.length > 0 ? (
-              person.tables.map((table, index) => (
-                <li key={index}>
-                  <h3>{table.name}</h3>
-                  <ul>
-                    {table.invoices.map((invoice, idx) => (
-                      <li key={idx}>
-                        <p>Invoice: {invoice.name}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))
-            ) : (
-              <p>No tables available for this person.</p>
-            )}
-          </ul>
+      {/* Виведення таблиць */}
+      {error && <p className={styles.error}>{error}</p>}
 
-          {/* Форма для додавання нової таблиці */}
-          <div className={styles.addTableForm}>
-            <input
-              type="text"
-              value={newTable}
-              onChange={(e) => setNewTable(e.target.value)}
-              placeholder="New Table Name"
-            />
-            <button onClick={handleAddTable}>Add Table</button>
-          </div>
-        </>
-      ) : (
-        <p>Loading...</p>
-      )}
+      <ul className={styles.tablesList}>
+        {person && person.tables.length > 0 ? (
+          person.tables.map((table) => (
+            <li
+              key={table.tableId} // Використовуємо унікальний tableId як ключ
+              className={styles.tableItem}
+              onClick={() => handleTableClick(table.tableId)} // Використовуємо tableId для навігації
+            >
+              <h3>{table.name}</h3>
+              <p className={styles.tableInfo}>Created on: {table.createdAt}</p>
+            </li>
+          ))
+        ) : (
+          <p>No tables available for this person.</p>
+        )}
+      </ul>
     </div>
   );
 };

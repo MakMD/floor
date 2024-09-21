@@ -88,3 +88,65 @@
 .backButton:hover {
   background-color: #0056b3;
 }
+.invoiceTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: white;
+}
+
+.invoiceTable th,
+.invoiceTable td {
+  padding: 12px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+.invoiceTable th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.invoiceRow:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.invoiceRow:hover {
+  background-color: #f1f1f1;
+}
+
+.tableContainer {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.addInvoiceForm {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inputField {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.addInvoiceButton {
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.addInvoiceButton:hover {
+  background-color: #0056b3;
+}

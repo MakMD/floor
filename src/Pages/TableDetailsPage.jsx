@@ -14,6 +14,14 @@ const TableDetailsPage = () => {
     total: 0,
   });
 
+  // Перевірка для обчислення Total з GST
+  const calculateGSTAndTotal = (total) => {
+    if (!total) return { gst: "0.00", totalWithGst: "0.00" };
+    const gst = (total * 0.05).toFixed(2);
+    const totalWithGst = (parseFloat(total) + parseFloat(gst)).toFixed(2);
+    return { gst, totalWithGst };
+  };
+
   useEffect(() => {
     const fetchTable = async () => {
       try {
@@ -49,10 +57,7 @@ const TableDetailsPage = () => {
       return;
     }
 
-    const gst = (newInvoice.total * 0.05).toFixed(2);
-    const totalWithGst = (
-      parseFloat(newInvoice.total) + parseFloat(gst)
-    ).toFixed(2);
+    const { gst, totalWithGst } = calculateGSTAndTotal(newInvoice.total);
 
     const invoiceToAdd = {
       ...newInvoice,
@@ -88,6 +93,27 @@ const TableDetailsPage = () => {
       console.error("Error adding invoice:", error);
     }
   };
+
+  const calculateTotal = () => {
+    if (!table || !table.invoices.length)
+      return { total: 0, gst: 0, totalWithGst: 0 };
+    return table.invoices.reduce(
+      (acc, invoice) => {
+        const total = parseFloat(invoice.total || 0);
+        const gst = parseFloat(invoice.GSTCollected || 0);
+        const totalWithGst = parseFloat(invoice.payablePerWorkOrder || 0);
+
+        return {
+          total: acc.total + total,
+          gst: acc.gst + gst,
+          totalWithGst: acc.totalWithGst + totalWithGst,
+        };
+      },
+      { total: 0, gst: 0, totalWithGst: 0 }
+    );
+  };
+
+  const totals = calculateTotal();
 
   return (
     <div className={styles.invoicePage}>
@@ -139,6 +165,13 @@ const TableDetailsPage = () => {
                     <td>{invoice.payablePerWorkOrder}</td>
                   </tr>
                 ))}
+                {/* Підсумковий рядок */}
+                <tr className={styles.totalRow}>
+                  <td colSpan="3">Total</td>
+                  <td>{totals.total.toFixed(2)}</td>
+                  <td>{totals.gst.toFixed(2)}</td>
+                  <td>{totals.totalWithGst.toFixed(2)}</td>
+                </tr>
               </tbody>
             </table>
 

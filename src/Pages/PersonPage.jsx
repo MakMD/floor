@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Додаємо useNavigate
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import styles from "./PersonPage.module.css";
 
@@ -35,6 +35,7 @@ const PersonPage = () => {
 
     try {
       const newTable = {
+        tableId: Date.now().toString(), // Додаємо унікальний ідентифікатор таблиці
         name: newTableName,
         invoices: [], // Порожній масив інвойсів для нової таблиці
       };
@@ -64,7 +65,7 @@ const PersonPage = () => {
 
       // Оновлюємо локальний стан таблиць та інвойсів
       const updatedTables = person.tables.map((table) =>
-        table.name === selectedTable.name
+        table.tableId === selectedTable.tableId
           ? { ...table, invoices: updatedInvoices }
           : table
       );
@@ -94,11 +95,16 @@ const PersonPage = () => {
     setNewInvoice({ ...newInvoice, [e.target.name]: e.target.value });
   };
 
+  const handleTableClick = (tableId) => {
+    // Перехід на сторінку з деталями вибраної таблиці
+    navigate(`/person/${personId}/tables/${tableId}`);
+  };
+
   return (
     <div className={styles.personPage}>
       {person ? (
         <>
-          <h2>{person.name} Tables</h2>
+          <h2 className={styles.pageTitle}>{person.name} Tables</h2>
 
           {/* Кнопка "Назад" */}
           <button className={styles.backButton} onClick={() => navigate(-1)}>
@@ -126,36 +132,41 @@ const PersonPage = () => {
                 <li
                   key={index}
                   className={styles.tableItem}
-                  onClick={() => setSelectedTable(table)}
+                  onClick={() => handleTableClick(table.tableId)} // Перехід на сторінку таблиці
                 >
                   {table.name}
                 </li>
               ))}
             </ul>
           ) : (
-            <p>No tables available. Add a new table above.</p>
+            <p className={styles.noTables}>
+              No tables available. Add a new table above.
+            </p>
           )}
 
           {/* Вибрана таблиця і інвойси */}
           {selectedTable && (
-            <div>
+            <div className={styles.selectedTable}>
               <h3>Invoices for {selectedTable.name}</h3>
               {selectedTable.invoices.length > 0 ? (
-                <ul className={styles.invoiceList}>
-                  {selectedTable.invoices.map((invoice, index) => (
-                    <li key={index} className={styles.invoiceItem}>
-                      <p>
-                        <strong>Address:</strong> {invoice.address}
-                      </p>
-                      <p>
-                        <strong>Date:</strong> {invoice.date}
-                      </p>
-                      <p>
-                        <strong>Total Income:</strong> ${invoice.total_income}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+                <table className={styles.invoiceTable}>
+                  <thead>
+                    <tr>
+                      <th>Address</th>
+                      <th>Date</th>
+                      <th>Total Income</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedTable.invoices.map((invoice, index) => (
+                      <tr key={index}>
+                        <td>{invoice.address}</td>
+                        <td>{invoice.date}</td>
+                        <td>${invoice.total_income}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               ) : (
                 <p>No invoices available for this table.</p>
               )}
