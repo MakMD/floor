@@ -9,7 +9,7 @@ import CompanyTablesPage from "../../Pages/CompanyTablesPage"; // Список �
 import TableDetailsPage from "../../Pages/TableDetailsPage"; // Сторінка деталей таблиці
 import PersonTablesPage from "../../Pages/PersonTablesPage"; // Список таблиць для людини
 import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage"; // Сторінка деталей таблиці людини
-
+import logo from "../../../public/Flooring.Boss.svg";
 const App = () => {
   const [people, setPeople] = useState([]);
   const [companies] = useState([
@@ -42,6 +42,16 @@ const App = () => {
   return (
     <Router>
       <div>
+        {/* Іконка на верху сторінки */}
+        <header style={{ textAlign: "center", padding: "10px" }}>
+          <a href="https://flooringboss.ca/index">
+            <img
+              src={logo}
+              alt="App Logo"
+              style={{ width: "300px", height: "auto" }}
+            />
+          </a>
+        </header>
         {/* Головна сторінка */}
         <Routes>
           <Route

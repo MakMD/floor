@@ -10,7 +10,7 @@ const PeopleList = ({ people }) => {
 
   return (
     <div className={styles.peopleListContainer}>
-      <h2>People List</h2>
+      <h2 className={styles.peopleTitle}>People</h2>
       <ul className={styles.peopleList}>
         {people.length > 0 ? (
           people.map((person) => (

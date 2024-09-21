@@ -137,3 +137,95 @@
   border-top: 2px solid #ddd;
   width: 100%;
 }
+.tablesContainer {
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.tableList {
+  list-style-type: none;
+  padding: 0;
+}
+
+.tableItem {
+  background-color: #ffffff;
+  margin-bottom: 10px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  transition: box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.tableItem:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tableItem h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.tableItem p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  color: #777;
+}
+.tablesContainer {
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.tableList {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+}
+
+.tableItem {
+  background-color: #ffffff;
+  margin-bottom: 15px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  transition: box-shadow 0.3s ease;
+  cursor: pointer;
+  width: calc(
+    50% - 10px
+  ); /* Кожна таблиця займає половину ширини контейнера з відступами */
+  box-sizing: border-box; /* Враховуємо padding і border */
+}
+
+.tableItem:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tableItem h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.tableItem p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  color: #777;
+}
+
+/* Адаптивність для мобільних пристроїв */
+@media (max-width: 768px) {
+  .tableItem {
+    width: 100%; /* Таблиця займатиме всю ширину на мобільних */
+  }
+}
