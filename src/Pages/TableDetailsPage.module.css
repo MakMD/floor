@@ -3,14 +3,14 @@
   margin: 0 auto;
   padding: 20px;
   font-family: Arial, sans-serif;
-  background-color: #f9f9f9; /* Легкий фон, щоб виділити документ */
+  background-color: #f9f9f9;
 }
 
 .document {
   border: 1px solid #000;
   padding: 20px;
   background-color: #fff;
-  margin-bottom: 40px; /* Відокремлює таблицю від форми */
+  margin-bottom: 40px;
 }
 
 .header {
@@ -49,7 +49,7 @@
 }
 
 .addInvoiceForm {
-  margin-top: 40px; /* Великий відступ для відокремлення форми */
+  margin-top: 40px;
   padding: 20px;
   background-color: #f1f1f1;
   border: 1px solid #ccc;
@@ -92,11 +92,21 @@
   background-color: #0056b3;
 }
 
+.totalRow {
+  font-weight: bold;
+  background-color: #f0f0f0;
+}
+
+.totalLabel {
+  text-align: right;
+  padding-right: 10px;
+}
+
 /* Друк документа */
 @media print {
   .addInvoiceForm,
   .backButton {
-    display: none; /* Не друкувати форму та кнопку повернення */
+    display: none;
   }
 
   .invoicePage {
@@ -114,6 +124,166 @@
     padding: 5px;
   }
 }
+
+/* Адаптація для мобільних пристроїв */
+@media (max-width: 768px) {
+  .invoicePage {
+    padding: 10px;
+  }
+
+  .document {
+    padding: 10px;
+  }
+
+  .invoiceHeader h2 {
+    font-size: 1.5em;
+  }
+
+  .invoiceTable th,
+  .invoiceTable td {
+    padding: 8px;
+  }
+
+  .addInvoiceForm {
+    padding: 15px;
+  }
+
+  .inputField {
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+
+  .addInvoiceButton,
+  .backButton {
+    padding: 8px 15px;
+  }
+}
+
+/* Адаптація для дуже маленьких екранів */
+@media (max-width: 480px) {
+  .invoiceHeader h2 {
+    font-size: 1.2em;
+  }
+
+  .invoiceHeader p {
+    font-size: 0.9em;
+  }
+
+  .invoiceTable th,
+  .invoiceTable td {
+    font-size: 0.9em;
+    padding: 6px;
+  }
+
+  .addInvoiceForm {
+    padding: 10px;
+  }
+
+  .inputField {
+    padding: 6px;
+    margin-bottom: 6px;
+  }
+
+  .addInvoiceButton,
+  .backButton {
+    padding: 6px 12px;
+    font-size: 0.9em;
+  }
+}
+.invoicePage {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+}
+
+.document {
+  border: 1px solid #000;
+  padding: 20px;
+  background-color: #fff;
+  margin-bottom: 40px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.invoiceHeader {
+  margin-bottom: 20px;
+}
+
+.invoiceHeader h2 {
+  margin: 0;
+}
+
+.invoiceHeader p {
+  margin: 5px 0;
+}
+
+.invoiceTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 30px;
+}
+
+.invoiceTable th,
+.invoiceTable td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.invoiceTable th {
+  background-color: #3a7bd5;
+  color: white;
+}
+
+.addInvoiceForm {
+  margin-top: 40px;
+  padding: 20px;
+  background-color: #f1f1f1;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.inputField {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+}
+
+.addInvoiceButton {
+  padding: 10px 20px;
+  background-color: #3a7bd5;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  display: block;
+  margin-top: 10px;
+}
+
+.addInvoiceButton:hover {
+  background-color: #357ab8;
+}
+
+.backButton {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.backButton:hover {
+  background-color: #0056b3;
+}
+
 .totalRow {
   font-weight: bold;
   background-color: #f0f0f0;
@@ -122,4 +292,69 @@
 .totalLabel {
   text-align: right;
   padding-right: 10px;
+}
+
+/* Друк документа */
+@media print {
+  .addInvoiceForm,
+  .backButton {
+    display: none;
+  }
+
+  .invoicePage {
+    padding: 0;
+    border: none;
+  }
+
+  .document {
+    border: none;
+    padding: 0;
+  }
+
+  .invoiceTable th,
+  .invoiceTable td {
+    padding: 5px;
+  }
+}
+
+/* Адаптація для мобільних пристроїв (375px) */
+@media (max-width: 375px) {
+  .invoicePage {
+    padding: 10px;
+  }
+
+  .document {
+    padding: 10px;
+    margin-bottom: 20px; /* Менший відступ між документами */
+  }
+
+  .invoiceHeader h2 {
+    font-size: 1.3em; /* Зменшений розмір заголовка */
+  }
+
+  .invoiceHeader p {
+    font-size: 0.9em; /* Зменшений розмір шрифту для додаткових даних */
+  }
+
+  .invoiceTable th,
+  .invoiceTable td {
+    font-size: 0.85em;
+    padding: 6px; /* Менший внутрішній відступ для таблиць */
+  }
+
+  .addInvoiceForm {
+    padding: 10px;
+  }
+
+  .inputField {
+    width: calc(100% - 10px);
+    padding: 8px;
+    margin-bottom: 8px; /* Менший відступ між полями вводу */
+  }
+
+  .addInvoiceButton,
+  .backButton {
+    padding: 8px 10px;
+    font-size: 0.9em; /* Зменшений розмір тексту в кнопках */
+  }
 }
