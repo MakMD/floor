@@ -13,6 +13,8 @@ const PersonPage = () => {
     date: "",
     total_income: 0,
   }); // Для додавання інвойсу
+  const [searchTerm, setSearchTerm] = useState(""); // Для пошукового запиту
+  const [filteredTables, setFilteredTables] = useState([]); // Для фільтрованих таблиць
   const navigate = useNavigate(); // Ініціалізуємо useNavigate
 
   useEffect(() => {
@@ -22,6 +24,7 @@ const PersonPage = () => {
           `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`
         );
         setPerson(response.data);
+        setFilteredTables(response.data.tables); // Ініціалізуємо відфільтровані таблиці
       } catch (error) {
         console.error("Error fetching person:", error);
       }
@@ -29,6 +32,17 @@ const PersonPage = () => {
 
     fetchPerson();
   }, [personId]);
+
+  useEffect(() => {
+    if (person && person.tables) {
+      const filtered = person.tables.filter((table) =>
+        table.invoices.some((invoice) =>
+          invoice.address.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+      setFilteredTables(filtered);
+    }
+  }, [searchTerm, person]);
 
   const handleAddTable = async () => {
     if (!newTableName.trim()) return; // Перевіряємо, чи введене ім'я таблиці
@@ -111,6 +125,17 @@ const PersonPage = () => {
             Back
           </button>
 
+          {/* Поле для пошуку за адресою */}
+          <div className={styles.searchContainer}>
+            <input
+              type="text"
+              placeholder="Search by address"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)} // Оновлюємо пошуковий запит
+              className={styles.searchInput}
+            />
+          </div>
+
           {/* Форма для додавання нової таблиці */}
           <div className={styles.addTableForm}>
             <input
@@ -126,9 +151,9 @@ const PersonPage = () => {
           </div>
 
           {/* Список таблиць */}
-          {person.tables && person.tables.length > 0 ? (
+          {filteredTables && filteredTables.length > 0 ? (
             <ul className={styles.tableList}>
-              {person.tables.map((table, index) => (
+              {filteredTables.map((table, index) => (
                 <li
                   key={index}
                   className={styles.tableItem}
@@ -140,7 +165,7 @@ const PersonPage = () => {
             </ul>
           ) : (
             <p className={styles.noTables}>
-              No tables available. Add a new table above.
+              No tables available for this person.
             </p>
           )}
 

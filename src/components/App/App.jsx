@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import axios from "axios";
-import PeopleList from "../PeopleList/PeopleList"; // Список людей
-import CreatePersonForm from "../CreatePersonForm/CreatePersonForm"; // Форма для створення нової людини
-import PersonPage from "../../Pages/PersonPage"; // Сторінка людини
-import CompanyList from "../CompanyList/CompanyList"; // Новий список компаній
-import CompanyTablesPage from "../../Pages/CompanyTablesPage"; // Список таблиць компанії
-import TableDetailsPage from "../../Pages/TableDetailsPage"; // Сторінка деталей таблиці
-import PersonTablesPage from "../../Pages/PersonTablesPage"; // Список таблиць для людини
-import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage"; // Сторінка деталей таблиці людини
-import LoginModal from "../LoginModal/LoginModal"; // Модальне вікно для логіну
-import logo from "../../../public/Flooring.Boss.svg"; // Лого
+import PeopleList from "../PeopleList/PeopleList";
+import CreatePersonForm from "../CreatePersonForm/CreatePersonForm";
+import PersonPage from "../../Pages/PersonPage";
+import CompanyList from "../CompanyList/CompanyList";
+import CompanyTablesPage from "../../Pages/CompanyTablesPage";
+import TableDetailsPage from "../../Pages/TableDetailsPage";
+import PersonTablesPage from "../../Pages/PersonTablesPage";
+import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage";
+import LoginModal from "../LoginModal/LoginModal";
+import logo from "../../../public/Flooring.Boss.svg";
+import NewCompanyTablesPage from "../NewCompanyTablePage/NewCompanyTablePage"; // Додаємо нову компанію
+import NewCompanyTableDetails from "../NewCompanyTablePage/NewCompanyTableDetails";
 
 const App = () => {
   const [people, setPeople] = useState([]);
@@ -21,9 +23,9 @@ const App = () => {
     { name: "cwp" },
     { name: "amazon" },
     { name: "norseman" },
+    { name: "newCompany" }, // Додаємо нову компанію
   ]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Стан логіну
-  // const [password, setPassword] = useState(""); // Для пароля
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const fetchPeople = async () => {
@@ -40,17 +42,18 @@ const App = () => {
   }, []);
 
   const handleLoginSuccess = () => {
-    setIsLoggedIn(true); // Змінюємо стан на логін
+    setIsLoggedIn(true);
   };
 
   return (
     <Router>
       <div>
-        {/* Показуємо модальне вікно, якщо не увійшли */}
         {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
 
-        {/* Іконка на верху сторінки */}
-        <header style={{ textAlign: "center", padding: "10px" }}>
+        <header
+          className="header"
+          style={{ textAlign: "center", padding: "10px" }}
+        >
           <a href="https://flooringboss.ca/index">
             <img
               src={logo}
@@ -60,20 +63,14 @@ const App = () => {
           </a>
         </header>
 
-        {/* Головна сторінка */}
         {isLoggedIn && (
           <Routes>
             <Route
               path="/"
               element={
                 <div>
-                  {/* Список компаній */}
                   <CompanyList companies={companies} />
-
-                  {/* Список людей */}
                   <PeopleList people={people} />
-
-                  {/* Форма для додавання нової людини */}
                   <CreatePersonForm
                     onPersonCreated={(newPerson) =>
                       setPeople((prev) => [...prev, newPerson])
@@ -83,30 +80,36 @@ const App = () => {
               }
             />
 
-            {/* Сторінка для конкретної компанії */}
             <Route
               path="/company/:companyName"
               element={<CompanyTablesPage />}
             />
 
-            {/* Сторінка для конкретної таблиці компанії */}
+            {/* Новий маршрут для нової компанії */}
+            <Route
+              path="/company/newcompany"
+              element={<NewCompanyTablesPage />}
+            />
+
             <Route
               path="/company/:companyName/table/:tableId"
               element={<TableDetailsPage />}
             />
 
-            {/* Сторінка для конкретної людини */}
             <Route path="/person/:personId" element={<PersonPage />} />
-            {/* Сторінка для таблиць людини */}
             <Route
               path="/person/:personId/tables"
               element={<PersonTablesPage />}
             />
-
-            {/* Сторінка для деталей таблиці людини */}
             <Route
               path="/person/:personId/tables/:tableId"
               element={<PersonTableDetailsPage />}
+            />
+
+            {/* Новий маршрут для деталей таблиці нової компанії */}
+            <Route
+              path="/company/newcompany/table/:tableId"
+              element={<NewCompanyTableDetails />}
             />
           </Routes>
         )}

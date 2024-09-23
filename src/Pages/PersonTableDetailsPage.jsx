@@ -12,6 +12,9 @@ const PersonTableDetailsPage = () => {
     date: "",
     total_income: 0,
   });
+  const [totalWithGST, setTotalWithGST] = useState(0); // Додаємо стан для Total with GST
+  const [adjustedTotal, setAdjustedTotal] = useState(0); // Стан для відкоригованого Total з WCB
+  const [wcb, setWcb] = useState(""); // Додаємо стан для WCB
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -78,6 +81,16 @@ const PersonTableDetailsPage = () => {
     0
   );
 
+  // Додавання функціоналу для обчислення Total with GST
+  const handleAddGST = () => {
+    setTotalWithGST(totalIncome + totalIncome * 0.05); // Додаємо 5% GST
+  };
+
+  // Віднімання WCB від Total
+  const handleSubtractWCB = () => {
+    setAdjustedTotal(totalIncome - parseFloat(wcb)); // Віднімаємо WCB від Total
+  };
+
   return (
     <div className={styles.tableDetailsContainer}>
       <button className={styles.backButton} onClick={() => navigate(-1)}>
@@ -109,8 +122,29 @@ const PersonTableDetailsPage = () => {
                 <td colSpan="2">Total:</td>
                 <td>${totalIncome.toFixed(2)}</td>
               </tr>
+              <tr className={styles.totalRow}>
+                <td colSpan="2">Total with GST:</td>
+                <td>${totalWithGST.toFixed(2)}</td>
+              </tr>
+              <tr className={styles.totalRow}>
+                <td colSpan="2">Total - WCB (-WCB):</td>
+                <td>${adjustedTotal.toFixed(2)}</td>
+              </tr>
             </tbody>
           </table>
+
+          {/* Кнопка для додавання GST */}
+          <button onClick={handleAddGST}>+GST</button>
+
+          {/* Поле та кнопка для введення WCB */}
+          <input
+            type="number"
+            placeholder="Enter WCB"
+            value={wcb}
+            onChange={(e) => setWcb(e.target.value)}
+            className={styles.inputField}
+          />
+          <button onClick={handleSubtractWCB}>-WCB</button>
 
           {/* Форма для додавання нового інвойсу */}
           <div className={styles.addInvoiceForm}>

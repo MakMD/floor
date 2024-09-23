@@ -57,3 +57,42 @@
   border: none;
   cursor: pointer;
 }
+@media print {
+  .addInvoiceForm,
+  .backButton {
+    display: none; /* Не друкувати форму та кнопку повернення */
+  }
+
+  .invoicePage {
+    padding: 0;
+    border: none;
+  }
+
+  .document {
+    border: none;
+    padding: 0;
+  }
+
+  .invoiceTable th,
+  .invoiceTable td {
+    padding: 5px;
+  }
+  header {
+    display: none;
+  }
+  button {
+    display: none;
+  }
+  input {
+    display: none;
+  }
+}
+.totalRow {
+  font-weight: bold;
+  background-color: #f0f0f0;
+}
+
+.totalLabel {
+  text-align: right;
+  padding-right: 10px;
+}
