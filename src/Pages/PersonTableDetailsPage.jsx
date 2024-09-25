@@ -100,9 +100,15 @@ const PersonTableDetailsPage = () => {
 
   return (
     <div className={styles.tableDetailsContainer}>
-      <button className={styles.backButton} onClick={() => navigate(-1)}>
-        Back
-      </button>
+      <div className={styles.btnBackPrintCont}>
+        <button className={styles.backButton} onClick={() => navigate(-1)}>
+          Back
+        </button>
+        {/* Додаємо кнопку для друку */}
+        <button onClick={handlePrint} className={styles.printButton}>
+          Print
+        </button>
+      </div>
       {error && <p className={styles.error}>{error}</p>}
       {table ? (
         <>
@@ -140,7 +146,9 @@ const PersonTableDetailsPage = () => {
             </tbody>
           </table>
           {/* Кнопка для додавання GST */}
-          <button onClick={handleAddGST}>+GST</button>
+          <button onClick={handleAddGST} className={styles.btnGst}>
+            +GST
+          </button>
           {/* Поле та кнопка для введення WCB */}
           <input
             type="number"
@@ -149,7 +157,9 @@ const PersonTableDetailsPage = () => {
             onChange={(e) => setWcb(e.target.value)}
             className={styles.inputField}
           />
-          <button onClick={handleSubtractWCB}>-WCB</button>
+          <button onClick={handleSubtractWCB} className={styles.btnWcb}>
+            -WCB
+          </button>
           {/* Форма для додавання нового інвойсу */}
           <div className={styles.addInvoiceForm}>
             <h3>Add New Invoice</h3>
@@ -184,10 +194,6 @@ const PersonTableDetailsPage = () => {
               Add Invoice
             </button>
           </div>
-          {/* Додаємо кнопку для друку */}
-          <button onClick={handlePrint} className={styles.printButton}>
-            Print
-          </button>
         </>
       ) : (
         <p>Loading table details...</p>

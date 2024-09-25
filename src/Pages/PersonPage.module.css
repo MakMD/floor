@@ -88,6 +88,20 @@
 .backButton:hover {
   background-color: #0056b3;
 }
+.addTableButton {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.addTableButton:hover {
+  background-color: #0056b3;
+}
+
 .invoiceTable {
   width: 100%;
   border-collapse: collapse;
@@ -131,10 +145,15 @@
 }
 
 .inputField {
+  width: 100%;
+  background-color: #f9f9f9;
+  max-width: 400px; /* Максимальна ширина інпуту */
   padding: 10px;
+  border: 2px solid #ccc; /* Сіра рамка */
+  border-radius: 4px; /* Закруглені кути */
   font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
 }
 
 .addInvoiceButton {
@@ -149,4 +168,36 @@
 
 .addInvoiceButton:hover {
   background-color: #0056b3;
+}
+/* Стилі для контейнера пошуку */
+/* .searchContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+  padding: 10px;
+
+  border-radius: 8px; 
+} */
+
+/* Стилі для інпуту пошуку */
+.searchInput {
+  width: 100%;
+  background-color: #f9f9f9;
+  max-width: 400px; /* Максимальна ширина інпуту */
+  padding: 10px;
+  border: 2px solid #ccc; /* Сіра рамка */
+  border-radius: 4px; /* Закруглені кути */
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+  margin-bottom: 30px;
+
+  /* Забезпечення адаптивності */
+  box-sizing: border-box;
+}
+
+/* Ефект фокусу для інпуту */
+.searchInput:focus {
+  border-color: #007bff; /* Зміна кольору рамки при фокусі */
+  outline: none; /* Прибрати стандартну синю рамку */
 }

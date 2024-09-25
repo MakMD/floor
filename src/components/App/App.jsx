@@ -13,6 +13,7 @@ import LoginModal from "../LoginModal/LoginModal";
 import logo from "../../../public/Flooring.Boss.svg";
 import NewCompanyTablesPage from "../NewCompanyTablePage/NewCompanyTablePage"; // Додаємо нову компанію
 import NewCompanyTableDetails from "../NewCompanyTablePage/NewCompanyTableDetails";
+import BackupButton from "../BackupButton/BackupButton";
 
 const App = () => {
   const [people, setPeople] = useState([]);
@@ -48,7 +49,7 @@ const App = () => {
     <Router>
       <div>
         {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
-
+        {isLoggedIn && <BackupButton />}
         <header
           className="header"
           style={{ textAlign: "center", padding: "10px" }}

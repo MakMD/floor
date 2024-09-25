@@ -110,7 +110,7 @@
 }
 
 .addTableButton {
-  background-color: #28a745;
+  background-color: #007bff;
   color: white;
   padding: 10px 20px;
   font-size: 16px;
@@ -122,12 +122,12 @@
 }
 
 .addTableButton:hover {
-  background-color: #218838;
+  background-color: #007bff;
   transform: translateY(-3px);
 }
 
 .addTableButton:active {
-  background-color: #1e7e34;
+  background-color: #007bff;
   transform: translateY(0);
 }
 
@@ -228,4 +228,24 @@
   .tableItem {
     width: 100%; /* Таблиця займатиме всю ширину на мобільних */
   }
+}
+.searchInput {
+  width: 100%;
+  background-color: #f9f9f9;
+  max-width: 400px; /* Максимальна ширина інпуту */
+  padding: 10px;
+  border: 2px solid #ccc; /* Сіра рамка */
+  border-radius: 4px; /* Закруглені кути */
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+  margin-bottom: 30px;
+
+  /* Забезпечення адаптивності */
+  box-sizing: border-box;
+}
+
+/* Ефект фокусу для інпуту */
+.searchInput:focus {
+  border-color: #007bff; /* Зміна кольору рамки при фокусі */
+  outline: none; /* Прибрати стандартну синю рамку */
 }

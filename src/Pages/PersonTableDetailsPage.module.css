@@ -4,12 +4,13 @@
 }
 
 .backButton {
-  background-color: #4caf50;
+  background-color: #007bff;
   color: white;
   padding: 10px 20px;
   border: none;
   cursor: pointer;
-  margin-bottom: 20px;
+
+  border-radius: 5px;
 }
 
 .invoiceTable {
@@ -26,7 +27,7 @@
 }
 
 .invoiceTable th {
-  background-color: #4caf50;
+  background-color: #007bff;
   color: white;
 }
 
@@ -51,11 +52,12 @@
 }
 
 .addInvoiceButton {
-  background-color: #4caf50;
+  background-color: #007bff;
   color: white;
   padding: 10px 15px;
   border: none;
   cursor: pointer;
+  border-radius: 5px;
 }
 @media print {
   .addInvoiceForm,
@@ -97,7 +99,7 @@
   padding-right: 10px;
 }
 .printButton {
-  background-color: #28a745;
+  background-color: #007bff;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -106,15 +108,37 @@
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.3s ease;
-  margin-top: 20px;
 }
 
 .printButton:hover {
-  background-color: #218838;
+  background-color: #007bff;
   transform: translateY(-3px);
 }
 
 .printButton:active {
-  background-color: #1e7e34;
+  background-color: #007bff;
   transform: translateY(0);
+}
+.btnGst {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+
+.btnWcb {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+.btnBackPrintCont {
+  display: flex;
+  justify-content: space-between;
 }

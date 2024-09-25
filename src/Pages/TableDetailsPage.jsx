@@ -123,10 +123,16 @@ const TableDetailsPage = () => {
   return (
     <div className={styles.invoicePage}>
       {/* Кнопка "Назад" */}
-      <button className={styles.backButton} onClick={() => navigate(-1)}>
-        Back
-      </button>
 
+      <div className={styles.btnBackPrintCont}>
+        <button className={styles.backButton} onClick={() => navigate(-1)}>
+          Back
+        </button>
+        {/* Додаємо кнопку для друку */}
+        <button onClick={handlePrint} className={styles.printButton}>
+          Print
+        </button>
+      </div>
       <div className={styles.document}>
         {/* Верхня частина документа */}
         <div className={styles.header}>
@@ -226,11 +232,6 @@ const TableDetailsPage = () => {
                 Add Invoice
               </button>
             </div>
-
-            {/* Кнопка для друку */}
-            <button onClick={handlePrint} className={styles.printButton}>
-              Print
-            </button>
           </>
         ) : (
           <p>Loading...</p>

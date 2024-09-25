@@ -206,3 +206,9 @@
     font-size: 0.9em;
   }
 }
+.formContainer {
+  margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}

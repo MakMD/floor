@@ -91,7 +91,7 @@ const NewCompanyTableDetails = () => {
   };
 
   // Додавання нового інвойсу
-  const handleAddInvoice = () => {
+  const handleAddInvoice = async () => {
     if (
       !newInvoice.date ||
       !newInvoice.address ||
@@ -114,6 +114,7 @@ const NewCompanyTableDetails = () => {
       totalWithGst: calculatedValues.totalWithGst,
     };
 
+    // Оновлення інвойсів локально
     const updatedInvoices = [...tableDetails.invoices, newInvoiceData];
 
     setTableDetails((prev) => ({
@@ -121,7 +122,37 @@ const NewCompanyTableDetails = () => {
       invoices: updatedInvoices,
     }));
 
-    calculateTotals(updatedInvoices); // Оновлення підсумкових значень
+    calculateTotals(updatedInvoices);
+
+    try {
+      // Отримання повної інформації про компанію з сервера для оновлення лише однієї таблиці
+      const response = await axios.get(
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/1`
+      );
+      const companyData = response.data;
+
+      // Оновлення конкретної таблиці з новими інвойсами
+      const updatedInvoiceTables = companyData.invoiceTables.map((table) => {
+        if (table.tableId === tableId) {
+          return { ...table, invoices: updatedInvoices };
+        }
+        return table;
+      });
+
+      // Відправка оновлених даних компанії з новими інвойсами на бекенд
+      await axios.put(
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/1`,
+        {
+          ...companyData,
+          invoiceTables: updatedInvoiceTables,
+        }
+      );
+
+      console.log("Invoice added successfully");
+    } catch (error) {
+      console.error("Error saving invoice to backend:", error);
+      alert("Failed to save the invoice. Please try again.");
+    }
 
     // Очищення форми після додавання інвойсу
     setNewInvoice({
