@@ -6,6 +6,7 @@ import styles from "./PersonTableDetailsPage.module.css"; // Підключає�
 const PersonTableDetailsPage = () => {
   const { personId, tableId } = useParams();
   const navigate = useNavigate();
+  const [personName, setPersonName] = useState(""); // Додаємо стан для імені користувача
   const [table, setTable] = useState(null);
   const [newInvoice, setNewInvoice] = useState({
     address: "",
@@ -27,6 +28,7 @@ const PersonTableDetailsPage = () => {
           (table) => table.tableId === tableId
         );
         setTable(selectedTable);
+        setPersonName(response.data.name); // Встановлюємо ім'я людини
       } catch (error) {
         setError("Error fetching table details");
         console.error("Error fetching table details:", error);
@@ -91,6 +93,11 @@ const PersonTableDetailsPage = () => {
     setAdjustedTotal(totalIncome - parseFloat(wcb)); // Віднімаємо WCB від Total
   };
 
+  // Функція для друку сторінки
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className={styles.tableDetailsContainer}>
       <button className={styles.backButton} onClick={() => navigate(-1)}>
@@ -99,7 +106,7 @@ const PersonTableDetailsPage = () => {
       {error && <p className={styles.error}>{error}</p>}
       {table ? (
         <>
-          <h2>{table.name} Details</h2>
+          <h2>{personName} Details</h2> {/* Виводимо ім'я людини */}
           {/* Стилізована таблиця інвойсів */}
           <table className={styles.invoiceTable}>
             <thead>
@@ -132,10 +139,8 @@ const PersonTableDetailsPage = () => {
               </tr>
             </tbody>
           </table>
-
           {/* Кнопка для додавання GST */}
           <button onClick={handleAddGST}>+GST</button>
-
           {/* Поле та кнопка для введення WCB */}
           <input
             type="number"
@@ -145,7 +150,6 @@ const PersonTableDetailsPage = () => {
             className={styles.inputField}
           />
           <button onClick={handleSubtractWCB}>-WCB</button>
-
           {/* Форма для додавання нового інвойсу */}
           <div className={styles.addInvoiceForm}>
             <h3>Add New Invoice</h3>
@@ -180,6 +184,10 @@ const PersonTableDetailsPage = () => {
               Add Invoice
             </button>
           </div>
+          {/* Додаємо кнопку для друку */}
+          <button onClick={handlePrint} className={styles.printButton}>
+            Print
+          </button>
         </>
       ) : (
         <p>Loading table details...</p>

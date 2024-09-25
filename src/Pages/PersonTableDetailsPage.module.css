@@ -96,3 +96,25 @@
   text-align: right;
   padding-right: 10px;
 }
+.printButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  margin-top: 20px;
+}
+
+.printButton:hover {
+  background-color: #218838;
+  transform: translateY(-3px);
+}
+
+.printButton:active {
+  background-color: #1e7e34;
+  transform: translateY(0);
+}

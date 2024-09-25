@@ -1,145 +1,172 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import styles from "./NewInvoiceForm.module.css"; // Стилі для нової компанії
+import styles from "./NewCompanyTablePage.module.css";
 
-const NewCompanyTablePage = () => {
-  const { companyName } = useParams();
-  const navigate = useNavigate();
+const NewCompanyTablesPage = () => {
   const [tables, setTables] = useState([]);
+  const [filteredTables, setFilteredTables] = useState([]); // Для відображення таблиць після фільтрації
+  const [searchQuery, setSearchQuery] = useState(""); // Для зберігання пошукового запиту
+  const [error, setError] = useState("");
   const [newTable, setNewTable] = useState({
     date: "",
     invoiceNumber: "",
     billTo: "",
-    price: "", // Поле для Price
-    sfStairs: "", // Поле для SF/Stairs
+    payTo: "",
   });
-  const [error, setError] = useState("");
+  const navigate = useNavigate(); // Використовуємо useNavigate для навігації
 
-  // Завантаження таблиць з бекенду
   useEffect(() => {
     const fetchTables = async () => {
       try {
         const response = await axios.get(
-          `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany`
+          "https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany"
         );
         if (response.data.length > 0) {
           setTables(response.data[0]?.invoiceTables || []);
+          setFilteredTables(response.data[0]?.invoiceTables || []); // Ініціалізуємо відфільтровані таблиці
         } else {
-          setError("No data found for this company");
+          setError("No data found for this company.");
         }
-      } catch (err) {
-        setError("Error fetching tables");
-        console.error("Error fetching tables:", err);
+      } catch (error) {
+        setError("Error fetching tables.");
+        console.error("Error fetching tables:", error);
       }
     };
 
     fetchTables();
-  }, [companyName]);
+  }, []);
 
-  // Оновлення полів форми
-  const handleInputChange = (e) => {
-    setNewTable({
-      ...newTable,
-      [e.target.name]: e.target.value,
-    });
+  // Пошук за адресою
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+
+    const filtered = tables.filter((table) =>
+      table.invoices.some((invoice) =>
+        invoice.address.toLowerCase().includes(query)
+      )
+    );
+    setFilteredTables(filtered);
   };
 
-  // Додавання нової таблиці
+  const handleTableClick = (tableId) => {
+    // Перенаправляємо на шлях з tableId
+    navigate(`/company/newcompany/table/${tableId}`);
+  };
+
+  // Функція для обробки змін у формі
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewTable((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Функція для додавання нової таблиці
   const handleAddTable = async () => {
-    const { date, invoiceNumber, billTo, price, sfStairs } = newTable;
-    if (!date || !invoiceNumber || !billTo || !price || !sfStairs) {
-      setError("All fields are required");
+    if (
+      !newTable.date ||
+      !newTable.invoiceNumber ||
+      !newTable.billTo ||
+      !newTable.payTo
+    ) {
+      alert("Please fill out all fields.");
       return;
     }
 
     const newTableData = {
       tableId: Date.now().toString(),
-      name: `Invoices for ${new Date(date).toLocaleString("en-US", {
-        month: "long",
-        year: "numeric",
-      })}`,
       invoiceDetails: {
-        date,
-        invoiceNumber,
-        billTo,
+        date: newTable.date,
+        invoiceNumber: newTable.invoiceNumber,
+        billTo: newTable.billTo,
+        payTo: newTable.payTo,
       },
-      price,
-      sfStairs,
       invoices: [],
     };
 
     try {
-      const updatedTables = [...tables, newTableData];
-
+      // Отримуємо поточні дані компанії
       const response = await axios.get(
-        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany`
+        "https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany"
       );
-      const currentCompanyData = response.data[0]; // Якщо є масив, беремо перший елемент
+      const currentCompanyData = response.data[0];
 
+      // Оновлюємо таблиці компанії
       if (currentCompanyData) {
         await axios.put(
           `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/${currentCompanyData.id}`,
-          { ...currentCompanyData, invoiceTables: updatedTables }
+          {
+            ...currentCompanyData,
+            invoiceTables: [...currentCompanyData.invoiceTables, newTableData],
+          }
         );
+        setTables((prev) => [...prev, newTableData]); // Додаємо нову таблицю до списку
+        setFilteredTables((prev) => [...prev, newTableData]); // Оновлюємо відфільтровані таблиці
+        setNewTable({ date: "", invoiceNumber: "", billTo: "", payTo: "" }); // Очищуємо форму
       }
-
-      setTables(updatedTables);
-      setNewTable({
-        date: "",
-        invoiceNumber: "",
-        billTo: "",
-        price: "",
-        sfStairs: "",
-      });
     } catch (error) {
-      setError("Error adding table");
       console.error("Error adding table:", error);
     }
   };
 
-  const handleTableClick = (tableId) => {
-    navigate(`/company/${companyName}/table/${tableId}`);
-  };
-
   return (
-    <div className={styles.companyTablesPage}>
+    <div className={styles.pageContainer}>
       {/* Кнопка "Назад" */}
       <button className={styles.backButton} onClick={() => navigate(-1)}>
         Back
       </button>
 
-      <h2>{companyName} - Custom Tables</h2>
-      {error && <p className={styles.error}>{error}</p>}
+      <h2 className={styles.pageTitle}>Tables for New Company</h2>
+      {error && <p className={styles.errorMessage}>{error}</p>}
+
+      {/* Поле для пошуку за адресою */}
+      <input
+        type="text"
+        placeholder="Search by address"
+        value={searchQuery}
+        onChange={handleSearch}
+        className={styles.searchField}
+      />
 
       <ul className={styles.tableList}>
-        {tables.length > 0 ? (
-          tables.map((table) => (
+        {filteredTables.length > 0 ? (
+          filteredTables.map((table) => (
             <li
               key={table.tableId}
               className={styles.tableItem}
-              onClick={() => handleTableClick(table.tableId)}
+              onClick={() => handleTableClick(table.tableId)} // При натисканні перенаправляємо
             >
-              <h3>{table.name}</h3>
-              <p>Date: {table.invoiceDetails.date}</p>
-              <p>Bill To: {table.invoiceDetails.billTo}</p>
-              <p>Price: {table.price || "Not available"}</p>
-              <p>SF/Stairs: {table.sfStairs || "Not available"}</p>
+              <h3 className={styles.tableTitle}>
+                {table.invoiceDetails.invoiceNumber}
+              </h3>
+              <p className={styles.tableDate}>
+                Date: {table.invoiceDetails.date}
+              </p>
+              <p className={styles.tableBillTo}>
+                Bill To: {table.invoiceDetails.billTo}
+              </p>
+              <p className={styles.tablePayTo}>
+                Pay To: {table.invoiceDetails.payTo}
+              </p>
             </li>
           ))
         ) : (
-          <p>No tables available for this company.</p>
+          <p className={styles.noTablesMessage}>No tables available.</p>
         )}
       </ul>
 
       {/* Форма для додавання нової таблиці */}
       <div className={styles.addTableForm}>
-        <h3>Add New Table</h3>
+        <h3 className={styles.formTitle}>Add New Table</h3>
         <input
           type="date"
           name="date"
           value={newTable.date}
           onChange={handleInputChange}
+          placeholder="Date"
           className={styles.inputField}
         />
         <input
@@ -158,21 +185,12 @@ const NewCompanyTablePage = () => {
           placeholder="Bill To"
           className={styles.inputField}
         />
-        {/* Специфічні поля для нової компанії */}
         <input
           type="text"
-          name="price"
-          value={newTable.price}
+          name="payTo"
+          value={newTable.payTo}
           onChange={handleInputChange}
-          placeholder="Price"
-          className={styles.inputField}
-        />
-        <input
-          type="text"
-          name="sfStairs"
-          value={newTable.sfStairs}
-          onChange={handleInputChange}
-          placeholder="SF/Stairs"
+          placeholder="Pay To"
           className={styles.inputField}
         />
         <button onClick={handleAddTable} className={styles.addTableButton}>
@@ -183,4 +201,4 @@ const NewCompanyTablePage = () => {
   );
 };
 
-export default NewCompanyTablePage;
+export default NewCompanyTablesPage;

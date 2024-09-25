@@ -13,6 +13,7 @@ const CompanyTablesPage = () => {
     date: "",
     invoiceNumber: "",
     billTo: "",
+    payTo: "", // Додаємо поле "payTo"
   });
   const [error, setError] = useState("");
 
@@ -61,8 +62,9 @@ const CompanyTablesPage = () => {
   };
 
   const handleAddTable = async () => {
-    const { date, invoiceNumber, billTo } = newTable;
-    if (!date || !invoiceNumber || !billTo) {
+    const { date, invoiceNumber, billTo, payTo } = newTable; // Додаємо "payTo"
+    if (!date || !invoiceNumber || !billTo || !payTo) {
+      // Перевірка на наявність "payTo"
       setError("All fields are required");
       return;
     }
@@ -74,28 +76,39 @@ const CompanyTablesPage = () => {
         year: "numeric",
       })}`,
       invoiceDetails: {
-        date: newTable.date,
-        invoiceNumber: newTable.invoiceNumber,
-        billTo: newTable.billTo,
+        date,
+        invoiceNumber,
+        billTo,
+        payTo, // Додаємо "payTo"
       },
       invoices: [],
     };
 
     try {
-      const updatedTables = [...tables, newTableData];
-
       const response = await axios.get(
         `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}`
       );
-      const currentCompanyData = response.data[0];
+      const currentCompanyData = response.data[0]; // Отримуємо перший елемент масиву
 
+      const companyId = currentCompanyData.id; // Використовуємо правильний ID
+
+      // Оновлюємо масив таблиць
+      const updatedTables = [
+        ...(currentCompanyData.invoiceTables || []),
+        newTableData,
+      ];
+
+      // Оновлюємо дані на сервері
       await axios.put(
-        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}/1`,
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}/${companyId}`,
         { ...currentCompanyData, invoiceTables: updatedTables }
       );
+      console.log("New table data:", newTableData);
+      console.log("Updated tables:", updatedTables); // Перевірка оновлених таблиць
 
+      // Оновлюємо стан таблиць
       setTables(updatedTables);
-      setNewTable({ date: "", invoiceNumber: "", billTo: "" });
+      setNewTable({ date: "", invoiceNumber: "", billTo: "", payTo: "" }); // Очищення полів форми
     } catch (error) {
       setError("Error adding table");
       console.error("Error adding table:", error);
@@ -136,8 +149,10 @@ const CompanyTablesPage = () => {
               onClick={() => handleTableClick(table.tableId)}
             >
               <h3>{table.name}</h3>
-              <p>Date: {table.invoiceDetails.date}</p>
+              <p>Pay To: {table.invoiceDetails.payTo}</p>
+              {/* Відображення "Pay To" */}
               <p>Bill To: {table.invoiceDetails.billTo}</p>
+              <p>Date: {table.invoiceDetails.date}</p>
             </li>
           ))
         ) : (
@@ -171,27 +186,14 @@ const CompanyTablesPage = () => {
           placeholder="Bill To"
           className={styles.inputField}
         />
-        {/* Специфічні поля для Norseman */}
-        {companyName === "norseman" && (
-          <>
-            <input
-              type="text"
-              name="price"
-              value={newTable.price || ""}
-              onChange={handleInputChange}
-              placeholder="Price"
-              className={styles.inputField}
-            />
-            <input
-              type="text"
-              name="sfStairs"
-              value={newTable.sfStairs || ""}
-              onChange={handleInputChange}
-              placeholder="SF/Stairs"
-              className={styles.inputField}
-            />
-          </>
-        )}
+        <input
+          type="text"
+          name="payTo" // Поле для "payTo"
+          value={newTable.payTo}
+          onChange={handleInputChange}
+          placeholder="Pay To"
+          className={styles.inputField}
+        />
         <button onClick={handleAddTable} className={styles.addTableButton}>
           Add Table
         </button>

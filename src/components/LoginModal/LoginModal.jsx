@@ -13,7 +13,7 @@ const LoginModal = ({ onLoginSuccess }) => {
       );
 
       const storedPassword = response.data[0].passwords; // Отримуємо пароль з правильного ключа
-      console.log(response.data[0].passwords);
+
       if (password === storedPassword) {
         onLoginSuccess(); // Якщо пароль правильний
       } else {

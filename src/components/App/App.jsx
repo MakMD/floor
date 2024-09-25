@@ -22,7 +22,6 @@ const App = () => {
     { name: "samsung" },
     { name: "cwp" },
     { name: "amazon" },
-    { name: "norseman" },
     { name: "newCompany" }, // Додаємо нову компанію
   ]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);

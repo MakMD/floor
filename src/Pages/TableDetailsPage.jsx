@@ -115,6 +115,11 @@ const TableDetailsPage = () => {
 
   const totals = calculateTotal();
 
+  // Додаємо функцію для друку
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className={styles.invoicePage}>
       {/* Кнопка "Назад" */}
@@ -138,6 +143,7 @@ const TableDetailsPage = () => {
           <>
             <div className={styles.invoiceHeader}>
               <h2>Invoice Number: {table.invoiceDetails.invoiceNumber}</h2>
+              <p>Pay to: {table.invoiceDetails.payTo}</p>
               <p>Date: {table.invoiceDetails.date}</p>
               <p>Bill To: {table.invoiceDetails.billTo}</p>
             </div>
@@ -220,6 +226,11 @@ const TableDetailsPage = () => {
                 Add Invoice
               </button>
             </div>
+
+            {/* Кнопка для друку */}
+            <button onClick={handlePrint} className={styles.printButton}>
+              Print
+            </button>
           </>
         ) : (
           <p>Loading...</p>
