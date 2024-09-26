@@ -138,6 +138,15 @@
   margin-bottom: 20px;
   border-radius: 5px;
 }
+.editButton {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+
+  border-radius: 5px;
+}
 .btnBackPrintCont {
   display: flex;
   justify-content: space-between;

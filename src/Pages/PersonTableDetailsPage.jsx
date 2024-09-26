@@ -16,6 +16,7 @@ const PersonTableDetailsPage = () => {
   const [totalWithGST, setTotalWithGST] = useState(0); // Додаємо стан для Total with GST
   const [adjustedTotal, setAdjustedTotal] = useState(0); // Стан для відкоригованого Total з WCB
   const [wcb, setWcb] = useState(""); // Додаємо стан для WCB
+  const [isEditing, setIsEditing] = useState(false); // Додаємо стан для перемикання режиму редагування
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -98,6 +99,36 @@ const PersonTableDetailsPage = () => {
     window.print();
   };
 
+  // Перемикання режиму редагування
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+  };
+
+  // Збереження змін на бекенд
+  const handleSaveChanges = async () => {
+    try {
+      const response = await axios.get(
+        `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`
+      );
+      const currentPersonData = response.data;
+
+      const updatedTables = currentPersonData.tables.map((tbl) =>
+        tbl.tableId === tableId ? { ...tbl, invoices: table.invoices } : tbl
+      );
+
+      await axios.put(
+        `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`,
+        { ...currentPersonData, tables: updatedTables }
+      );
+
+      console.log("Changes saved successfully");
+      setIsEditing(false); // Після збереження вимикаємо режим редагування
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      setError("Failed to save changes.");
+    }
+  };
+
   return (
     <div className={styles.tableDetailsContainer}>
       <div className={styles.btnBackPrintCont}>
@@ -107,6 +138,13 @@ const PersonTableDetailsPage = () => {
         {/* Додаємо кнопку для друку */}
         <button onClick={handlePrint} className={styles.printButton}>
           Print
+        </button>
+        {/* Кнопка для перемикання режиму редагування */}
+        <button
+          onClick={isEditing ? handleSaveChanges : toggleEditMode}
+          className={styles.editButton}
+        >
+          {isEditing ? "Save Changes" : "Edit"}
         </button>
       </div>
       {error && <p className={styles.error}>{error}</p>}
@@ -125,9 +163,60 @@ const PersonTableDetailsPage = () => {
             <tbody>
               {table.invoices.map((invoice, index) => (
                 <tr key={index}>
-                  <td>{invoice.address}</td>
-                  <td>{invoice.date}</td>
-                  <td>{invoice.total_income}</td>
+                  <td>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={invoice.address}
+                        onChange={(e) => {
+                          const updatedInvoices = [...table.invoices];
+                          updatedInvoices[index].address = e.target.value;
+                          setTable((prevTable) => ({
+                            ...prevTable,
+                            invoices: updatedInvoices,
+                          }));
+                        }}
+                      />
+                    ) : (
+                      invoice.address
+                    )}
+                  </td>
+                  <td>
+                    {isEditing ? (
+                      <input
+                        type="date"
+                        value={invoice.date}
+                        onChange={(e) => {
+                          const updatedInvoices = [...table.invoices];
+                          updatedInvoices[index].date = e.target.value;
+                          setTable((prevTable) => ({
+                            ...prevTable,
+                            invoices: updatedInvoices,
+                          }));
+                        }}
+                      />
+                    ) : (
+                      invoice.date
+                    )}
+                  </td>
+                  <td>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        value={invoice.total_income}
+                        onChange={(e) => {
+                          const updatedInvoices = [...table.invoices];
+                          updatedInvoices[index].total_income = e.target.value;
+                          setTable((prevTable) => ({
+                            ...prevTable,
+                            invoices: updatedInvoices,
+                          }));
+                        }}
+                      />
+                    ) : (
+                      invoice.total_income
+                    )}
+                  </td>
                 </tr>
               ))}
               {/* Рядок з підсумковою сумою */}

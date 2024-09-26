@@ -88,7 +88,6 @@
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.3s ease;
-  margin-top: 20px;
 }
 
 .backButton:hover {
@@ -193,6 +192,17 @@
     font-size: 0.9em;
   }
 }
+.editButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
 .printButton {
   background-color: #007bff;
   color: white;
@@ -203,7 +213,6 @@
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.3s ease;
-  margin-top: 20px;
 }
 
 .printButton:hover {
@@ -219,4 +228,71 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 30px;
+}
+@media print {
+  /* Забезпечуємо, що всі елементи таблиці відображаються під час друку */
+  .invoiceTable,
+  .invoiceTable th,
+  .invoiceTable td {
+    visibility: visible;
+    color: black; /* Переконуємося, що текст чорний */
+    -webkit-print-color-adjust: exact; /* Переконуємося, що кольори друкуються */
+  }
+
+  /* Відображаємо кнопки, якщо вони повинні бути видимі */
+  .printButton,
+  .backButton {
+    display: none; /* Ховаємо кнопки під час друку */
+  }
+
+  /* Відображаємо хедер документа під час друку */
+  .header,
+  .invoiceHeader {
+    visibility: visible;
+    color: black;
+  }
+
+  /* Забезпечуємо видимість всієї таблиці та її підсумкових значень */
+  .totalRow {
+    visibility: visible;
+    color: black;
+  }
+
+  /* Прибираємо інші елементи, якщо вони не потрібні при друці */
+  .divider,
+  .addInvoiceForm {
+    display: none;
+  }
+}
+@media print {
+  /* При друці перетворюємо всі інпути на текст */
+  input {
+    border: none;
+    background: none;
+    color: black;
+    font-size: inherit;
+    -webkit-appearance: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Інпути не відображаються як елементи введення, лише як текст */
+  input::placeholder {
+    color: black;
+    visibility: hidden;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="date"] {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .printButton,
+  .backButton {
+    display: none; /* Ховаємо кнопки при друку */
+  }
 }

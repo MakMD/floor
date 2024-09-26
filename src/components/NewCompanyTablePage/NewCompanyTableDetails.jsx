@@ -7,9 +7,10 @@ const NewCompanyTableDetails = () => {
   const { tableId } = useParams();
   const [tableDetails, setTableDetails] = useState(null);
   const [error, setError] = useState("");
+  const [isEditing, setIsEditing] = useState(false); // Перемикання режиму редагування
   const navigate = useNavigate();
 
-  // Стани для введення нових даних
+  // Стани для нових даних
   const [newInvoice, setNewInvoice] = useState({
     date: "",
     address: "",
@@ -66,28 +67,56 @@ const NewCompanyTableDetails = () => {
     setTotalWithGstSum(totalWithGstSum.toFixed(2));
   };
 
-  // Оновлення форми і автоматичне обчислення Total, GST і Total with GST для нового інвойсу
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewInvoice((prev) => ({
+  // Обробка змін полів інвойсів у таблиці
+  const handleFieldChange = async (e, index, field) => {
+    const updatedInvoices = [...tableDetails.invoices];
+    updatedInvoices[index][field] = e.target.value;
+
+    if (field === "price" || field === "sf/stairs") {
+      const price = parseFloat(updatedInvoices[index].price || 0);
+      const sfStairs = parseFloat(updatedInvoices[index]["sf/stairs"] || 0);
+      const total = price * sfStairs;
+      const gst = total * 0.05;
+      const totalWithGst = total + gst;
+
+      updatedInvoices[index].total = total.toFixed(2);
+      updatedInvoices[index].GSTCollected = gst.toFixed(2);
+      updatedInvoices[index].totalWithGst = totalWithGst.toFixed(2);
+    }
+
+    setTableDetails((prev) => ({
       ...prev,
-      [name]: value,
+      invoices: updatedInvoices,
     }));
-  };
 
-  // Функція для обчислення Total, GST і Total with GST для нового інвойсу
-  const calculateInvoice = () => {
-    const price = parseFloat(newInvoice.price);
-    const sfStairs = parseFloat(newInvoice.sfStairs);
-    const total = price * sfStairs;
-    const gst = total * 0.05;
-    const totalWithGst = total + gst;
+    try {
+      // Оновлення даних на бекенді
+      const response = await axios.get(
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/1`
+      );
+      const companyData = response.data;
 
-    return {
-      total: total.toFixed(2),
-      gst: gst.toFixed(2),
-      totalWithGst: totalWithGst.toFixed(2),
-    };
+      const updatedInvoiceTables = companyData.invoiceTables.map((table) => {
+        if (table.tableId === tableId) {
+          return { ...table, invoices: updatedInvoices };
+        }
+        return table;
+      });
+
+      await axios.put(
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/1`,
+        {
+          ...companyData,
+          invoiceTables: updatedInvoiceTables,
+        }
+      );
+
+      console.log("Invoice updated successfully");
+    } catch (error) {
+      console.error("Error updating invoice to backend:", error);
+    }
+
+    calculateTotals(updatedInvoices);
   };
 
   // Додавання нового інвойсу
@@ -102,16 +131,20 @@ const NewCompanyTableDetails = () => {
       return;
     }
 
-    const calculatedValues = calculateInvoice();
+    const price = parseFloat(newInvoice.price);
+    const sfStairs = parseFloat(newInvoice.sfStairs);
+    const total = price * sfStairs;
+    const gst = total * 0.05;
+    const totalWithGst = total + gst;
 
     const newInvoiceData = {
       date: newInvoice.date,
       address: newInvoice.address,
       price: newInvoice.price,
       "sf/stairs": newInvoice.sfStairs,
-      total: calculatedValues.total,
-      GSTCollected: calculatedValues.gst,
-      totalWithGst: calculatedValues.totalWithGst,
+      total: total.toFixed(2),
+      GSTCollected: gst.toFixed(2),
+      totalWithGst: totalWithGst.toFixed(2),
     };
 
     // Оновлення інвойсів локально
@@ -125,13 +158,11 @@ const NewCompanyTableDetails = () => {
     calculateTotals(updatedInvoices);
 
     try {
-      // Отримання повної інформації про компанію з сервера для оновлення лише однієї таблиці
       const response = await axios.get(
         `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/1`
       );
       const companyData = response.data;
 
-      // Оновлення конкретної таблиці з новими інвойсами
       const updatedInvoiceTables = companyData.invoiceTables.map((table) => {
         if (table.tableId === tableId) {
           return { ...table, invoices: updatedInvoices };
@@ -139,7 +170,6 @@ const NewCompanyTableDetails = () => {
         return table;
       });
 
-      // Відправка оновлених даних компанії з новими інвойсами на бекенд
       await axios.put(
         `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/1`,
         {
@@ -150,8 +180,7 @@ const NewCompanyTableDetails = () => {
 
       console.log("Invoice added successfully");
     } catch (error) {
-      console.error("Error saving invoice to backend:", error);
-      alert("Failed to save the invoice. Please try again.");
+      console.error("Error adding invoice to backend:", error);
     }
 
     // Очищення форми після додавання інвойсу
@@ -161,6 +190,16 @@ const NewCompanyTableDetails = () => {
       price: 0,
       sfStairs: 0,
     });
+  };
+
+  // Друк сторінки
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Перемикання режиму редагування
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
   };
 
   if (error) {
@@ -173,9 +212,17 @@ const NewCompanyTableDetails = () => {
 
   return (
     <div className={styles.invoicePage}>
-      <button className={styles.backButton} onClick={() => navigate(-1)}>
-        Back
-      </button>
+      <div className={styles.buttonContainer}>
+        <button className={styles.backButton} onClick={() => navigate(-1)}>
+          Back
+        </button>
+        <button className={styles.printButton} onClick={handlePrint}>
+          Print
+        </button>
+        <button className={styles.editButton} onClick={toggleEditMode}>
+          {isEditing ? "Save Changes" : "Edit Invoices"}
+        </button>
+      </div>
 
       <div className={styles.document}>
         {/* Верхня частина таблиці з даними компанії */}
@@ -219,10 +266,50 @@ const NewCompanyTableDetails = () => {
           <tbody>
             {tableDetails.invoices.map((invoice, index) => (
               <tr key={index}>
-                <td>{invoice.date}</td>
-                <td>{invoice.address}</td>
-                <td>{invoice.price}</td>
-                <td>{invoice["sf/stairs"]}</td>
+                <td>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={invoice.date}
+                      onChange={(e) => handleFieldChange(e, index, "date")}
+                    />
+                  ) : (
+                    invoice.date
+                  )}
+                </td>
+                <td>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={invoice.address}
+                      onChange={(e) => handleFieldChange(e, index, "address")}
+                    />
+                  ) : (
+                    invoice.address
+                  )}
+                </td>
+                <td>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={invoice.price}
+                      onChange={(e) => handleFieldChange(e, index, "price")}
+                    />
+                  ) : (
+                    invoice.price
+                  )}
+                </td>
+                <td>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={invoice["sf/stairs"]}
+                      onChange={(e) => handleFieldChange(e, index, "sf/stairs")}
+                    />
+                  ) : (
+                    invoice["sf/stairs"]
+                  )}
+                </td>
                 <td>{invoice.total}</td>
                 <td>{invoice.GSTCollected}</td>
                 <td>{invoice.totalWithGst}</td>
@@ -241,13 +328,16 @@ const NewCompanyTableDetails = () => {
           </tfoot>
         </table>
 
-        {/* Форма для додавання нового інвойсу під таблицею */}
+        {/* Форма для додавання нового інвойсу */}
         <div className={styles.formContainer}>
+          <h3>Add New Invoice</h3>
           <input
             type="date"
             name="date"
             value={newInvoice.date}
-            onChange={handleInputChange}
+            onChange={(e) =>
+              setNewInvoice({ ...newInvoice, date: e.target.value })
+            }
             placeholder="Date"
             className={styles.inputField}
           />
@@ -255,7 +345,9 @@ const NewCompanyTableDetails = () => {
             type="text"
             name="address"
             value={newInvoice.address}
-            onChange={handleInputChange}
+            onChange={(e) =>
+              setNewInvoice({ ...newInvoice, address: e.target.value })
+            }
             placeholder="Address"
             className={styles.inputField}
           />
@@ -263,7 +355,9 @@ const NewCompanyTableDetails = () => {
             type="number"
             name="price"
             value={newInvoice.price}
-            onChange={handleInputChange}
+            onChange={(e) =>
+              setNewInvoice({ ...newInvoice, price: e.target.value })
+            }
             placeholder="Price"
             className={styles.inputField}
           />
@@ -271,7 +365,9 @@ const NewCompanyTableDetails = () => {
             type="number"
             name="sfStairs"
             value={newInvoice.sfStairs}
-            onChange={handleInputChange}
+            onChange={(e) =>
+              setNewInvoice({ ...newInvoice, sfStairs: e.target.value })
+            }
             placeholder="SF/Stairs"
             className={styles.inputField}
           />
@@ -282,6 +378,7 @@ const NewCompanyTableDetails = () => {
             Add Invoice
           </button>
         </div>
+
         <p className={styles.dueUponReceipt}>DUE UPON RECEIPT</p>
       </div>
     </div>
