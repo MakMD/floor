@@ -4,21 +4,40 @@ import axios from "axios";
 const BackupButton = () => {
   const [loading, setLoading] = useState(false);
 
+  // Список компаній, дані яких ми хочемо бекапити
+  const companies = [
+    { name: "google" },
+    { name: "apple" },
+    { name: "samsung" },
+    { name: "cwp" },
+    { name: "amazon" },
+    { name: "newCompany" },
+    { name: "example" },
+  ];
+
   const handleBackup = async () => {
     setLoading(true);
 
     try {
-      // Отримання даних з першого API
-      const newCompanyResponse = await axios.get(
-        "https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany"
-      );
+      // Бекап даних всіх компаній
+      const companyDataPromises = companies.map(async (company) => {
+        const response = await axios.get(
+          `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${company.name}`
+        );
+        return { [company.name]: response.data };
+      });
 
+      // Бекап даних всіх людей
       const peopleResponse = await axios.get(
         "https://66e3d74dd2405277ed1201b1.mockapi.io/people"
       );
 
+      // Чекаємо на всі запити до компаній
+      const companyData = await Promise.all(companyDataPromises);
+
+      // Формуємо загальні дані для бекапу
       const data = {
-        newCompany: newCompanyResponse.data,
+        companies: companyData,
         people: peopleResponse.data,
       };
 

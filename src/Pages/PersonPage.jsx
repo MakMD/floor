@@ -7,12 +7,6 @@ const PersonPage = () => {
   const { personId } = useParams();
   const [person, setPerson] = useState(null);
   const [newTableName, setNewTableName] = useState(""); // Для нової таблиці
-  const [selectedTable, setSelectedTable] = useState(null); // Для вибраної таблиці
-  const [newInvoice, setNewInvoice] = useState({
-    address: "",
-    date: "",
-    total_income: 0,
-  }); // Для додавання інвойсу
   const [searchTerm, setSearchTerm] = useState(""); // Для пошукового запиту
   const [filteredTables, setFilteredTables] = useState([]); // Для фільтрованих таблиць
   const navigate = useNavigate(); // Ініціалізуємо useNavigate
@@ -24,7 +18,7 @@ const PersonPage = () => {
           `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`
         );
         setPerson(response.data);
-        setFilteredTables(response.data.tables); // Ініціалізуємо відфільтровані таблиці
+        setFilteredTables(response.data.tables || []); // Ініціалізуємо відфільтровані таблиці
       } catch (error) {
         console.error("Error fetching person:", error);
       }
@@ -35,11 +29,16 @@ const PersonPage = () => {
 
   useEffect(() => {
     if (person && person.tables) {
-      const filtered = person.tables.filter((table) =>
-        table.invoices.some((invoice) =>
-          invoice.address.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
+      const filtered = person.tables.filter((table) => {
+        // Якщо таблиця має інвойси, перевіряємо на пошук по адресі
+        if (table.invoices.length > 0) {
+          return table.invoices.some((invoice) =>
+            invoice.address.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        // Якщо таблиця не має інвойсів, показуємо її без фільтрації по адресі
+        return true;
+      });
       setFilteredTables(filtered);
     }
   }, [searchTerm, person]);
@@ -54,7 +53,7 @@ const PersonPage = () => {
         invoices: [], // Порожній масив інвойсів для нової таблиці
       };
 
-      const updatedTables = [...person.tables, newTable]; // Додаємо нову таблицю
+      const updatedTables = [...(person.tables || []), newTable]; // Додаємо нову таблицю
 
       await axios.put(
         `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`,
@@ -68,45 +67,25 @@ const PersonPage = () => {
     }
   };
 
-  const handleAddInvoice = async () => {
-    if (!selectedTable) return;
-
+  const handleDeleteTable = async (tableId) => {
     try {
-      const newInvoiceData = { ...newInvoice };
-
-      // Оновлюємо список інвойсів локально
-      const updatedInvoices = [...selectedTable.invoices, newInvoiceData]; // Додаємо інвойс до вибраної таблиці
-
-      // Оновлюємо локальний стан таблиць та інвойсів
-      const updatedTables = person.tables.map((table) =>
-        table.tableId === selectedTable.tableId
-          ? { ...table, invoices: updatedInvoices }
-          : table
+      // Фільтруємо таблиці, щоб видалити вибрану
+      const updatedTables = person.tables.filter(
+        (table) => table.tableId !== tableId
       );
 
-      // Оновлюємо стан одразу після додавання
-      setSelectedTable({ ...selectedTable, invoices: updatedInvoices });
-      setPerson({ ...person, tables: updatedTables });
-
-      // Відправляємо запит на сервер для оновлення даних
+      // Оновлюємо дані на бекенді
       await axios.put(
         `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`,
         { ...person, tables: updatedTables }
       );
 
-      // Очищаємо форму
-      setNewInvoice({
-        address: "",
-        date: "",
-        total_income: 0,
-      });
+      // Оновлюємо стан локально
+      setPerson({ ...person, tables: updatedTables });
+      setFilteredTables(updatedTables);
     } catch (error) {
-      console.error("Error adding invoice:", error);
+      console.error("Error deleting table:", error);
     }
-  };
-
-  const handleInvoiceChange = (e) => {
-    setNewInvoice({ ...newInvoice, [e.target.name]: e.target.value });
   };
 
   const handleTableClick = (tableId) => {
@@ -154,12 +133,17 @@ const PersonPage = () => {
           {filteredTables && filteredTables.length > 0 ? (
             <ul className={styles.tableList}>
               {filteredTables.map((table, index) => (
-                <li
-                  key={index}
-                  className={styles.tableItem}
-                  onClick={() => handleTableClick(table.tableId)} // Перехід на сторінку таблиці
-                >
-                  {table.name}
+                <li key={index} className={styles.tableItem}>
+                  <span onClick={() => handleTableClick(table.tableId)}>
+                    {table.name}
+                  </span>
+                  {/* Кнопка для видалення таблиці */}
+                  {/* <button
+                    onClick={() => handleDeleteTable(table.tableId)}
+                    className={styles.deleteButton}
+                  >
+                    Delete
+                  </button> */}
                 </li>
               ))}
             </ul>
@@ -167,70 +151,6 @@ const PersonPage = () => {
             <p className={styles.noTables}>
               No tables available for this person.
             </p>
-          )}
-
-          {/* Вибрана таблиця і інвойси */}
-          {selectedTable && (
-            <div className={styles.selectedTable}>
-              <h3>Invoices for {selectedTable.name}</h3>
-              {selectedTable.invoices.length > 0 ? (
-                <table className={styles.invoiceTable}>
-                  <thead>
-                    <tr>
-                      <th>Address</th>
-                      <th>Date</th>
-                      <th>Total Income</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedTable.invoices.map((invoice, index) => (
-                      <tr key={index}>
-                        <td>{invoice.address}</td>
-                        <td>{invoice.date}</td>
-                        <td>${invoice.total_income}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p>No invoices available for this table.</p>
-              )}
-
-              {/* Форма для додавання нового інвойсу */}
-              <div className={styles.addInvoiceForm}>
-                <h3>Add New Invoice to {selectedTable.name}</h3>
-                <input
-                  type="text"
-                  name="address"
-                  value={newInvoice.address}
-                  onChange={handleInvoiceChange}
-                  placeholder="Address"
-                  className={styles.inputField}
-                />
-                <input
-                  type="date"
-                  name="date"
-                  value={newInvoice.date}
-                  onChange={handleInvoiceChange}
-                  placeholder="Date"
-                  className={styles.inputField}
-                />
-                <input
-                  type="number"
-                  name="total_income"
-                  value={newInvoice.total_income}
-                  onChange={handleInvoiceChange}
-                  placeholder="Total Income"
-                  className={styles.inputField}
-                />
-                <button
-                  onClick={handleAddInvoice}
-                  className={styles.addInvoiceButton}
-                >
-                  Add Invoice
-                </button>
-              </div>
-            </div>
           )}
         </>
       ) : (
