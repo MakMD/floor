@@ -9,6 +9,7 @@ const PersonPage = () => {
   const [newTableName, setNewTableName] = useState(""); // Для нової таблиці
   const [searchTerm, setSearchTerm] = useState(""); // Для пошукового запиту
   const [filteredTables, setFilteredTables] = useState([]); // Для фільтрованих таблиць
+  const [isEditing, setIsEditing] = useState(false); // Стан для режиму редагування
   const navigate = useNavigate(); // Ініціалізуємо useNavigate
 
   useEffect(() => {
@@ -30,13 +31,11 @@ const PersonPage = () => {
   useEffect(() => {
     if (person && person.tables) {
       const filtered = person.tables.filter((table) => {
-        // Якщо таблиця має інвойси, перевіряємо на пошук по адресі
         if (table.invoices.length > 0) {
           return table.invoices.some((invoice) =>
             invoice.address.toLowerCase().includes(searchTerm.toLowerCase())
           );
         }
-        // Якщо таблиця не має інвойсів, показуємо її без фільтрації по адресі
         return true;
       });
       setFilteredTables(filtered);
@@ -44,23 +43,23 @@ const PersonPage = () => {
   }, [searchTerm, person]);
 
   const handleAddTable = async () => {
-    if (!newTableName.trim()) return; // Перевіряємо, чи введене ім'я таблиці
+    if (!newTableName.trim()) return;
 
     try {
       const newTable = {
-        tableId: Date.now().toString(), // Додаємо унікальний ідентифікатор таблиці
+        tableId: Date.now().toString(),
         name: newTableName,
-        invoices: [], // Порожній масив інвойсів для нової таблиці
+        invoices: [],
       };
 
-      const updatedTables = [...(person.tables || []), newTable]; // Додаємо нову таблицю
+      const updatedTables = [...(person.tables || []), newTable];
 
       await axios.put(
         `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`,
         { ...person, tables: updatedTables }
       );
 
-      setPerson({ ...person, tables: updatedTables }); // Оновлюємо стан
+      setPerson({ ...person, tables: updatedTables });
       setNewTableName(""); // Очищаємо поле вводу
     } catch (error) {
       console.error("Error adding table:", error);
@@ -69,18 +68,15 @@ const PersonPage = () => {
 
   const handleDeleteTable = async (tableId) => {
     try {
-      // Фільтруємо таблиці, щоб видалити вибрану
       const updatedTables = person.tables.filter(
         (table) => table.tableId !== tableId
       );
 
-      // Оновлюємо дані на бекенді
       await axios.put(
         `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`,
         { ...person, tables: updatedTables }
       );
 
-      // Оновлюємо стан локально
       setPerson({ ...person, tables: updatedTables });
       setFilteredTables(updatedTables);
     } catch (error) {
@@ -89,8 +85,11 @@ const PersonPage = () => {
   };
 
   const handleTableClick = (tableId) => {
-    // Перехід на сторінку з деталями вибраної таблиці
     navigate(`/person/${personId}/tables/${tableId}`);
+  };
+
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing); // Перемикаємо режим редагування
   };
 
   return (
@@ -102,6 +101,11 @@ const PersonPage = () => {
           {/* Кнопка "Назад" */}
           <button className={styles.backButton} onClick={() => navigate(-1)}>
             Back
+          </button>
+
+          {/* Кнопка "Редагувати" */}
+          <button className={styles.editButton} onClick={toggleEditMode}>
+            {isEditing ? "Save" : "Edit"}
           </button>
 
           {/* Поле для пошуку за адресою */}
@@ -137,13 +141,16 @@ const PersonPage = () => {
                   <span onClick={() => handleTableClick(table.tableId)}>
                     {table.name}
                   </span>
-                  {/* Кнопка для видалення таблиці */}
-                  {/* <button
-                    onClick={() => handleDeleteTable(table.tableId)}
-                    className={styles.deleteButton}
-                  >
-                    Delete
-                  </button> */}
+
+                  {/* Кнопка для видалення таблиці показується тільки в режимі редагування */}
+                  {isEditing && (
+                    <button
+                      onClick={() => handleDeleteTable(table.tableId)}
+                      className={styles.deleteButton}
+                    >
+                      Delete
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
