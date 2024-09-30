@@ -13,10 +13,13 @@ const PersonTableDetailsPage = () => {
     date: "",
     total_income: 0,
   });
-  const [totalWithGST, setTotalWithGST] = useState(0); // Додаємо стан для Total with GST
-  const [adjustedTotal, setAdjustedTotal] = useState(0); // Стан для відкоригованого Total з WCB
-  const [wcb, setWcb] = useState(""); // Додаємо стан для WCB
-  const [isEditing, setIsEditing] = useState(false); // Додаємо стан для перемикання режиму редагування
+  const [totalWithGST, setTotalWithGST] = useState(null); // Стан для Total with GST
+  const [wcb, setWcb] = useState(null); // Стан для WCB
+  const [isEditing, setIsEditing] = useState(false); // Стан для перемикання режиму редагування
+  const [showGST, setShowGST] = useState(false); // Стан для показу Total + GST
+  const [showWCB, setShowWCB] = useState(false); // Стан для показу WCB
+  const [isWCBCalculated, setIsWCBCalculated] = useState(false); // Стан для перевірки, чи обчислено WCB
+  const [isGSTCalculated, setIsGSTCalculated] = useState(false); // Стан для перевірки, чи обчислено GST
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -84,14 +87,25 @@ const PersonTableDetailsPage = () => {
     0
   );
 
-  // Додавання функціоналу для обчислення Total with GST
-  const handleAddGST = () => {
-    setTotalWithGST(totalIncome + totalIncome * 0.05); // Додаємо 5% GST
+  // Обчислення WCB та Total with GST
+  const calculateWCB = () => {
+    const newWCB = (totalIncome - (totalIncome / 100) * 3).toFixed(2);
+    setWcb(newWCB);
+    setShowWCB(true); // Показати поле з WCB
+    setIsWCBCalculated(true); // Позначаємо, що WCB вже обчислено
+
+    // Якщо GST вже обчислений, перераховуємо його від Total - WCB
+    if (isGSTCalculated) {
+      setTotalWithGST((newWCB * 1.05).toFixed(2)); // Додаємо 5% GST до Total - WCB
+    }
   };
 
-  // Віднімання WCB від Total
-  const handleSubtractWCB = () => {
-    setAdjustedTotal(totalIncome - parseFloat(wcb)); // Віднімаємо WCB від Total
+  const calculateTotalWithGST = () => {
+    // Перевіряємо, чи було обчислено WCB, щоб додати GST до Total - WCB або просто Total
+    const baseIncome = isWCBCalculated ? wcb : totalIncome;
+    setTotalWithGST((baseIncome * 1.05).toFixed(2)); // Додаємо 5% GST до базової суми
+    setShowGST(true); // Показати поле з Total + GST
+    setIsGSTCalculated(true); // Позначаємо, що GST вже обчислено
   };
 
   // Функція для друку сторінки
@@ -135,11 +149,9 @@ const PersonTableDetailsPage = () => {
         <button className={styles.backButton} onClick={() => navigate(-1)}>
           Back
         </button>
-        {/* Додаємо кнопку для друку */}
         <button onClick={handlePrint} className={styles.printButton}>
           Print
         </button>
-        {/* Кнопка для перемикання режиму редагування */}
         <button
           onClick={isEditing ? handleSaveChanges : toggleEditMode}
           className={styles.editButton}
@@ -151,7 +163,6 @@ const PersonTableDetailsPage = () => {
       {table ? (
         <>
           <h2>{personName} Details</h2> {/* Виводимо ім'я людини */}
-          {/* Стилізована таблиця інвойсів */}
           <table className={styles.invoiceTable}>
             <thead>
               <tr>
@@ -219,34 +230,29 @@ const PersonTableDetailsPage = () => {
                   </td>
                 </tr>
               ))}
-              {/* Рядок з підсумковою сумою */}
               <tr className={styles.totalRow}>
                 <td colSpan="2">Total:</td>
                 <td>${totalIncome.toFixed(2)}</td>
               </tr>
-              <tr className={styles.totalRow}>
-                <td colSpan="2">Total with GST:</td>
-                <td>${totalWithGST.toFixed(2)}</td>
-              </tr>
-              <tr className={styles.totalRow}>
-                <td colSpan="2">Total - WCB (-WCB):</td>
-                <td>${adjustedTotal.toFixed(2)}</td>
-              </tr>
+              {showGST && (
+                <tr className={styles.totalRow}>
+                  <td colSpan="2">Total with GST:</td>
+                  <td>${totalWithGST}</td>
+                </tr>
+              )}
+              {showWCB && (
+                <tr className={styles.totalRow}>
+                  <td colSpan="2">Total - WCB:</td>
+                  <td>${wcb}</td>
+                </tr>
+              )}
             </tbody>
           </table>
-          {/* Кнопка для додавання GST */}
-          <button onClick={handleAddGST} className={styles.btnGst}>
+          {/* Кнопки для обчислення GST та WCB */}
+          <button onClick={calculateTotalWithGST} className={styles.btnGst}>
             +GST
           </button>
-          {/* Поле та кнопка для введення WCB */}
-          <input
-            type="number"
-            placeholder="Enter WCB"
-            value={wcb}
-            onChange={(e) => setWcb(e.target.value)}
-            className={styles.inputField}
-          />
-          <button onClick={handleSubtractWCB} className={styles.btnWcb}>
+          <button onClick={calculateWCB} className={styles.btnWcb}>
             -WCB
           </button>
           {/* Форма для додавання нового інвойсу */}
