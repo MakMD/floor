@@ -1,298 +1,208 @@
+/* Загальний контейнер для сторінки інвойсів */
 .invoicePage {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
+  background-color: #f4f5f7;
+  font-family: "Lora", serif;
 }
 
+/* Кнопки "Назад", "Друк", "Редагування" */
+.btnBackPrintCont {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.backButton,
+.printButton,
+.editButton {
+  padding: 10px 20px;
+  background-color: #4a90e2;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 5px;
+}
+
+.backButton:hover,
+.printButton:hover,
+.editButton:hover {
+  background-color: #357ab8;
+}
+
+/* Контейнер для документа */
 .document {
-  border: 1px solid #000;
-  padding: 20px;
   background-color: #fff;
-  margin-bottom: 40px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
+/* Заголовок компанії та верхні 5 рядків */
 .header {
-  text-align: center;
-  margin-bottom: 20px;
+  text-align: center; /* Відцентровуємо заголовки та текст */
 }
 
-.invoiceHeader {
-  margin-bottom: 20px;
+.header h1 {
+  font-size: 28px;
+  margin-bottom: 10px;
+  color: #333333;
 }
 
+.header p {
+  font-size: 14px;
+  color: #666666;
+  margin-bottom: 5px;
+}
+
+/* Заголовок інвойсу */
 .invoiceHeader h2 {
-  margin: 0;
+  font-size: 22px;
+  margin-bottom: 10px;
+  color: #333333;
 }
 
 .invoiceHeader p {
-  margin: 5px 0;
+  font-size: 16px;
+  color: #666666;
+  margin-bottom: 5px;
 }
 
+/* Таблиця інвойсів */
 .invoiceTable {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 30px;
+  margin-top: 20px;
 }
 
 .invoiceTable th,
 .invoiceTable td {
   border: 1px solid #ddd;
-  padding: 10px;
+  padding: 12px;
   text-align: left;
+  font-size: 16px;
 }
 
 .invoiceTable th {
-  background-color: #3a7bd5;
-  color: white;
+  background-color: #f4f5f7;
+  font-weight: 600;
 }
 
+.totalRow td {
+  font-weight: 700;
+  background-color: #f4f5f7;
+}
+
+/* Лінія розділювача */
+.divider {
+  border: 0;
+  border-top: 1px solid #e5e5e5;
+  margin: 30px 0;
+}
+
+/* Форма додавання інвойсу */
 .addInvoiceForm {
-  margin-top: 40px;
+  background-color: #f9fafc;
   padding: 20px;
-  background-color: #f1f1f1;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  margin-top: 30px;
 }
 
 .inputField {
-  width: calc(100% - 20px);
-  padding: 10px;
-  margin-bottom: 10px;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
   border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
 }
 
 .addInvoiceButton {
-  padding: 10px 20px;
-  background-color: #3a7bd5;
+  padding: 12px 20px;
+  background-color: #4a90e2;
   color: white;
   border: none;
   cursor: pointer;
+  font-size: 16px;
   border-radius: 5px;
-  display: block;
-  margin-top: 10px;
 }
 
 .addInvoiceButton:hover {
   background-color: #357ab8;
 }
 
-.backButton {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.backButton:hover {
-  background-color: #0056b3;
-}
-
-.totalRow {
-  font-weight: bold;
-  background-color: #f0f0f0;
-}
-
-.totalLabel {
-  text-align: right;
-  padding-right: 10px;
-}
-
-/* Друк документа */
-@media print {
-  .addInvoiceForm,
-  .backButton {
-    display: none;
-  }
-
-  .invoicePage {
-    padding: 0;
-    border: none;
-  }
-
-  .document {
-    border: none;
-    padding: 0;
-  }
-
-  .invoiceTable th,
-  .invoiceTable td {
-    padding: 5px;
-  }
-}
-
-/* Адаптація для мобільних пристроїв */
+/* Мобільна версія (від 375px до 768px) */
 @media (max-width: 768px) {
   .invoicePage {
     padding: 10px;
   }
 
-  .document {
-    padding: 10px;
+  .btnBackPrintCont {
+    flex-direction: column;
   }
 
-  .invoiceHeader h2 {
-    font-size: 1.5em;
-  }
-
-  .invoiceTable th,
-  .invoiceTable td {
-    padding: 8px;
-  }
-
-  .addInvoiceForm {
-    padding: 15px;
-  }
-
-  .inputField {
-    padding: 8px;
-    margin-bottom: 8px;
-  }
-
-  .addInvoiceButton,
-  .backButton {
-    padding: 8px 15px;
-  }
-}
-
-/* Адаптація для дуже маленьких екранів */
-@media (max-width: 480px) {
-  .invoiceHeader h2 {
-    font-size: 1.2em;
-  }
-
-  .invoiceHeader p {
-    font-size: 0.9em;
-  }
-
-  .invoiceTable th,
-  .invoiceTable td {
-    font-size: 0.9em;
-    padding: 6px;
-  }
-
-  .addInvoiceForm {
-    padding: 10px;
-  }
-
-  .inputField {
-    padding: 6px;
-    margin-bottom: 6px;
-  }
-
-  .addInvoiceButton,
-  .backButton {
-    padding: 6px 12px;
-    font-size: 0.9em;
-  }
-}
-.editButton {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-.printButton {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.printButton:hover {
-  background-color: #007bff;
-  transform: translateY(-3px);
-}
-
-.printButton:active {
-  background-color: #007bff;
-  transform: translateY(0);
-}
-.btnBackPrintCont {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 30px;
-}
-@media print {
-  /* Забезпечуємо, що всі елементи таблиці відображаються під час друку */
-  .invoiceTable,
-  .invoiceTable th,
-  .invoiceTable td {
-    visibility: visible;
-    color: black; /* Переконуємося, що текст чорний */
-    -webkit-print-color-adjust: exact; /* Переконуємося, що кольори друкуються */
-  }
-
-  /* Відображаємо кнопки, якщо вони повинні бути видимі */
+  .backButton,
   .printButton,
-  .backButton {
-    display: none; /* Ховаємо кнопки під час друку */
+  .editButton {
+    width: 100%;
+    font-size: 14px;
+    margin-bottom: 10px;
   }
 
-  /* Відображаємо хедер документа під час друку */
-  .header,
-  .invoiceHeader {
-    visibility: visible;
-    color: black;
+  .header h1 {
+    font-size: 22px;
   }
 
-  /* Забезпечуємо видимість всієї таблиці та її підсумкових значень */
-  .totalRow {
-    visibility: visible;
-    color: black;
+  .header p,
+  .invoiceHeader p {
+    font-size: 12px;
   }
 
-  /* Прибираємо інші елементи, якщо вони не потрібні при друці */
-  .divider,
+  .invoiceTable th,
+  .invoiceTable td {
+    font-size: 14px;
+  }
+
+  .inputField {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .addInvoiceButton {
+    width: 100%;
+    font-size: 14px;
+  }
+}
+
+/* Стилі для друку */
+@media print {
+  /* Сховати кнопки та форми */
+  .btnBackPrintCont,
   .addInvoiceForm {
     display: none;
   }
-}
-@media print {
-  /* При друці перетворюємо всі інпути на текст */
-  input {
-    border: none;
-    background: none;
-    color: black;
-    font-size: inherit;
-    -webkit-appearance: none;
-    padding: 0;
-    margin: 0;
-  }
 
-  /* Інпути не відображаються як елементи введення, лише як текст */
-  input::placeholder {
-    color: black;
-    visibility: hidden;
-  }
-
-  input[type="text"],
-  input[type="number"],
-  input[type="date"] {
-    border: none;
+  /* Зробити таблицю та заголовки ширшими */
+  .invoicePage {
     box-shadow: none;
     padding: 0;
-    margin: 0;
   }
 
-  .printButton,
-  .backButton {
-    display: none; /* Ховаємо кнопки при друку */
+  .document {
+    padding: 0;
+  }
+
+  .invoiceTable {
+    width: 100%;
+    font-size: 12px;
+  }
+
+  /* Сховати розділювачі та додаткові елементи, непотрібні для друку */
+  .divider,
+  .dueUponReceipt {
+    display: none;
   }
 }

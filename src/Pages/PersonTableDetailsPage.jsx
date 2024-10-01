@@ -162,7 +162,8 @@ const PersonTableDetailsPage = () => {
       {error && <p className={styles.error}>{error}</p>}
       {table ? (
         <>
-          <h2>{personName} Details</h2> {/* Виводимо ім'я людини */}
+          <h2 className={styles.personName}>{personName} Details</h2>{" "}
+          {/* Виводимо ім'я людини */}
           <table className={styles.invoiceTable}>
             <thead>
               <tr>
@@ -187,6 +188,7 @@ const PersonTableDetailsPage = () => {
                             invoices: updatedInvoices,
                           }));
                         }}
+                        className={styles.inputField}
                       />
                     ) : (
                       invoice.address
@@ -205,6 +207,7 @@ const PersonTableDetailsPage = () => {
                             invoices: updatedInvoices,
                           }));
                         }}
+                        className={styles.inputField}
                       />
                     ) : (
                       invoice.date
@@ -223,6 +226,7 @@ const PersonTableDetailsPage = () => {
                             invoices: updatedInvoices,
                           }));
                         }}
+                        className={styles.inputField}
                       />
                     ) : (
                       invoice.total_income

@@ -27,7 +27,7 @@ const NewCompanyTableDetails = () => {
     const fetchTableDetails = async () => {
       try {
         const response = await axios.get(
-          "https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany"
+          "https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD"
         );
         const tableData = response.data[0]?.invoiceTables.find(
           (table) => table.tableId === tableId
@@ -92,7 +92,7 @@ const NewCompanyTableDetails = () => {
     try {
       // Оновлення даних на бекенді
       const response = await axios.get(
-        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/1`
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD/1`
       );
       const companyData = response.data;
 
@@ -104,7 +104,7 @@ const NewCompanyTableDetails = () => {
       });
 
       await axios.put(
-        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/1`,
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD/1`,
         {
           ...companyData,
           invoiceTables: updatedInvoiceTables,
@@ -159,7 +159,7 @@ const NewCompanyTableDetails = () => {
 
     try {
       const response = await axios.get(
-        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/1`
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD/1`
       );
       const companyData = response.data;
 
@@ -171,7 +171,7 @@ const NewCompanyTableDetails = () => {
       });
 
       await axios.put(
-        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/1`,
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD/1`,
         {
           ...companyData,
           invoiceTables: updatedInvoiceTables,
@@ -378,8 +378,6 @@ const NewCompanyTableDetails = () => {
             Add Invoice
           </button>
         </div>
-
-        <p className={styles.dueUponReceipt}>DUE UPON RECEIPT</p>
       </div>
     </div>
   );

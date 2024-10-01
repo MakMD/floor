@@ -10,15 +10,16 @@ import PeopleList from "../PeopleList/PeopleList";
 import CreatePersonForm from "../CreatePersonForm/CreatePersonForm";
 import PersonPage from "../../Pages/PersonPage";
 import CompanyList from "../CompanyList/CompanyList";
-import CompanyTablesPage from "../../Pages/CompanyTablesPage";
+import CompanyTablesPage from "../../Pages/CompanyTablesPage"; // Розкоментовано для загальних компаній
 import TableDetailsPage from "../../Pages/TableDetailsPage";
 import PersonTablesPage from "../../Pages/PersonTablesPage";
 import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage";
 import LoginModal from "../LoginModal/LoginModal";
 import logo from "../../../public/Flooring.Boss.svg";
-import NewCompanyTablesPage from "../NewCompanyTablePage/NewCompanyTablePage";
+import BelvistaTablesPage from "../NewCompanyTablePage/BelvistaTablesPage"; // Новий компонент для BelvistaHomesLTD
 import NewCompanyTableDetails from "../NewCompanyTablePage/NewCompanyTableDetails";
 import BackupButton from "../BackupButton/BackupButton";
+import styles from "./App.module.css";
 
 const AppContent = () => {
   const [people, setPeople] = useState([]);
@@ -28,14 +29,14 @@ const AppContent = () => {
   const [filteredPeople, setFilteredPeople] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
 
+  // Залишаємо лише потрібні компанії
   const companyResources = [
-    "google",
-    "apple",
-    "samsung",
-    "cwp",
-    "amazon",
-    "newCompany",
-    "example",
+    "TouchtoneCanadaLTD",
+    "SarefaHomesLTD",
+    "BelvistaHomesLTD",
+    "NestHomesLTD",
+    "CenrurylandHomesLTD",
+    "TradesProSupplyDepotLTD",
   ];
 
   const location = useLocation(); // useLocation правильно використано всередині компонента
@@ -107,31 +108,24 @@ const AppContent = () => {
   };
 
   return (
-    <div>
+    <div className={styles.appContainer}>
       {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
       {isLoggedIn && <BackupButton />}
-      <header
-        className="header"
-        style={{ textAlign: "center", padding: "10px" }}
-      >
+      <header className={styles.header}>
         <a href="https://flooringboss.ca/index">
-          <img
-            src={logo}
-            alt="App Logo"
-            style={{ width: "300px", height: "auto" }}
-          />
+          <img src={logo} alt="App Logo" className={styles.logo} />
         </a>
       </header>
 
       {/* Поле для пошуку тільки на головній сторінці */}
       {isLoggedIn && location.pathname === "/" && (
-        <div style={{ textAlign: "center", margin: "20px" }}>
+        <div className={styles.searchContainer}>
           <input
             type="text"
             placeholder="Search by address"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ padding: "10px", width: "300px" }}
+            className={styles.searchInput}
           />
         </div>
       )}
@@ -141,7 +135,7 @@ const AppContent = () => {
           <Route
             path="/"
             element={
-              <div>
+              <div className={styles.pageContent}>
                 <CompanyList companies={filteredCompanies} />
                 <PeopleList people={filteredPeople} />
                 <CreatePersonForm
@@ -152,15 +146,18 @@ const AppContent = () => {
               </div>
             }
           />
-          <Route path="/company/:companyName" element={<CompanyTablesPage />} />
+          {/* Окремий маршрут для BelvistaHomesLTD з іншим виглядом таблиць */}
           <Route
-            path="/company/newcompany"
-            element={<NewCompanyTablesPage />}
+            path="/company/BelvistaHomesLTD"
+            element={<BelvistaTablesPage />}
           />
+          {/* Загальний маршрут для всіх інших компаній */}
+          <Route path="/company/:companyName" element={<CompanyTablesPage />} />
           <Route
             path="/company/:companyName/table/:tableId"
             element={<TableDetailsPage />}
           />
+          {/* Маршрути для персональних сторінок */}
           <Route path="/person/:personId" element={<PersonPage />} />
           <Route
             path="/person/:personId/tables"
@@ -170,8 +167,9 @@ const AppContent = () => {
             path="/person/:personId/tables/:tableId"
             element={<PersonTableDetailsPage />}
           />
+          {/* Маршрут для NewCompany деталей таблиці */}
           <Route
-            path="/company/newcompany/table/:tableId"
+            path="/company/BelvistaHomesLTD/table/:tableId"
             element={<NewCompanyTableDetails />}
           />
         </Routes>

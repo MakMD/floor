@@ -1,251 +1,231 @@
-.tablesContainer {
-  max-width: 800px;
+/* Загальні стилі для контейнера сторінки */
+.pageContainer {
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  font-family: "Roboto", Arial, sans-serif;
+  background-color: #f4f5f7;
+  font-family: "Lora", serif;
 }
 
-.pageTitle {
-  font-size: 28px;
-  color: #333;
-  text-align: center;
-  margin-bottom: 20px;
-  font-weight: 500;
-}
-
-.tablesList {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-}
-
-.tableItem {
-  background-color: #f5f5f5;
-  padding: 20px 25px;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 500;
-  color: #333;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  min-width: 220px;
-  cursor: pointer;
-  border: 1px solid #ddd;
-}
-
-.tableItem:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.tableItem:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-.tableItem:focus {
-  outline: none;
-  border-color: #007bff;
-}
-
-.tableInfo {
-  font-size: 16px;
-  color: #666;
-  margin-top: 5px;
-}
+/* Назад кнопка */
 .backButton {
-  background-color: #007bff;
-  color: white;
-  border: none;
+  display: inline-block;
   padding: 10px 20px;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
   margin-bottom: 20px;
+  background-color: #4a90e2;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  text-align: center;
+  border-radius: 5px;
 }
 
 .backButton:hover {
-  background-color: #0056b3;
-  transform: translateY(-3px);
+  background-color: #357ab8;
 }
 
-.backButton:active {
-  background-color: #003f7f;
-  transform: translateY(0);
+/* Заголовок сторінки */
+.pageTitle {
+  font-family: "Montserrat", sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  color: #333333;
+  text-align: center;
 }
 
-.addTableForm {
-  background-color: #f5f5f5;
-  padding: 20px;
+/* Пошукове поле */
+.searchField {
+  width: 100%;
+  max-width: 600px;
+  padding: 12px;
+  margin-bottom: 30px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  background-color: #fff;
+}
+
+/* Стиль для списку таблиць */
+.tableList {
+  list-style: none;
+  padding: 0;
+}
+
+.tableItem {
+  background-color: #ffffff;
+  padding: 15px;
+  margin-bottom: 15px;
   border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: box-shadow 0.3s ease;
+}
+
+.tableItem:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Заголовок таблиці */
+.tableTitle {
+  font-family: "Montserrat", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #333333;
+}
+
+/* Інформація про таблицю */
+.tableDate,
+.tableBillTo,
+.tablePayTo {
+  font-size: 16px;
+  color: #666666;
+  margin-bottom: 5px;
+}
+
+/* Повідомлення, якщо таблиць немає */
+.noTablesMessage {
+  font-size: 18px;
+  text-align: center;
+  color: #666666;
+}
+
+/* Кнопка для приховування таблиці */
+.hideButton {
+  padding: 8px 16px;
+  background-color: #e74c3c;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.hideButton:hover {
+  background-color: #c0392b;
+}
+
+/* Форма для додавання таблиці */
+.addTableForm {
+  background-color: #f9fafc;
+  padding: 20px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
   margin-top: 30px;
-  border: 1px solid #ddd;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
+}
+
+.formTitle {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 20px;
 }
 
 .inputField {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  font-size: 16px;
+  max-width: 600px;
+  padding: 12px;
+  margin-bottom: 20px;
   border: 1px solid #ccc;
   border-radius: 5px;
-  transition: border-color 0.3s ease;
-}
-
-.inputField:focus {
-  border-color: #007bff;
-  outline: none;
+  font-size: 16px;
 }
 
 .addTableButton {
-  background-color: #007bff;
+  padding: 12px 20px;
+  background-color: #4a90e2;
   color: white;
-  padding: 10px 20px;
-  font-size: 16px;
-  font-weight: 500;
   border: none;
-  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
+  font-size: 16px;
+  border-radius: 5px;
+  display: flex;
 }
 
 .addTableButton:hover {
-  background-color: #007bff;
-  transform: translateY(-3px);
+  background-color: #357ab8;
 }
 
-.addTableButton:active {
-  background-color: #007bff;
-  transform: translateY(0);
-}
-
-.divider {
-  margin: 20px 0;
+/* Кнопка для перемикання показу прихованих таблиць */
+.showHiddenButton {
+  padding: 10px 20px;
+  background-color: #f39c12;
+  color: #ffffff;
   border: none;
-  border-top: 2px solid #ddd;
-  width: 100%;
-}
-.tablesContainer {
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-}
-
-.tableList {
-  list-style-type: none;
-  padding: 0;
-}
-
-.tableItem {
-  background-color: #ffffff;
-  margin-bottom: 10px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  transition: box-shadow 0.3s ease;
   cursor: pointer;
-}
-
-.tableItem:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.tableItem h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-}
-
-.tableItem p {
-  margin: 5px 0 0;
-  font-size: 14px;
-  color: #777;
-}
-.tablesContainer {
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-
-.tableList {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  padding: 0;
-  margin: 0;
-  list-style-type: none;
-}
-
-.tableItem {
-  background-color: #ffffff;
-  margin-bottom: 15px;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  transition: box-shadow 0.3s ease;
-  cursor: pointer;
-  width: calc(
-    50% - 10px
-  ); /* Кожна таблиця займає половину ширини контейнера з відступами */
-  box-sizing: border-box; /* Враховуємо padding і border */
-}
-
-.tableItem:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.tableItem h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-}
-
-.tableItem p {
-  margin: 5px 0 0;
-  font-size: 14px;
-  color: #777;
-}
-
-/* Адаптивність для мобільних пристроїв */
-@media (max-width: 768px) {
-  .tableItem {
-    width: 100%; /* Таблиця займатиме всю ширину на мобільних */
-  }
-}
-.searchInput {
-  width: 100%;
-  background-color: #f9f9f9;
-  max-width: 400px; /* Максимальна ширина інпуту */
-  padding: 10px;
-  border: 2px solid #ccc; /* Сіра рамка */
-  border-radius: 4px; /* Закруглені кути */
   font-size: 16px;
-  transition: border-color 0.3s ease;
-  margin-bottom: 30px;
-
-  /* Забезпечення адаптивності */
-  box-sizing: border-box;
+  margin-top: 20px;
+  border-radius: 5px;
 }
 
-/* Ефект фокусу для інпуту */
-.searchInput:focus {
-  border-color: #007bff; /* Зміна кольору рамки при фокусі */
-  outline: none; /* Прибрати стандартну синю рамку */
+.showHiddenButton:hover {
+  background-color: #e67e22;
+}
+
+/* Кнопка для редагування */
+.editButton {
+  padding: 12px 20px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+.editButton:hover {
+  background-color: #357ab8;
+}
+
+/* Мобільна версія (від 375px до 768px) */
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 10px;
+  }
+
+  .backButton {
+    width: 100%;
+    font-size: 14px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+  }
+
+  .searchField {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .tableTitle {
+    font-size: 16px;
+  }
+
+  .tableDate,
+  .tableBillTo,
+  .tablePayTo {
+    font-size: 14px;
+  }
+
+  .addTableForm {
+    padding: 15px;
+  }
+
+  .formTitle {
+    font-size: 20px;
+  }
+
+  .inputField {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .addTableButton,
+  .editButton,
+  .showHiddenButton {
+    width: 100%;
+    font-size: 14px;
+  }
 }

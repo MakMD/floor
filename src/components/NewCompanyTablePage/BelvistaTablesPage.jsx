@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import styles from "./NewCompanyTablePage.module.css";
+import styles from "./NewCompanyTablePage.module.css"; // Заміна стилів на BelvistaHomes
 
-const NewCompanyTablesPage = () => {
+const BelvistaHomesTablesPage = () => {
   const [tables, setTables] = useState([]);
   const [filteredTables, setFilteredTables] = useState([]); // Для відображення таблиць після фільтрації
   const [searchQuery, setSearchQuery] = useState(""); // Для зберігання пошукового запиту
@@ -14,13 +14,15 @@ const NewCompanyTablesPage = () => {
     billTo: "",
     payTo: "",
   });
+  const [isEditing, setIsEditing] = useState(false); // Режим редагування
+  const [showHidden, setShowHidden] = useState(false); // Показувати приховані таблиці чи ні
   const navigate = useNavigate(); // Використовуємо useNavigate для навігації
 
   useEffect(() => {
     const fetchTables = async () => {
       try {
         const response = await axios.get(
-          "https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany"
+          "https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD"
         );
         if (response.data.length > 0) {
           setTables(response.data[0]?.invoiceTables || []);
@@ -51,8 +53,8 @@ const NewCompanyTablesPage = () => {
   };
 
   const handleTableClick = (tableId) => {
-    // Перенаправляємо на шлях з tableId
-    navigate(`/company/newcompany/table/${tableId}`);
+    // Перенаправляємо на шлях з tableId для відображення деталей таблиці BelvistaHomesLTD
+    navigate(`/company/BelvistaHomesLTD/table/${tableId}`);
   };
 
   // Функція для обробки змін у формі
@@ -85,19 +87,20 @@ const NewCompanyTablesPage = () => {
         payTo: newTable.payTo,
       },
       invoices: [],
+      isHidden: false, // Додаємо поле для приховування таблиць
     };
 
     try {
       // Отримуємо поточні дані компанії
       const response = await axios.get(
-        "https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany"
+        "https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD"
       );
       const currentCompanyData = response.data[0];
 
       // Оновлюємо таблиці компанії
       if (currentCompanyData) {
         await axios.put(
-          `https://66ac12f3f009b9d5c7310a1a.mockapi.io/newCompany/${currentCompanyData.id}`,
+          `https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD/${currentCompanyData.id}`,
           {
             ...currentCompanyData,
             invoiceTables: [...currentCompanyData.invoiceTables, newTableData],
@@ -112,6 +115,31 @@ const NewCompanyTablesPage = () => {
     }
   };
 
+  // Функція для приховування таблиці
+  const handleHideTable = (tableId, e) => {
+    e.stopPropagation(); // Зупиняємо вспливання події, щоб не активувалось відкриття таблиці
+    const updatedTables = tables.map((table) =>
+      table.tableId === tableId ? { ...table, isHidden: true } : table
+    );
+    setTables(updatedTables);
+    setFilteredTables(updatedTables.filter((table) => !table.isHidden));
+  };
+
+  // Перемикання режиму редагування
+  const toggleEditMode = () => {
+    setIsEditing((prev) => !prev);
+  };
+
+  // Показ прихованих таблиць
+  const toggleHiddenTables = () => {
+    setShowHidden((prev) => !prev);
+    if (!showHidden) {
+      setFilteredTables(tables.filter((table) => table.isHidden));
+    } else {
+      setFilteredTables(tables.filter((table) => !table.isHidden));
+    }
+  };
+
   return (
     <div className={styles.pageContainer}>
       {/* Кнопка "Назад" */}
@@ -119,7 +147,7 @@ const NewCompanyTablesPage = () => {
         Back
       </button>
 
-      <h2 className={styles.pageTitle}>Tables for New Company</h2>
+      <h2 className={styles.pageTitle}>Tables for Belvista Homes</h2>
       {error && <p className={styles.errorMessage}>{error}</p>}
 
       {/* Поле для пошуку за адресою */}
@@ -151,12 +179,30 @@ const NewCompanyTablesPage = () => {
               <p className={styles.tablePayTo}>
                 Pay To: {table.invoiceDetails.payTo}
               </p>
+              {isEditing && (
+                <button
+                  className={styles.hideButton}
+                  onClick={(e) => handleHideTable(table.tableId, e)} // Використовуємо stopPropagation
+                >
+                  Hide
+                </button>
+              )}
             </li>
           ))
         ) : (
           <p className={styles.noTablesMessage}>No tables available.</p>
         )}
       </ul>
+
+      {/* Кнопка для переходу в режим редагування */}
+      <button onClick={toggleEditMode} className={styles.editButton}>
+        {isEditing ? "Stop Editing" : "Edit"}
+      </button>
+
+      {/* Кнопка для показу прихованих таблиць */}
+      <button onClick={toggleHiddenTables} className={styles.showHiddenButton}>
+        {showHidden ? "Show Active Tables" : "Show Hidden Tables"}
+      </button>
 
       {/* Форма для додавання нової таблиці */}
       <div className={styles.addTableForm}>
@@ -201,4 +247,4 @@ const NewCompanyTablesPage = () => {
   );
 };
 
-export default NewCompanyTablesPage;
+export default BelvistaHomesTablesPage;

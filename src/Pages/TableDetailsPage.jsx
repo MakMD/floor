@@ -170,7 +170,6 @@ const TableDetailsPage = () => {
   return (
     <div className={styles.invoicePage}>
       {/* Кнопка "Назад" */}
-
       <div className={styles.btnBackPrintCont}>
         <button className={styles.backButton} onClick={() => navigate(-1)}>
           Back
@@ -184,6 +183,7 @@ const TableDetailsPage = () => {
           {isEditing ? "Save Changes" : "Edit Invoices"}
         </button>
       </div>
+
       <div className={styles.document}>
         {/* Верхня частина документа */}
         <div className={styles.header}>
@@ -290,7 +290,6 @@ const TableDetailsPage = () => {
               </tbody>
             </table>
 
-            {/* Візуальний розділювач перед формою */}
             <hr className={styles.divider} />
 
             {/* Форма додавання нового інвойсу */}

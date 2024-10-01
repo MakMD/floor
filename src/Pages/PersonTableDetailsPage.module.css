@@ -1,153 +1,173 @@
+/* Основний контейнер для деталей таблиці */
 .tableDetailsContainer {
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
-  font-family: Arial, sans-serif;
+  background-color: #f4f5f7;
+  font-family: "Lora", serif;
 }
 
-.backButton {
-  background-color: #007bff;
-  color: white;
+/* Контейнер для кнопок */
+.btnBackPrintCont {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+/* Кнопки "Назад", "Друк", "Редагування" */
+.backButton,
+.printButton,
+.editButton {
   padding: 10px 20px;
+  background-color: #4a90e2;
+  color: #ffffff;
   border: none;
   cursor: pointer;
-
+  font-size: 16px;
   border-radius: 5px;
 }
 
+.backButton:hover,
+.printButton:hover,
+.editButton:hover {
+  background-color: #357ab8;
+}
+
+/* Заголовок з іменем людини */
+.personName {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Таблиця інвойсів */
 .invoiceTable {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 20px;
+  margin-top: 20px;
 }
 
 .invoiceTable th,
 .invoiceTable td {
   border: 1px solid #ddd;
-  padding: 8px;
+  padding: 12px;
   text-align: left;
+  font-size: 16px;
 }
 
 .invoiceTable th {
-  background-color: #007bff;
-  color: white;
+  background-color: #f4f5f7;
+  font-weight: 600;
 }
 
-.invoiceTable tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-.totalRow {
+/* Рядок підсумкових даних */
+.totalRow td {
   font-weight: bold;
-  background-color: #e0e0e0;
+  background-color: #f4f5f7;
 }
 
-.addInvoiceForm {
+/* Кнопки для GST та WCB */
+.btnGst,
+.btnWcb {
+  padding: 10px 20px;
+  background-color: #4a90e2;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin-right: 10px;
+  border-radius: 5px;
   margin-top: 20px;
 }
 
+.btnGst:hover,
+.btnWcb:hover {
+  background-color: #357ab8;
+}
+
+/* Форма для додавання інвойсу */
+.addInvoiceForm {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #f9fafc;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+}
+
 .inputField {
-  padding: 8px;
-  margin: 10px 0;
   width: 100%;
-  box-sizing: border-box;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
 }
 
 .addInvoiceButton {
-  background-color: #007bff;
+  padding: 12px 20px;
+  background-color: #4a90e2;
   color: white;
-  padding: 10px 15px;
   border: none;
   cursor: pointer;
+  font-size: 16px;
   border-radius: 5px;
 }
-@media print {
-  .addInvoiceForm,
-  .backButton {
-    display: none; /* Не друкувати форму та кнопку повернення */
+
+.addInvoiceButton:hover {
+  background-color: #357ab8;
+}
+
+/* Мобільна версія (від 375px до 768px) */
+@media (max-width: 768px) {
+  .tableDetailsContainer {
+    padding: 10px;
   }
 
-  .invoicePage {
-    padding: 0;
-    border: none;
+  .btnBackPrintCont {
+    flex-direction: column;
   }
 
-  .document {
-    border: none;
-    padding: 0;
+  .backButton,
+  .printButton,
+  .editButton {
+    width: 100%;
+    font-size: 14px;
+    margin-bottom: 10px;
   }
 
   .invoiceTable th,
   .invoiceTable td {
-    padding: 5px;
+    font-size: 14px;
   }
-  header {
+
+  .inputField {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .addInvoiceButton {
+    width: 100%;
+    font-size: 14px;
+  }
+}
+
+/* Стилі для друку */
+@media print {
+  .btnBackPrintCont,
+  .addInvoiceForm,
+  .btnGst,
+  .btnWcb,
+  button,
+  img {
     display: none;
   }
-  button {
-    display: none;
+
+  .tableDetailsContainer {
+    box-shadow: none;
+    padding: 0;
   }
-  input {
-    display: none;
+
+  .invoiceTable {
+    width: 100%;
+    font-size: 12px;
   }
-}
-.totalRow {
-  font-weight: bold;
-  background-color: #f0f0f0;
-}
-
-.totalLabel {
-  text-align: right;
-  padding-right: 10px;
-}
-.printButton {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.printButton:hover {
-  background-color: #007bff;
-  transform: translateY(-3px);
-}
-
-.printButton:active {
-  background-color: #007bff;
-  transform: translateY(0);
-}
-.btnGst {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  margin-bottom: 20px;
-  border-radius: 5px;
-}
-
-.btnWcb {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  margin-bottom: 20px;
-  border-radius: 5px;
-}
-.editButton {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-
-  border-radius: 5px;
-}
-.btnBackPrintCont {
-  display: flex;
-  justify-content: space-between;
 }

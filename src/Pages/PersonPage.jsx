@@ -97,16 +97,17 @@ const PersonPage = () => {
       {person ? (
         <>
           <h2 className={styles.pageTitle}>{person.name} Tables</h2>
+          <div className={styles.contBtnBackEdit}>
+            {/* Кнопка "Назад" */}
+            <button className={styles.backButton} onClick={() => navigate(-1)}>
+              Back
+            </button>
 
-          {/* Кнопка "Назад" */}
-          <button className={styles.backButton} onClick={() => navigate(-1)}>
-            Back
-          </button>
-
-          {/* Кнопка "Редагувати" */}
-          <button className={styles.editButton} onClick={toggleEditMode}>
-            {isEditing ? "Save" : "Edit"}
-          </button>
+            {/* Кнопка "Редагувати" */}
+            <button className={styles.editButton} onClick={toggleEditMode}>
+              {isEditing ? "Save" : "Edit"}
+            </button>
+          </div>
 
           {/* Поле для пошуку за адресою */}
           <div className={styles.searchContainer}>
@@ -114,7 +115,7 @@ const PersonPage = () => {
               type="text"
               placeholder="Search by address"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)} // Оновлюємо пошуковий запит
+              onChange={(e) => setSearchTerm(e.target.value)}
               className={styles.searchInput}
             />
           </div>
@@ -138,7 +139,10 @@ const PersonPage = () => {
             <ul className={styles.tableList}>
               {filteredTables.map((table, index) => (
                 <li key={index} className={styles.tableItem}>
-                  <span onClick={() => handleTableClick(table.tableId)}>
+                  <span
+                    className={styles.tableName}
+                    onClick={() => handleTableClick(table.tableId)}
+                  >
                     {table.name}
                   </span>
 
