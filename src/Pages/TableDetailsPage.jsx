@@ -7,7 +7,7 @@ const TableDetailsPage = () => {
   const { companyName, tableId } = useParams();
   const navigate = useNavigate();
   const [table, setTable] = useState(null);
-  const [isEditing, setIsEditing] = useState(false); // Додаємо стан для редагування
+  const [isEditing, setIsEditing] = useState(false);
   const [newInvoice, setNewInvoice] = useState({
     date: "",
     workOrder: "",
@@ -97,7 +97,47 @@ const TableDetailsPage = () => {
   const handleInvoiceFieldChange = (e, index, field) => {
     const updatedInvoices = [...table.invoices];
     updatedInvoices[index][field] = e.target.value;
+
+    const isInvoiceEmpty =
+      !updatedInvoices[index].date &&
+      !updatedInvoices[index].workOrder &&
+      !updatedInvoices[index].address &&
+      !updatedInvoices[index].total;
+
+    if (isInvoiceEmpty) {
+      updatedInvoices.splice(index, 1);
+      handleDeleteInvoice(index);
+    }
+
     setTable({ ...table, invoices: updatedInvoices });
+  };
+
+  const handleDeleteInvoice = async (invoiceIndex) => {
+    try {
+      const response = await axios.get(
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}`
+      );
+      const currentCompanyData = response.data[0];
+
+      const updatedTables = currentCompanyData.invoiceTables.map((tbl) => {
+        if (tbl.tableId === table.tableId) {
+          const updatedInvoices = tbl.invoices.filter(
+            (invoice, idx) => idx !== invoiceIndex
+          );
+          return { ...tbl, invoices: updatedInvoices };
+        }
+        return tbl;
+      });
+
+      await axios.put(
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}/1`,
+        { ...currentCompanyData, invoiceTables: updatedTables }
+      );
+
+      console.log("Invoice deleted successfully");
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+    }
   };
 
   const handleInvoiceBlur = async (index, field) => {
@@ -157,35 +197,29 @@ const TableDetailsPage = () => {
 
   const totals = calculateTotal();
 
-  // Функція для перемикання режиму редагування
   const toggleEditMode = () => {
     setIsEditing((prevIsEditing) => !prevIsEditing);
   };
 
-  // Додаємо функцію для друку
   const handlePrint = () => {
     window.print();
   };
 
   return (
     <div className={styles.invoicePage}>
-      {/* Кнопка "Назад" */}
       <div className={styles.btnBackPrintCont}>
         <button className={styles.backButton} onClick={() => navigate(-1)}>
           Back
         </button>
-        {/* Додаємо кнопку для друку */}
         <button onClick={handlePrint} className={styles.printButton}>
           Print
         </button>
-        {/* Додаємо кнопку для перемикання режиму редагування */}
         <button onClick={toggleEditMode} className={styles.editButton}>
           {isEditing ? "Save Changes" : "Edit Invoices"}
         </button>
       </div>
 
       <div className={styles.document}>
-        {/* Верхня частина документа */}
         <div className={styles.header}>
           <h1>FLOORING BOSS LTD.</h1>
           <p>422 ALLARD BLVD SW, EDMONTON, ALBERTA, T6W3S7</p>
@@ -205,7 +239,6 @@ const TableDetailsPage = () => {
               <p>Bill To: {table.invoiceDetails.billTo}</p>
             </div>
 
-            {/* Відображення інвойсів */}
             <table className={styles.invoiceTable}>
               <thead>
                 <tr>
@@ -280,7 +313,6 @@ const TableDetailsPage = () => {
                     <td>{invoice.payablePerWorkOrder}</td>
                   </tr>
                 ))}
-                {/* Підсумковий рядок */}
                 <tr className={styles.totalRow}>
                   <td colSpan="3">Total</td>
                   <td>{totals.total.toFixed(2)}</td>

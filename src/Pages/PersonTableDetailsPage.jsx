@@ -42,8 +42,25 @@ const PersonTableDetailsPage = () => {
     fetchTableDetails();
   }, [personId, tableId]);
 
-  const handleInvoiceChange = (e) => {
-    setNewInvoice({ ...newInvoice, [e.target.name]: e.target.value });
+  const handleInvoiceChange = (e, index, field) => {
+    const updatedInvoices = [...table.invoices];
+    updatedInvoices[index][field] = e.target.value;
+
+    // Перевірка, чи всі поля інвойсу пусті
+    const isInvoiceEmpty =
+      !updatedInvoices[index].address &&
+      !updatedInvoices[index].date &&
+      !updatedInvoices[index].total_income;
+
+    if (isInvoiceEmpty) {
+      // Видаляємо інвойс, якщо всі поля порожні
+      updatedInvoices.splice(index, 1);
+    }
+
+    setTable((prevTable) => ({
+      ...prevTable,
+      invoices: updatedInvoices,
+    }));
   };
 
   const handleAddInvoice = async () => {
@@ -180,14 +197,9 @@ const PersonTableDetailsPage = () => {
                       <input
                         type="text"
                         value={invoice.address}
-                        onChange={(e) => {
-                          const updatedInvoices = [...table.invoices];
-                          updatedInvoices[index].address = e.target.value;
-                          setTable((prevTable) => ({
-                            ...prevTable,
-                            invoices: updatedInvoices,
-                          }));
-                        }}
+                        onChange={(e) =>
+                          handleInvoiceChange(e, index, "address")
+                        }
                         className={styles.inputField}
                       />
                     ) : (
@@ -199,14 +211,7 @@ const PersonTableDetailsPage = () => {
                       <input
                         type="date"
                         value={invoice.date}
-                        onChange={(e) => {
-                          const updatedInvoices = [...table.invoices];
-                          updatedInvoices[index].date = e.target.value;
-                          setTable((prevTable) => ({
-                            ...prevTable,
-                            invoices: updatedInvoices,
-                          }));
-                        }}
+                        onChange={(e) => handleInvoiceChange(e, index, "date")}
                         className={styles.inputField}
                       />
                     ) : (
@@ -218,14 +223,9 @@ const PersonTableDetailsPage = () => {
                       <input
                         type="number"
                         value={invoice.total_income}
-                        onChange={(e) => {
-                          const updatedInvoices = [...table.invoices];
-                          updatedInvoices[index].total_income = e.target.value;
-                          setTable((prevTable) => ({
-                            ...prevTable,
-                            invoices: updatedInvoices,
-                          }));
-                        }}
+                        onChange={(e) =>
+                          handleInvoiceChange(e, index, "total_income")
+                        }
                         className={styles.inputField}
                       />
                     ) : (
@@ -234,6 +234,7 @@ const PersonTableDetailsPage = () => {
                   </td>
                 </tr>
               ))}
+
               <tr className={styles.totalRow}>
                 <td colSpan="2">Total:</td>
                 <td>${totalIncome.toFixed(2)}</td>

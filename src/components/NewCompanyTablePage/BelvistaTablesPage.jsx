@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import styles from "./NewCompanyTablePage.module.css"; // Заміна стилів на BelvistaHomes
+import styles from "./NewCompanyTablePage.module.css"; // Стилі для сторінки
 
 const BelvistaHomesTablesPage = () => {
   const [tables, setTables] = useState([]);
@@ -15,9 +15,10 @@ const BelvistaHomesTablesPage = () => {
     payTo: "",
   });
   const [isEditing, setIsEditing] = useState(false); // Режим редагування
-  const [showHidden, setShowHidden] = useState(false); // Показувати приховані таблиці чи ні
+  const [showHidden, setShowHidden] = useState(false); // Показ прихованих таблиць
   const navigate = useNavigate(); // Використовуємо useNavigate для навігації
 
+  // Завантаження таблиць після завантаження сторінки
   useEffect(() => {
     const fetchTables = async () => {
       try {
@@ -25,8 +26,15 @@ const BelvistaHomesTablesPage = () => {
           "https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD"
         );
         if (response.data.length > 0) {
-          setTables(response.data[0]?.invoiceTables || []);
-          setFilteredTables(response.data[0]?.invoiceTables || []); // Ініціалізуємо відфільтровані таблиці
+          const fetchedTables = response.data[0]?.invoiceTables || [];
+
+          // Фільтруємо таблиці за умовою showHidden
+          const filtered = fetchedTables.filter((table) =>
+            showHidden ? table.isHidden : !table.isHidden
+          );
+
+          setTables(fetchedTables);
+          setFilteredTables(filtered); // Оновлюємо відфільтровані таблиці
         } else {
           setError("No data found for this company.");
         }
@@ -37,7 +45,7 @@ const BelvistaHomesTablesPage = () => {
     };
 
     fetchTables();
-  }, []);
+  }, [showHidden]); // Залежність від showHidden
 
   // Пошук за адресою
   const handleSearch = (e) => {
@@ -52,8 +60,8 @@ const BelvistaHomesTablesPage = () => {
     setFilteredTables(filtered);
   };
 
+  // Кліком по таблиці перенаправляємо на деталі таблиці
   const handleTableClick = (tableId) => {
-    // Перенаправляємо на шлях з tableId для відображення деталей таблиці BelvistaHomesLTD
     navigate(`/company/BelvistaHomesLTD/table/${tableId}`);
   };
 
@@ -116,13 +124,33 @@ const BelvistaHomesTablesPage = () => {
   };
 
   // Функція для приховування таблиці
-  const handleHideTable = (tableId, e) => {
+  const handleHideTable = async (tableId, e) => {
     e.stopPropagation(); // Зупиняємо вспливання події, щоб не активувалось відкриття таблиці
+
     const updatedTables = tables.map((table) =>
       table.tableId === tableId ? { ...table, isHidden: true } : table
     );
     setTables(updatedTables);
     setFilteredTables(updatedTables.filter((table) => !table.isHidden));
+
+    try {
+      // Отримуємо поточні дані компанії з сервера
+      const response = await axios.get(
+        "https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD"
+      );
+      const currentCompanyData = response.data[0];
+
+      // Оновлюємо таблиці на сервері
+      await axios.put(
+        `https://66ac12f3f009b9d5c7310a1a.mockapi.io/BelvistaHomesLTD/${currentCompanyData.id}`,
+        {
+          ...currentCompanyData,
+          invoiceTables: updatedTables, // Відправляємо оновлені таблиці із прапорцем isHidden
+        }
+      );
+    } catch (error) {
+      console.error("Error hiding table:", error);
+    }
   };
 
   // Перемикання режиму редагування
@@ -130,14 +158,9 @@ const BelvistaHomesTablesPage = () => {
     setIsEditing((prev) => !prev);
   };
 
-  // Показ прихованих таблиць
+  // Перемикання між активними та прихованими таблицями
   const toggleHiddenTables = () => {
     setShowHidden((prev) => !prev);
-    if (!showHidden) {
-      setFilteredTables(tables.filter((table) => table.isHidden));
-    } else {
-      setFilteredTables(tables.filter((table) => !table.isHidden));
-    }
   };
 
   return (

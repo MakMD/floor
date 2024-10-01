@@ -40,7 +40,7 @@ const CompanyTablesPage = () => {
         }));
 
         setTables(updatedTables);
-        setFilteredTables(updatedTables);
+        setFilteredTables(updatedTables); // Оновлюємо фільтровані таблиці одразу
       } catch (err) {
         setError("Error fetching tables");
         console.error("Error fetching tables:", err);
@@ -50,15 +50,20 @@ const CompanyTablesPage = () => {
     fetchTables();
   }, [companyName]);
 
-  // Оновлюємо фільтровані таблиці на основі пошукового запиту
+  // Оновлюємо фільтровані таблиці на основі пошукового запиту і стану showHidden
   useEffect(() => {
-    const filtered = tables.filter((table) =>
-      table.invoices.some((invoice) =>
-        invoice.address.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
+    const filtered = tables
+      .filter((table) => (showHidden ? table.isHidden : !table.isHidden)) // Фільтруємо за isHidden
+      .filter(
+        (table) =>
+          // Відображаємо таблицю, навіть якщо вона порожня, або фільтруємо інвойси за пошуковим запитом
+          table.invoices.length === 0 ||
+          table.invoices.some((invoice) =>
+            invoice.address.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+      );
     setFilteredTables(filtered);
-  }, [searchTerm, tables]);
+  }, [searchTerm, tables, showHidden]);
 
   const handleInputChange = (e) => {
     setNewTable({
@@ -73,13 +78,16 @@ const CompanyTablesPage = () => {
 
   const handleAddTable = async () => {
     const { date, invoiceNumber, billTo, payTo } = newTable;
+
+    // Перевірка наявності всіх полів
     if (!date || !invoiceNumber || !billTo || !payTo) {
       setError("All fields are required");
       return;
     }
 
+    // Створення нової таблиці з унікальним tableId
     const newTableData = {
-      tableId: Date.now().toString(),
+      tableId: `${Date.now()}_${Math.random()}`, // Генеруємо унікальний ідентифікатор
       name: `Invoices for ${new Date(date).toLocaleString("en-US", {
         month: "long",
         year: "numeric",
@@ -91,30 +99,41 @@ const CompanyTablesPage = () => {
         payTo,
       },
       invoices: [],
-      isHidden: false, // Новий прапорець для приховування
+      isHidden: "", // Новий прапорець для приховування
     };
 
     try {
+      // Отримуємо дані поточної компанії
       const response = await axios.get(
         `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}`
       );
-      const currentCompanyData = response.data[0];
+
+      let currentCompanyData;
+      if (Array.isArray(response.data)) {
+        currentCompanyData = response.data[0]; // Якщо це масив, беремо перший елемент
+      } else {
+        currentCompanyData = response.data; // Якщо це об'єкт, використовуємо його напряму
+      }
 
       const companyId = currentCompanyData.id;
 
+      // Додаємо нову таблицю до існуючих
       const updatedTables = [
-        ...(currentCompanyData.invoiceTables || []),
+        ...(currentCompanyData.invoiceTables || []), // Перевіряємо, чи є вже таблиці
         newTableData,
       ];
 
+      // Оновлюємо компанію з новими таблицями
       await axios.put(
         `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}/${companyId}`,
         { ...currentCompanyData, invoiceTables: updatedTables }
       );
 
+      // Оновлюємо стани таблиць після успішного запиту
       setTables(updatedTables);
-      setFilteredTables(updatedTables);
+      setFilteredTables(updatedTables); // Оновлюємо також фільтровані таблиці
       setNewTable({ date: "", invoiceNumber: "", billTo: "", payTo: "" });
+      setError(""); // Очищуємо повідомлення про помилку, якщо все ок
     } catch (error) {
       setError("Error adding table");
       console.error("Error adding table:", error);
@@ -179,34 +198,32 @@ const CompanyTablesPage = () => {
 
       <ul className={styles.tableList}>
         {filteredTables.length > 0 ? (
-          filteredTables
-            .filter((table) => table.isHidden === showHidden) // Фільтруємо за станом isHidden
-            .map((table) => (
-              <li
-                key={table.tableId}
-                className={styles.tableItem}
-                onClick={(event) => handleTableClick(table.tableId, event)}
-              >
-                <h3 className={styles.tableTitle}>{table.name}</h3>
-                <p className={styles.tablePayTo}>
-                  Pay To: {table.invoiceDetails.payTo}
-                </p>
-                <p className={styles.tableBillTo}>
-                  Bill To: {table.invoiceDetails.billTo}
-                </p>
-                <p className={styles.tableDate}>
-                  Date: {table.invoiceDetails.date}
-                </p>
-                {isEditing && (
-                  <button
-                    onClick={() => handleHideTable(table.tableId)}
-                    className={styles.hideButton}
-                  >
-                    Hide
-                  </button>
-                )}
-              </li>
-            ))
+          filteredTables.map((table) => (
+            <li
+              key={table.tableId}
+              className={styles.tableItem}
+              onClick={(event) => handleTableClick(table.tableId, event)}
+            >
+              <h3 className={styles.tableTitle}>{table.name}</h3>
+              <p className={styles.tablePayTo}>
+                Pay To: {table.invoiceDetails.payTo}
+              </p>
+              <p className={styles.tableBillTo}>
+                Bill To: {table.invoiceDetails.billTo}
+              </p>
+              <p className={styles.tableDate}>
+                Date: {table.invoiceDetails.date}
+              </p>
+              {isEditing && (
+                <button
+                  onClick={() => handleHideTable(table.tableId)}
+                  className={styles.hideButton}
+                >
+                  Hide
+                </button>
+              )}
+            </li>
+          ))
         ) : (
           <p className={styles.noTablesMessage}>
             No tables available for this company.
