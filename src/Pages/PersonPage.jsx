@@ -102,7 +102,15 @@ const PersonPage = () => {
             <button className={styles.backButton} onClick={() => navigate(-1)}>
               Back
             </button>
-
+            <div className={styles.searchContainer}>
+              <input
+                type="text"
+                placeholder="Search by address"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={styles.searchInput}
+              />
+            </div>
             {/* Кнопка "Редагувати" */}
             <button className={styles.editButton} onClick={toggleEditMode}>
               {isEditing ? "Save" : "Edit"}
@@ -110,7 +118,7 @@ const PersonPage = () => {
           </div>
 
           {/* Поле для пошуку за адресою */}
-          <div className={styles.searchContainer}>
+          {/* <div className={styles.searchContainer}>
             <input
               type="text"
               placeholder="Search by address"
@@ -118,7 +126,7 @@ const PersonPage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className={styles.searchInput}
             />
-          </div>
+          </div> */}
 
           {/* Форма для додавання нової таблиці */}
           <div className={styles.addTableForm}>

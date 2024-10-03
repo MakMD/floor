@@ -40,7 +40,7 @@
   width: 100%;
   max-width: 600px;
   padding: 12px;
-  margin-bottom: 30px;
+
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 16px;
@@ -50,6 +50,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 626px;
 }
 /* Список таблиць */
 .tableList {
@@ -116,6 +117,7 @@
   align-content: center;
   justify-content: center;
   align-items: center;
+  margin-left: 7px;
 }
 
 .inputField {
@@ -169,7 +171,10 @@
   .personPage {
     padding: 10px;
   }
-
+  .contBtnBackEdit {
+    flex-wrap: wrap;
+    gap: 20px;
+  }
   .backButton {
     width: 100%;
     font-size: 14px;
