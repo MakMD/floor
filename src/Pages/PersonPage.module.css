@@ -200,9 +200,14 @@
   }
 
   .addTableForm {
-    padding: 15px;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
   }
-
+  .addTableButton {
+    margin-left: 0;
+  }
   .inputField {
     font-size: 14px;
     padding: 10px;
