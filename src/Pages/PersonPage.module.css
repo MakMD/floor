@@ -46,7 +46,11 @@
   font-size: 16px;
   background-color: #fff;
 }
-
+.searchContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 /* Список таблиць */
 .tableList {
   list-style: none;
@@ -102,19 +106,22 @@
 
 /* Форма для додавання нової таблиці */
 .addTableForm {
-  background-color: #f9fafc;
   padding: 20px;
-  border: 1px solid #e5e5e5;
+
   border-radius: 10px;
   margin-top: 30px;
-  margin-bottom: 20px;
+  margin-bottom: 50px;
+  display: flex;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
 }
 
 .inputField {
   width: 100%;
   max-width: 600px;
   padding: 12px;
-  margin-bottom: 20px;
+
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 16px;
