@@ -229,7 +229,7 @@ const NewCompanyTableDetails = () => {
         <div className={styles.companyInfo}>
           <h2>FLOORING BOSS LTD.</h2>
           <p>422 ALLARD BLVD SW, EDMONTON, ALBERTA, T6W3S7</p>
-          <p>Mykhailo: (587) 937 7862 | Miroslav: (825) 461 1950</p>
+          <p>Mykhailo: (587) 937 7862 | Myroslav: (825) 461 1950</p>
           <p>Email: flooring.boss1@gmail.com</p>
           <p>GST: 704201813 RT 0001 | WCB: 9839473</p>
         </div>
