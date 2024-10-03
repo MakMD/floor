@@ -80,6 +80,7 @@
   font-size: 18px;
   font-weight: 600;
   color: #333333;
+  width: 100%;
 }
 
 /* Повідомлення, якщо таблиць немає */
@@ -184,6 +185,7 @@
   }
 
   .tableName {
+    width: 100%;
     font-size: 16px;
   }
 
