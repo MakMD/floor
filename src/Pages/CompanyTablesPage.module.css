@@ -40,10 +40,10 @@
 
 /* Пошукове поле */
 .searchField {
-  width: 100%;
-  max-width: 600px;
+  /* width: 100%;
+  width: 600px; */
   padding: 12px;
-  margin-bottom: 30px;
+  width: 626px;
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 16px;
@@ -117,6 +117,8 @@
   border: 1px solid #e5e5e5;
   border-radius: 10px;
   margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .formTitle {
@@ -186,7 +188,10 @@
   .pageContainer {
     padding: 10px;
   }
-
+  .backEditBtnCont {
+    flex-wrap: wrap;
+    gap: 20px;
+  }
   .backButton {
     width: 100%;
     font-size: 14px;

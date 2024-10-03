@@ -182,6 +182,14 @@ const CompanyTablesPage = () => {
         <button className={styles.backButton} onClick={() => navigate(-1)}>
           Back
         </button>
+        <input
+          type="text"
+          placeholder="Search by address"
+          value={searchTerm}
+          onChange={handleSearchInput}
+          className={styles.searchField}
+        />
+        {/* <div className={styles.searchContainer}></div> */}
         <button onClick={toggleEditMode} className={styles.editButton}>
           {isEditing ? "Stop Editing" : "Edit"}
         </button>
@@ -190,7 +198,7 @@ const CompanyTablesPage = () => {
       {error && <p className={styles.errorMessage}>{error}</p>}
 
       {/* Поле для пошуку за адресою */}
-      <div className={styles.searchContainer}>
+      {/* <div className={styles.searchContainer}>
         <input
           type="text"
           placeholder="Search by address"
@@ -198,7 +206,7 @@ const CompanyTablesPage = () => {
           onChange={handleSearchInput}
           className={styles.searchField}
         />
-      </div>
+      </div> */}
 
       <ul className={styles.tableList}>
         {filteredTables.length > 0 ? (
@@ -234,10 +242,6 @@ const CompanyTablesPage = () => {
           </p>
         )}
       </ul>
-
-      <button onClick={toggleEditMode} className={styles.editButton}>
-        {isEditing ? "Stop Editing" : "Edit"}
-      </button>
 
       {/* Форма для додавання нової таблиці */}
       <div className={styles.addTableForm}>
