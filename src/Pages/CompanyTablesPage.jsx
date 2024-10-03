@@ -178,10 +178,14 @@ const CompanyTablesPage = () => {
   return (
     <div className={styles.pageContainer}>
       {/* Кнопка "Назад" */}
-      <button className={styles.backButton} onClick={() => navigate(-1)}>
-        Back
-      </button>
-
+      <div className={styles.backEditBtnCont}>
+        <button className={styles.backButton} onClick={() => navigate(-1)}>
+          Back
+        </button>
+        <button onClick={toggleEditMode} className={styles.editButton}>
+          {isEditing ? "Stop Editing" : "Edit"}
+        </button>
+      </div>
       <h2 className={styles.pageTitle}>{companyName} - Tables</h2>
       {error && <p className={styles.errorMessage}>{error}</p>}
 
