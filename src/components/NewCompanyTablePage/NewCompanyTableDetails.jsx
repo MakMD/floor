@@ -72,6 +72,7 @@ const NewCompanyTableDetails = () => {
     const updatedInvoices = [...tableDetails.invoices];
     updatedInvoices[index][field] = e.target.value;
 
+    // Якщо поля "price" або "sf/stairs" змінені, перераховуємо total, GST і totalWithGst
     if (field === "price" || field === "sf/stairs") {
       const price = parseFloat(updatedInvoices[index].price || 0);
       const sfStairs = parseFloat(updatedInvoices[index]["sf/stairs"] || 0);
@@ -82,6 +83,18 @@ const NewCompanyTableDetails = () => {
       updatedInvoices[index].total = total.toFixed(2);
       updatedInvoices[index].GSTCollected = gst.toFixed(2);
       updatedInvoices[index].totalWithGst = totalWithGst.toFixed(2);
+    }
+
+    // Перевіряємо, чи всі поля інвойсу пусті
+    const isEmptyInvoice =
+      !updatedInvoices[index].date &&
+      !updatedInvoices[index].address &&
+      !updatedInvoices[index].price &&
+      !updatedInvoices[index]["sf/stairs"];
+
+    if (isEmptyInvoice) {
+      // Видаляємо інвойс з масиву, якщо всі поля пусті
+      updatedInvoices.splice(index, 1);
     }
 
     setTableDetails((prev) => ({
