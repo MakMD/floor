@@ -116,6 +116,13 @@ const PersonTableDetailsPage = () => {
       setTotalWithGST((newWCB * 1.05).toFixed(2)); // Додаємо 5% GST до Total - WCB
     }
   };
+  const handleNewInvoiceChange = (e) => {
+    const { name, value } = e.target;
+    setNewInvoice((prevInvoice) => ({
+      ...prevInvoice,
+      [name]: value,
+    }));
+  };
 
   const calculateTotalWithGST = () => {
     // Перевіряємо, чи було обчислено WCB, щоб додати GST до Total - WCB або просто Total
@@ -267,7 +274,7 @@ const PersonTableDetailsPage = () => {
               type="text"
               name="address"
               value={newInvoice.address}
-              onChange={handleInvoiceChange}
+              onChange={handleNewInvoiceChange} // Використовуй handleNewInvoiceChange для оновлення нового інвойсу
               placeholder="Address"
               className={styles.inputField}
             />
@@ -275,7 +282,7 @@ const PersonTableDetailsPage = () => {
               type="date"
               name="date"
               value={newInvoice.date}
-              onChange={handleInvoiceChange}
+              onChange={handleNewInvoiceChange} // Використовуй handleNewInvoiceChange
               placeholder="Date"
               className={styles.inputField}
             />
@@ -283,7 +290,7 @@ const PersonTableDetailsPage = () => {
               type="number"
               name="total_income"
               value={newInvoice.total_income}
-              onChange={handleInvoiceChange}
+              onChange={handleNewInvoiceChange} // Використовуй handleNewInvoiceChange
               placeholder="Total Income"
               className={styles.inputField}
             />
