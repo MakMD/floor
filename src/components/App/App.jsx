@@ -16,8 +16,6 @@ import PersonTablesPage from "../../Pages/PersonTablesPage";
 import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage";
 import LoginModal from "../LoginModal/LoginModal";
 import logo from "../../../public/Flooring.Boss.svg";
-import BelvistaTablesPage from "../NewCompanyTablePage/BelvistaTablesPage";
-import NewCompanyTableDetails from "../NewCompanyTablePage/NewCompanyTableDetails";
 import BackupButton from "../BackupButton/BackupButton";
 import styles from "./App.module.css";
 
@@ -29,6 +27,7 @@ const AppContent = () => {
   const [filteredPeople, setFilteredPeople] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
 
+  // Додано нову компанію до загального списку ресурсів
   const companyResources = [
     "TouchtoneCanadaLTD",
     "SarefaHomesLTD",
@@ -36,7 +35,7 @@ const AppContent = () => {
     "NestHomesLTD",
     "CenrurylandHomesLTD",
     "TradesProSupplyDepotLTD",
-    "NewEraFloorGalleryLTD", // Нова компанія
+    "NewEraFloorGalleryLTD", // Додано нову компанію
   ];
 
   const location = useLocation();
@@ -144,17 +143,7 @@ const AppContent = () => {
               </div>
             }
           />
-          {/* Окремий маршрут для BelvistaHomesLTD з іншим виглядом таблиць */}
-          <Route
-            path="/company/BelvistaHomesLTD"
-            element={<BelvistaTablesPage />}
-          />
-          {/* Маршрут для NewEraFloorGalleryLTD з тим самим компонентом, що й BelvistaHomesLTD */}
-          <Route
-            path="/company/NewEraFloorGalleryLTD"
-            element={<BelvistaTablesPage />}
-          />
-          {/* Загальний маршрут для всіх інших компаній */}
+          {/* Загальний маршрут для всіх компаній */}
           <Route path="/company/:companyName" element={<CompanyTablesPage />} />
           <Route
             path="/company/:companyName/table/:tableId"
@@ -169,15 +158,6 @@ const AppContent = () => {
           <Route
             path="/person/:personId/tables/:tableId"
             element={<PersonTableDetailsPage />}
-          />
-          {/* Маршрути для деталей таблиці BelvistaHomesLTD та NewEraFloorGalleryLTD */}
-          <Route
-            path="/company/BelvistaHomesLTD/table/:tableId"
-            element={<NewCompanyTableDetails />}
-          />
-          <Route
-            path="/company/NewEraFloorGalleryLTD/table/:tableId"
-            element={<NewCompanyTableDetails />}
           />
         </Routes>
       )}
