@@ -4,19 +4,19 @@ import {
   Routes,
   Route,
   useLocation,
-} from "react-router-dom"; // useLocation правильно в Router
+} from "react-router-dom";
 import axios from "axios";
 import PeopleList from "../PeopleList/PeopleList";
 import CreatePersonForm from "../CreatePersonForm/CreatePersonForm";
 import PersonPage from "../../Pages/PersonPage";
 import CompanyList from "../CompanyList/CompanyList";
-import CompanyTablesPage from "../../Pages/CompanyTablesPage"; // Розкоментовано для загальних компаній
+import CompanyTablesPage from "../../Pages/CompanyTablesPage";
 import TableDetailsPage from "../../Pages/TableDetailsPage";
 import PersonTablesPage from "../../Pages/PersonTablesPage";
 import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage";
 import LoginModal from "../LoginModal/LoginModal";
 import logo from "../../../public/Flooring.Boss.svg";
-import BelvistaTablesPage from "../NewCompanyTablePage/BelvistaTablesPage"; // Новий компонент для BelvistaHomesLTD
+import BelvistaTablesPage from "../NewCompanyTablePage/BelvistaTablesPage";
 import NewCompanyTableDetails from "../NewCompanyTablePage/NewCompanyTableDetails";
 import BackupButton from "../BackupButton/BackupButton";
 import styles from "./App.module.css";
@@ -25,11 +25,10 @@ const AppContent = () => {
   const [people, setPeople] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(""); // Стан для пошуку
+  const [searchTerm, setSearchTerm] = useState("");
   const [filteredPeople, setFilteredPeople] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
 
-  // Залишаємо лише потрібні компанії
   const companyResources = [
     "TouchtoneCanadaLTD",
     "SarefaHomesLTD",
@@ -37,9 +36,10 @@ const AppContent = () => {
     "NestHomesLTD",
     "CenrurylandHomesLTD",
     "TradesProSupplyDepotLTD",
+    "NewEraFloorGalleryLTD", // Нова компанія
   ];
 
-  const location = useLocation(); // useLocation правильно використано всередині компонента
+  const location = useLocation();
 
   useEffect(() => {
     const fetchPeople = async () => {
@@ -48,7 +48,7 @@ const AppContent = () => {
           "https://66e3d74dd2405277ed1201b1.mockapi.io/people"
         );
         setPeople(response.data);
-        setFilteredPeople(response.data); // Ініціалізація фільтрованих людей
+        setFilteredPeople(response.data);
       } catch (error) {
         console.error("Error fetching people:", error);
       }
@@ -77,7 +77,6 @@ const AppContent = () => {
     fetchCompanies();
   }, []);
 
-  // Фільтрація компаній та людей за пошуковим запитом
   useEffect(() => {
     if (searchTerm) {
       const filteredPeople = people.filter((person) =>
@@ -117,7 +116,6 @@ const AppContent = () => {
         </a>
       </header>
 
-      {/* Поле для пошуку тільки на головній сторінці */}
       {isLoggedIn && location.pathname === "/" && (
         <div className={styles.searchContainer}>
           <input
@@ -151,6 +149,11 @@ const AppContent = () => {
             path="/company/BelvistaHomesLTD"
             element={<BelvistaTablesPage />}
           />
+          {/* Маршрут для NewEraFloorGalleryLTD з тим самим компонентом, що й BelvistaHomesLTD */}
+          <Route
+            path="/company/NewEraFloorGalleryLTD"
+            element={<BelvistaTablesPage />}
+          />
           {/* Загальний маршрут для всіх інших компаній */}
           <Route path="/company/:companyName" element={<CompanyTablesPage />} />
           <Route
@@ -167,9 +170,13 @@ const AppContent = () => {
             path="/person/:personId/tables/:tableId"
             element={<PersonTableDetailsPage />}
           />
-          {/* Маршрут для NewCompany деталей таблиці */}
+          {/* Маршрути для деталей таблиці BelvistaHomesLTD та NewEraFloorGalleryLTD */}
           <Route
             path="/company/BelvistaHomesLTD/table/:tableId"
+            element={<NewCompanyTableDetails />}
+          />
+          <Route
+            path="/company/NewEraFloorGalleryLTD/table/:tableId"
             element={<NewCompanyTableDetails />}
           />
         </Routes>
