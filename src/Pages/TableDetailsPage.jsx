@@ -226,7 +226,12 @@ const TableDetailsPage = () => {
           <p>
             Contact Mykhailo: (587) 937 7862 | Contact Myroslav: (825) 461 1950
           </p>
-          <p>Email: Flooringm8pservice@gmail.com</p>
+          <p>
+            Email:{" "}
+            {companyName === "NewEraFloorGalleryLTD"
+              ? "flooring.boss1@gmail.com"
+              : "Flooringm8pservice@gmail.com"}
+          </p>
           <p>GST: 704201813 RT 0001 | WCB: 9839473</p>
         </div>
 
