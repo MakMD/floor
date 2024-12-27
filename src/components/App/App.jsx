@@ -35,7 +35,8 @@ const AppContent = () => {
     "NestHomesLTD",
     "CenrurylandHomesLTD",
     "TradesProSupplyDepotLTD",
-    "NewEraFloorGalleryLTD", // Додано нову компанію
+    "NewEraFloorGalleryLTD",
+    "LinhanDevelopments", // Додано нову компанію
   ];
 
   const location = useLocation();
