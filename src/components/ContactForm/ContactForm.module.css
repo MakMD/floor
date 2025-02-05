@@ -1,0 +1,31 @@
+.inputWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid brown;
+  width: 200px;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 20px;
+  margin-bottom: 30px;
+  border-radius: 5px;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+  font-size: 18px;
+}
+.input {
+  height: 20px;
+  margin-top: 10px;
+}
+
+.addContactBtn {
+  height: 25px;
+  border: none;
+  border-radius: 4px;
+  color: blanchedalmond;
+  background-color: darkgoldenrod;
+}

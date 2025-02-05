@@ -1,0 +1,58 @@
+.peopleListContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: "Roboto", Arial, sans-serif;
+}
+
+.peopleListContainer h2 {
+  font-size: 28px;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.peopleList {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+
+  font-family: "Roboto", Arial, sans-serif;
+}
+
+.personItem {
+  background-color: #f5f5f5;
+  padding: 15px 25px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-width: 180px;
+  cursor: pointer;
+  border: 1px solid #ddd;
+}
+
+.personItem:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.personItem:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.personItem:focus {
+  outline: none;
+  border-color: #007bff;
+}
+.peopleTitle {
+  margin-top: 100px;
+}

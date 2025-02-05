@@ -1,0 +1,175 @@
+/* Основний контейнер для деталей таблиці */
+.tableDetailsContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f4f5f7;
+  font-family: "Lora", serif;
+}
+
+/* Контейнер для кнопок */
+.btnBackPrintCont {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+/* Кнопки "Назад", "Друк", "Редагування" */
+.backButton,
+.printButton,
+.editButton {
+  padding: 10px 20px;
+  background-color: #4a90e2;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 5px;
+}
+
+.backButton:hover,
+.printButton:hover,
+.editButton:hover {
+  background-color: #357ab8;
+}
+
+/* Заголовок з іменем людини */
+.personName {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Таблиця інвойсів */
+.invoiceTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.invoiceTable th,
+.invoiceTable td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+  font-size: 16px;
+}
+
+.invoiceTable th {
+  background-color: #f4f5f7;
+  font-weight: 600;
+}
+
+/* Рядок підсумкових даних */
+.totalRow td {
+  font-weight: bold;
+  background-color: #f4f5f7;
+}
+
+/* Кнопки для GST та WCB */
+.btnGst,
+.btnWcb {
+  padding: 10px 20px;
+  background-color: #4a90e2;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin-right: 10px;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.btnGst:hover,
+.btnWcb:hover {
+  background-color: #357ab8;
+}
+
+/* Форма для додавання інвойсу */
+.addInvoiceForm {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #f9fafc;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.inputField {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.addInvoiceButton {
+  padding: 12px 20px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 5px;
+}
+
+.addInvoiceButton:hover {
+  background-color: #357ab8;
+}
+
+/* Мобільна версія (від 375px до 768px) */
+@media (max-width: 768px) {
+  .tableDetailsContainer {
+    padding: 10px;
+  }
+
+  .btnBackPrintCont {
+    flex-direction: column;
+  }
+
+  .backButton,
+  .printButton,
+  .editButton {
+    width: 100%;
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .invoiceTable th,
+  .invoiceTable td {
+    font-size: 14px;
+  }
+
+  .inputField {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .addInvoiceButton {
+    width: 100%;
+    font-size: 14px;
+  }
+}
+
+/* Стилі для друку */
+@media print {
+  .btnBackPrintCont,
+  .addInvoiceForm,
+  .btnGst,
+  .btnWcb,
+  button,
+  img {
+    display: none;
+  }
+
+  .tableDetailsContainer {
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .invoiceTable {
+    width: 100%;
+    font-size: 12px;
+  }
+}
