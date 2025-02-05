@@ -15,8 +15,9 @@ import TableDetailsPage from "../../Pages/TableDetailsPage";
 import PersonTablesPage from "../../Pages/PersonTablesPage";
 import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage";
 import LoginModal from "../LoginModal/LoginModal";
-import logo from "../../../public/Flooring.Boss.svg";
 import BackupButton from "../BackupButton/BackupButton";
+import logo from "../../../public/Flooring.Boss.svg";
+import TemporaryCompaniesList from "../TemporaryCompaniesList/TemporaryCompaniesList"; // Додано
 import styles from "./App.module.css";
 
 const AppContent = () => {
@@ -36,7 +37,8 @@ const AppContent = () => {
     "CenrurylandHomesLTD",
     "TradesProSupplyDepotLTD",
     "NewEraFloorGalleryLTD",
-    "LinhanDevelopments", // Додано нову компанію
+    "LinhanDevelopments",
+    "TemporaryCompanies", // Додано нову компанію
   ];
 
   const location = useLocation();
@@ -144,13 +146,17 @@ const AppContent = () => {
               </div>
             }
           />
-          {/* Загальний маршрут для всіх компаній */}
+          {/* Додано новий маршрут для тимчасових компаній */}
+          <Route
+            path="/temporary-companies"
+            element={<TemporaryCompaniesList />}
+          />
+          {/* Інші маршрути */}
           <Route path="/company/:companyName" element={<CompanyTablesPage />} />
           <Route
             path="/company/:companyName/table/:tableId"
             element={<TableDetailsPage />}
           />
-          {/* Маршрути для персональних сторінок */}
           <Route path="/person/:personId" element={<PersonPage />} />
           <Route
             path="/person/:personId/tables"
