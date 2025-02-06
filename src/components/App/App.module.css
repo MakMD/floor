@@ -1,0 +1,63 @@
+/* Загальний контейнер для програми */
+.appContainer {
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f4f5f7;
+  font-family: "Lora", serif;
+}
+
+/* Стиль для заголовка */
+.header {
+  text-align: center;
+  padding: 10px;
+  background-color: #f4f5f7;
+}
+
+/* Стиль для логотипу */
+.logo {
+  width: 300px;
+  height: auto;
+}
+
+/* Контейнер для пошуку */
+.searchContainer {
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* Поле пошуку */
+.searchInput {
+  padding: 10px;
+  width: 300px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+/* Контейнер для контенту на сторінці */
+.pageContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* Мобільна версія (від 375px до 768px) */
+@media (max-width: 768px) {
+  .appContainer {
+    padding: 10px;
+  }
+
+  .searchInput {
+    width: 100%;
+    font-size: 14px;
+  }
+
+  .logo {
+    width: 200px;
+  }
+
+  .pageContent {
+    gap: 10px;
+  }
+}

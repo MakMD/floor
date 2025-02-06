@@ -1,0 +1,208 @@
+.invoicePage {
+  font-family: "Arial", sans-serif;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.backButton,
+.printButton,
+.editButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.backButton:hover,
+.printButton:hover,
+.editButton:hover {
+  background-color: #0056b3;
+}
+
+.document {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.companyInfo {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.companyInfo h2 {
+  margin-bottom: 5px;
+  font-size: 24px;
+  color: #333;
+}
+
+.companyInfo p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.invoiceHeader {
+  margin-bottom: 20px;
+}
+
+.invoiceHeader p {
+  font-size: 16px;
+  margin: 5px 0;
+}
+
+strong {
+  color: #333;
+}
+
+.invoiceTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.invoiceTable th,
+.invoiceTable td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.invoiceTable th {
+  background-color: #f1f1f1;
+  font-weight: bold;
+}
+
+.totalRow {
+  font-weight: bold;
+  background-color: #f1f1f1;
+}
+
+.totalLabel {
+  text-align: right;
+  padding-right: 15px;
+}
+
+.formContainer {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+h3 {
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.inputField {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.addInvoiceButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.addInvoiceButton:hover {
+  background-color: #218838;
+}
+
+.dueUponReceipt {
+  font-size: 18px;
+  text-align: center;
+  color: #555;
+  margin-top: 20px;
+}
+
+/* Адаптивний дизайн для мобільних пристроїв */
+@media screen and (max-width: 768px) {
+  .invoicePage {
+    padding: 15px;
+  }
+
+  .buttonContainer {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .backButton,
+  .printButton,
+  .editButton {
+    width: 100%;
+  }
+
+  .invoiceTable th,
+  .invoiceTable td {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .inputField {
+    padding: 8px;
+  }
+
+  .addInvoiceButton {
+    padding: 10px;
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 375px) {
+  .invoiceTable th,
+  .invoiceTable td {
+    font-size: 12px;
+  }
+
+  .inputField {
+    font-size: 14px;
+  }
+}
+
+/* Правила для друку */
+@media print {
+  .buttonContainer,
+  .formContainer,
+  .dueUponReceipt {
+    display: none;
+  }
+
+  .invoicePage {
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .invoiceTable {
+    width: 100%;
+    font-size: 12px;
+  }
+
+  .document {
+    padding: 0;
+  }
+}
