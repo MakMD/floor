@@ -38,7 +38,8 @@ const PersonPage = () => {
         }
         return true;
       });
-      setFilteredTables(filtered);
+      // Змінюємо порядок таблиць: новіші зверху
+      setFilteredTables(filtered.reverse());
     }
   }, [searchTerm, person]);
 
@@ -116,17 +117,6 @@ const PersonPage = () => {
               {isEditing ? "Save" : "Edit"}
             </button>
           </div>
-
-          {/* Поле для пошуку за адресою */}
-          {/* <div className={styles.searchContainer}>
-            <input
-              type="text"
-              placeholder="Search by address"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={styles.searchInput}
-            />
-          </div> */}
 
           {/* Форма для додавання нової таблиці */}
           <div className={styles.addTableForm}>
