@@ -306,7 +306,7 @@ const TableDetailsPage = () => {
             <table className={styles.invoiceTable}>
               <thead>
                 <tr>
-                  <th>#</th> {/* Додано для нумерації */}
+                  <th>#</th>
                   <th>Date</th>
                   <th>Work Order</th>
                   <th>Address</th>
@@ -316,13 +316,12 @@ const TableDetailsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* Перевертати масив invoices для відображення нових елементів спочатку */}
                 {table.invoices
                   .slice()
                   .reverse()
                   .map((invoice, index) => (
                     <tr key={index}>
-                      <td>{index + 1}</td> {/* Нумерація */}
+                      <td>{index + 1}</td>
                       <td>
                         {isEditing ? (
                           <input
