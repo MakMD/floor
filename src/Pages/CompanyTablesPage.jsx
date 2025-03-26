@@ -25,18 +25,28 @@ const CompanyTablesPage = () => {
         const response = await axios.get(
           `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}`
         );
-        let fetchedTables = Array.isArray(response.data)
-          ? response.data[0]?.invoiceTables || []
-          : response.data.invoiceTables || [];
+        let fetchedTables = [];
 
-        // Додаємо isHidden, якщо його немає
+        if (Array.isArray(response.data)) {
+          fetchedTables = response.data[0]?.invoiceTables || [];
+        } else {
+          fetchedTables = response.data.invoiceTables || [];
+        }
+
+        // Ініціалізуємо isHidden для кожної таблиці
         const updatedTables = fetchedTables.map((table) => ({
           ...table,
-          isHidden: table.isHidden || false,
+          isHidden: table.isHidden || false, // Якщо isHidden не визначено, робимо його false
         }));
 
+        // Сортуємо таблиці за датою (від новішої до старішої)
+        updatedTables.sort(
+          (a, b) =>
+            new Date(b.invoiceDetails.date) - new Date(a.invoiceDetails.date)
+        );
+
         setTables(updatedTables);
-        setFilteredTables(updatedTables.reverse()); // Відображаємо у зворотному порядку
+        setFilteredTables(updatedTables); // Оновлюємо фільтровані таблиці одразу
       } catch (err) {
         setError("Error fetching tables");
         console.error("Error fetching tables:", err);
@@ -66,8 +76,13 @@ const CompanyTablesPage = () => {
     });
   };
 
+  const handleSearchInput = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
   const handleAddTable = async () => {
     const { date, invoiceNumber, billTo, payTo } = newTable;
+
     if (!date || !invoiceNumber || !billTo || !payTo) {
       setError("All fields are required");
       return;
@@ -79,20 +94,30 @@ const CompanyTablesPage = () => {
         month: "long",
         year: "numeric",
       })}`,
-      invoiceDetails: { date, invoiceNumber, billTo, payTo },
+      invoiceDetails: {
+        date,
+        invoiceNumber,
+        billTo,
+        payTo,
+      },
       invoices: [],
-      isHidden: false,
+      isHidden: "",
     };
 
     try {
       const response = await axios.get(
         `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}`
       );
-      let currentCompanyData = Array.isArray(response.data)
-        ? response.data[0]
-        : response.data;
+
+      let currentCompanyData;
+      if (Array.isArray(response.data)) {
+        currentCompanyData = response.data[0];
+      } else {
+        currentCompanyData = response.data;
+      }
 
       const companyId = currentCompanyData.id;
+
       const updatedTables = [
         newTableData,
         ...(currentCompanyData.invoiceTables || []),
@@ -113,31 +138,44 @@ const CompanyTablesPage = () => {
     }
   };
 
+  const handleTableClick = (tableId, event) => {
+    if (event.target.tagName === "BUTTON") {
+      return;
+    }
+    navigate(`/company/${companyName}/table/${tableId}`);
+  };
+
+  const handleHideTable = async (tableId) => {
+    const updatedTables = tables.map((table) =>
+      table.tableId === tableId ? { ...table, isHidden: true } : table
+    );
+
+    const response = await axios.get(
+      `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}`
+    );
+    const currentCompanyData = response.data[0];
+    const companyId = currentCompanyData.id;
+
+    await axios.put(
+      `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}/${companyId}`,
+      { ...currentCompanyData, invoiceTables: updatedTables }
+    );
+
+    setTables(updatedTables);
+    setFilteredTables(updatedTables);
+  };
+
+  const toggleHiddenTables = () => {
+    setShowHidden((prev) => !prev);
+  };
+
+  const toggleEditMode = () => {
+    setIsEditing((prev) => !prev);
+  };
+
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.backEditBtnCont}>
-        <button className={styles.backButton} onClick={() => navigate(-1)}>
-          Back
-        </button>
-        <input
-          type="text"
-          placeholder="Search by address"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className={styles.searchField}
-        />
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className={styles.editButton}
-        >
-          {isEditing ? "Stop Editing" : "Edit"}
-        </button>
-      </div>
-
-      <h2 className={styles.pageTitle}>{companyName} - Tables</h2>
-      {error && <p className={styles.errorMessage}>{error}</p>}
-
-      {/* Форма для додавання таблиці (переміщена вверх) */}
+      {/* Форма для додавання таблиці зверху */}
       <div className={styles.addTableForm}>
         <h3 className={styles.formTitle}>Add New Table</h3>
         <input
@@ -176,19 +214,38 @@ const CompanyTablesPage = () => {
         </button>
       </div>
 
-      {/* Список таблиць (нові зверху) */}
+      {/* Кнопка "Назад" */}
+      <div className={styles.backEditBtnCont}>
+        <button className={styles.backButton} onClick={() => navigate(-1)}>
+          Back
+        </button>
+        <input
+          type="text"
+          placeholder="Search by address"
+          value={searchTerm}
+          onChange={handleSearchInput}
+          className={styles.searchField}
+        />
+        <button onClick={toggleEditMode} className={styles.editButton}>
+          {isEditing ? "Stop Editing" : "Edit"}
+        </button>
+      </div>
+
+      <h2 className={styles.pageTitle}>{companyName} - Tables</h2>
+      {error && <p className={styles.errorMessage}>{error}</p>}
+
       <ul className={styles.tableList}>
         {filteredTables.length > 0 ? (
           filteredTables.map((table) => (
             <li
               key={table.tableId}
               className={styles.tableItem}
-              onClick={(event) => {
-                if (event.target.tagName !== "BUTTON")
-                  navigate(`/company/${companyName}/table/${table.tableId}`);
-              }}
+              onClick={(event) => handleTableClick(table.tableId, event)}
             >
               <h3 className={styles.tableTitle}>{table.name}</h3>
+              <p className={styles.tableInvoiceNumber}>
+                Invoice Number: {table.invoiceDetails.invoiceNumber}
+              </p>
               <p className={styles.tablePayTo}>
                 Pay To: {table.invoiceDetails.payTo}
               </p>
@@ -200,13 +257,7 @@ const CompanyTablesPage = () => {
               </p>
               {isEditing && (
                 <button
-                  onClick={() => {
-                    const updatedTables = tables.map((t) =>
-                      t.tableId === table.tableId ? { ...t, isHidden: true } : t
-                    );
-                    setTables(updatedTables);
-                    setFilteredTables(updatedTables);
-                  }}
+                  onClick={() => handleHideTable(table.tableId)}
                   className={styles.hideButton}
                 >
                   Hide
@@ -221,10 +272,7 @@ const CompanyTablesPage = () => {
         )}
       </ul>
 
-      <button
-        onClick={() => setShowHidden(!showHidden)}
-        className={styles.showHiddenButton}
-      >
+      <button onClick={toggleHiddenTables} className={styles.showHiddenButton}>
         {showHidden ? "Show Active Tables" : "Show Hidden Tables"}
       </button>
     </div>

@@ -70,7 +70,7 @@ const PersonTableDetailsPage = () => {
     }
 
     try {
-      const updatedInvoices = [...table.invoices, newInvoice];
+      const updatedInvoices = [newInvoice, ...table.invoices]; // Додаємо новий інвойс на початок
 
       const response = await axios.get(
         `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`
@@ -116,6 +116,7 @@ const PersonTableDetailsPage = () => {
       setTotalWithGST((newWCB * 1.05).toFixed(2)); // Додаємо 5% GST до Total - WCB
     }
   };
+
   const handleNewInvoiceChange = (e) => {
     const { name, value } = e.target;
     setNewInvoice((prevInvoice) => ({
@@ -186,11 +187,47 @@ const PersonTableDetailsPage = () => {
       {error && <p className={styles.error}>{error}</p>}
       {table ? (
         <>
-          <h2 className={styles.personName}>{personName} Details</h2>{" "}
-          {/* Виводимо ім'я людини */}
+          <h2 className={styles.personName}>{personName} Details</h2>
+          {/* Форма для додавання нового інвойсу */}
+          <div className={styles.addInvoiceForm}>
+            <h3>Add New Invoice</h3>
+            <input
+              type="text"
+              name="address"
+              value={newInvoice.address}
+              onChange={handleNewInvoiceChange}
+              placeholder="Address"
+              className={styles.inputField}
+            />
+            <input
+              type="date"
+              name="date"
+              value={newInvoice.date}
+              onChange={handleNewInvoiceChange}
+              placeholder="Date"
+              className={styles.inputField}
+            />
+            <input
+              type="number"
+              name="total_income"
+              value={newInvoice.total_income}
+              onChange={handleNewInvoiceChange}
+              placeholder="Total Income"
+              className={styles.inputField}
+            />
+            <button
+              onClick={handleAddInvoice}
+              className={styles.addInvoiceButton}
+            >
+              Add Invoice
+            </button>
+          </div>
+
+          {/* Таблиця з інвойсами */}
           <table className={styles.invoiceTable}>
             <thead>
               <tr>
+                <th>#</th>
                 <th>Address</th>
                 <th>Date</th>
                 <th>Total Income</th>
@@ -199,6 +236,7 @@ const PersonTableDetailsPage = () => {
             <tbody>
               {table.invoices.map((invoice, index) => (
                 <tr key={index}>
+                  <td>{index + 1}</td> {/* Додаємо нумерацію інвойсів */}
                   <td>
                     {isEditing ? (
                       <input
@@ -241,25 +279,25 @@ const PersonTableDetailsPage = () => {
                   </td>
                 </tr>
               ))}
-
               <tr className={styles.totalRow}>
-                <td colSpan="2">Total:</td>
+                <td colSpan="3">Total:</td>
                 <td>${totalIncome.toFixed(2)}</td>
               </tr>
               {showGST && (
                 <tr className={styles.totalRow}>
-                  <td colSpan="2">Total with GST:</td>
+                  <td colSpan="3">Total with GST:</td>
                   <td>${totalWithGST}</td>
                 </tr>
               )}
               {showWCB && (
                 <tr className={styles.totalRow}>
-                  <td colSpan="2">Total - WCB:</td>
+                  <td colSpan="3">Total - WCB:</td>
                   <td>${wcb}</td>
                 </tr>
               )}
             </tbody>
           </table>
+
           {/* Кнопки для обчислення GST та WCB */}
           <button onClick={calculateTotalWithGST} className={styles.btnGst}>
             +GST
@@ -267,40 +305,6 @@ const PersonTableDetailsPage = () => {
           <button onClick={calculateWCB} className={styles.btnWcb}>
             -WCB
           </button>
-          {/* Форма для додавання нового інвойсу */}
-          <div className={styles.addInvoiceForm}>
-            <h3>Add New Invoice</h3>
-            <input
-              type="text"
-              name="address"
-              value={newInvoice.address}
-              onChange={handleNewInvoiceChange} // Використовуй handleNewInvoiceChange для оновлення нового інвойсу
-              placeholder="Address"
-              className={styles.inputField}
-            />
-            <input
-              type="date"
-              name="date"
-              value={newInvoice.date}
-              onChange={handleNewInvoiceChange} // Використовуй handleNewInvoiceChange
-              placeholder="Date"
-              className={styles.inputField}
-            />
-            <input
-              type="number"
-              name="total_income"
-              value={newInvoice.total_income}
-              onChange={handleNewInvoiceChange} // Використовуй handleNewInvoiceChange
-              placeholder="Total Income"
-              className={styles.inputField}
-            />
-            <button
-              onClick={handleAddInvoice}
-              className={styles.addInvoiceButton}
-            >
-              Add Invoice
-            </button>
-          </div>
         </>
       ) : (
         <p>Loading table details...</p>
