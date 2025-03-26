@@ -111,7 +111,7 @@ const AppContent = () => {
   return (
     <div className={styles.appContainer}>
       {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
-      {isLoggedIn && <BackupButton />}
+      {/* {isLoggedIn && <BackupButton />} */}
       <header className={styles.header}>
         <a href="https://flooringboss.ca/index">
           <img src={logo} alt="App Logo" className={styles.logo} />

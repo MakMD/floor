@@ -109,6 +109,7 @@
   border: 1px solid #e5e5e5;
   border-radius: 10px;
   margin-top: 30px;
+  margin-bottom: 30px;
 }
 
 .inputField {
@@ -118,6 +119,7 @@
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 16px;
+  box-sizing: border-box;
 }
 
 .addInvoiceButton {
