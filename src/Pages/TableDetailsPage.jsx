@@ -31,7 +31,9 @@ const TableDetailsPage = () => {
         const selectedTable = response.data[0]?.invoiceTables.find(
           (table) => table.tableId === tableId
         );
-        setTable(selectedTable);
+        if (selectedTable) {
+          setTable(selectedTable);
+        }
       } catch (error) {
         console.error("Error fetching table:", error);
       }
