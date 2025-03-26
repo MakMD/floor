@@ -179,7 +179,7 @@ const TableDetailsPage = () => {
   };
 
   const calculateTotal = () => {
-    if (!table || !table.invoices.length)
+    if (!table || !table.invoices || !table.invoices.length)
       return { total: 0, gst: 0, totalWithGst: 0 };
     return table.invoices.reduce(
       (acc, invoice) => {
