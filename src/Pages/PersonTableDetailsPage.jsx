@@ -236,7 +236,7 @@ const PersonTableDetailsPage = () => {
             <tbody>
               {table.invoices.map((invoice, index) => (
                 <tr key={index}>
-                  <td>{index + 1}</td> {/* Додаємо нумерацію інвойсів */}
+                  <td>{index + 1}</td>
                   <td>
                     {isEditing ? (
                       <input
