@@ -5,7 +5,7 @@ const CompanyList = ({ companies }) => {
   const navigate = useNavigate();
 
   const handleCompanyClick = (companyName) => {
-    navigate(`/company/${companyName}`); // Перехо
+    navigate(`/company/${companyName}`); // Пер
   };
 
   return (
