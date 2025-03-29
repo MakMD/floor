@@ -385,7 +385,7 @@ const TableDetailsPage = () => {
                     </tr>
                   ))}
                 <tr className={styles.totalRow}>
-                  <td colSpan="3">Total</td>
+                  <td colSpan="4">Total</td>
                   <td>{totals.total.toFixed(2)}</td>
                   <td>{totals.gst.toFixed(2)}</td>
                   <td>{totals.totalWithGst.toFixed(2)}</td>
