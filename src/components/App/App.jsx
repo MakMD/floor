@@ -113,7 +113,7 @@ const AppContent = () => {
       {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
       {/* {isLoggedIn && <BackupButton />} */}
       <header className={styles.header}>
-        <a href="https://flooringboss.ca/index">
+        <a href="https://flooring-boss.vercel.app/">
           <img src={logo} alt="App Logo" className={styles.logo} />
         </a>
       </header>
