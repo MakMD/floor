@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   useLocation,
+  Link,
 } from "react-router-dom";
 import axios from "axios";
 import PeopleList from "../PeopleList/PeopleList";
@@ -113,9 +114,9 @@ const AppContent = () => {
       {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
       {/* {isLoggedIn && <BackupButton />} */}
       <header className={styles.header}>
-        <a href="https://flooring-boss.vercel.app/">
+        <Link to="/">
           <img src={logo} alt="App Logo" className={styles.logo} />
-        </a>
+        </Link>
       </header>
 
       {isLoggedIn && location.pathname === "/" && (
