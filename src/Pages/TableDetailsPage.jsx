@@ -68,7 +68,7 @@ const TableDetailsPage = () => {
     };
 
     try {
-      const updatedInvoices = [...table.invoices, invoiceToAdd];
+      const updatedInvoices = [invoiceToAdd, ...table.invoices];
       const response = await axios.get(
         `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${companyName}`
       );
@@ -222,66 +222,50 @@ const TableDetailsPage = () => {
       </div>
 
       <div className={styles.document}>
-        {/* <div className={styles.header}>
-          <h1>FLOORING BOSS LTD.</h1>
-          <p>422 ALLARD BLVD SW, EDMONTON, ALBERTA, T6W3S7</p>
-          <p>
-            Contact Mykhailo: (587) 937 7862 | Contact Myroslav: (825) 461 1950
-          </p>
-          <p>
-            Email:{" "}
-            {companyName === "NewEraFloorGalleryLTD"
-              ? "flooring.boss1@gmail.com"
-              : "Flooringm8pservice@gmail.com"}
-          </p>
-          <p>GST: 704201813 RT 0001 | WCB: 9839473</p>
-        </div> */}
+        <div className={styles.addInvoiceForm}>
+          <h3>Add New Invoice</h3>
+          <input
+            type="date"
+            name="date"
+            value={newInvoice.date}
+            onChange={handleInputChange}
+            placeholder="Date"
+            className={styles.inputField}
+          />
+          <input
+            type="text"
+            name="workOrder"
+            value={newInvoice.workOrder}
+            onChange={handleInputChange}
+            placeholder="Work Order"
+            className={styles.inputField}
+          />
+          <input
+            type="text"
+            name="address"
+            value={newInvoice.address}
+            onChange={handleInputChange}
+            placeholder="Address"
+            className={styles.inputField}
+          />
+          <input
+            type="number"
+            name="total"
+            value={newInvoice.total}
+            onChange={handleInputChange}
+            placeholder="Total"
+            className={styles.inputField}
+          />
+          <button
+            onClick={handleAddInvoice}
+            className={styles.addInvoiceButton}
+          >
+            Add Invoice
+          </button>
+        </div>
 
         {table ? (
           <>
-            {/* Переміщена форма додавання інвойсу перед контактною інформацією */}
-            <div className={styles.addInvoiceForm}>
-              <h3>Add New Invoice</h3>
-              <input
-                type="date"
-                name="date"
-                value={newInvoice.date}
-                onChange={handleInputChange}
-                placeholder="Date"
-                className={styles.inputField}
-              />
-              <input
-                type="text"
-                name="workOrder"
-                value={newInvoice.workOrder}
-                onChange={handleInputChange}
-                placeholder="Work Order"
-                className={styles.inputField}
-              />
-              <input
-                type="text"
-                name="address"
-                value={newInvoice.address}
-                onChange={handleInputChange}
-                placeholder="Address"
-                className={styles.inputField}
-              />
-              <input
-                type="number"
-                name="total"
-                value={newInvoice.total}
-                onChange={handleInputChange}
-                placeholder="Total"
-                className={styles.inputField}
-              />
-              <button
-                onClick={handleAddInvoice}
-                className={styles.addInvoiceButton}
-              >
-                Add Invoice
-              </button>
-            </div>
-
             <div className={styles.header}>
               <h1>FLOORING BOSS LTD.</h1>
               <p>5244 Kinney Pl SW, Edmonton, AB T6W 5G5</p>
@@ -318,72 +302,69 @@ const TableDetailsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {table.invoices
-                  .slice()
-                  .reverse()
-                  .map((invoice, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>
-                        {isEditing ? (
-                          <input
-                            type="date"
-                            value={invoice.date}
-                            onChange={(e) =>
-                              handleInvoiceFieldChange(e, index, "date")
-                            }
-                            onBlur={() => handleInvoiceBlur(index, "date")}
-                          />
-                        ) : (
-                          invoice.date
-                        )}
-                      </td>
-                      <td>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={invoice.workOrder}
-                            onChange={(e) =>
-                              handleInvoiceFieldChange(e, index, "workOrder")
-                            }
-                            onBlur={() => handleInvoiceBlur(index, "workOrder")}
-                          />
-                        ) : (
-                          invoice.workOrder
-                        )}
-                      </td>
-                      <td>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={invoice.address}
-                            onChange={(e) =>
-                              handleInvoiceFieldChange(e, index, "address")
-                            }
-                            onBlur={() => handleInvoiceBlur(index, "address")}
-                          />
-                        ) : (
-                          invoice.address
-                        )}
-                      </td>
-                      <td>
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            value={invoice.total}
-                            onChange={(e) =>
-                              handleInvoiceFieldChange(e, index, "total")
-                            }
-                            onBlur={() => handleInvoiceBlur(index, "total")}
-                          />
-                        ) : (
-                          invoice.total
-                        )}
-                      </td>
-                      <td>{invoice.GSTCollected}</td>
-                      <td>{invoice.payablePerWorkOrder}</td>
-                    </tr>
-                  ))}
+                {table.invoices.map((invoice, index) => (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    <td>
+                      {isEditing ? (
+                        <input
+                          type="date"
+                          value={invoice.date}
+                          onChange={(e) =>
+                            handleInvoiceFieldChange(e, index, "date")
+                          }
+                          onBlur={() => handleInvoiceBlur(index, "date")}
+                        />
+                      ) : (
+                        invoice.date
+                      )}
+                    </td>
+                    <td>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={invoice.workOrder}
+                          onChange={(e) =>
+                            handleInvoiceFieldChange(e, index, "workOrder")
+                          }
+                          onBlur={() => handleInvoiceBlur(index, "workOrder")}
+                        />
+                      ) : (
+                        invoice.workOrder
+                      )}
+                    </td>
+                    <td>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={invoice.address}
+                          onChange={(e) =>
+                            handleInvoiceFieldChange(e, index, "address")
+                          }
+                          onBlur={() => handleInvoiceBlur(index, "address")}
+                        />
+                      ) : (
+                        invoice.address
+                      )}
+                    </td>
+                    <td>
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={invoice.total}
+                          onChange={(e) =>
+                            handleInvoiceFieldChange(e, index, "total")
+                          }
+                          onBlur={() => handleInvoiceBlur(index, "total")}
+                        />
+                      ) : (
+                        invoice.total
+                      )}
+                    </td>
+                    <td>{invoice.GSTCollected}</td>
+                    <td>{invoice.payablePerWorkOrder}</td>
+                  </tr>
+                ))}
                 <tr className={styles.totalRow}>
                   <td colSpan="4">Total</td>
                   <td>{totals.total.toFixed(2)}</td>
