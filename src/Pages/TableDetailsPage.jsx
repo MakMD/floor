@@ -268,7 +268,7 @@ const TableDetailsPage = () => {
           <>
             <div className={styles.header}>
               <h1>FLOORING BOSS LTD.</h1>
-              <p>5244 Kinney Pl SW, Edmonton, AB T6W 5G5</p>
+              <p>5246 Kinney Pl SW, Edmonton, AB T6W 5G5</p>
               <p>
                 Contact Mykhailo: (587) 937 7862 | Contact Myroslav: (825) 461
                 1950
