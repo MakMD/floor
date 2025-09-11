@@ -1,7 +1,8 @@
+/* src/components/PeopleList/PeopleList.module.css */
+
 .peopleListContainer {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
   font-family: "Roboto", Arial, sans-serif;
 }
 
@@ -21,7 +22,6 @@
   flex-wrap: wrap;
   gap: 20px;
   justify-content: center;
-
   font-family: "Roboto", Arial, sans-serif;
 }
 
@@ -37,9 +37,12 @@
   min-width: 180px;
   cursor: pointer;
   border: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.personItem:hover {
+.personItem:not(.editing):hover {
   transform: translateY(-5px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
@@ -53,6 +56,22 @@
   outline: none;
   border-color: #007bff;
 }
-.peopleTitle {
-  margin-top: 100px;
+
+.personItem.editing {
+  cursor: default;
+}
+
+.toggleStatusButton {
+  padding: 6px 12px;
+  background-color: #5c6ac4;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 12px;
+  transition: background-color 0.3s ease;
+}
+
+.toggleStatusButton:hover {
+  background-color: #4a57a3;
 }

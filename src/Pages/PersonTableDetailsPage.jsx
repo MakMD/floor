@@ -1,65 +1,84 @@
-import { useState, useEffect } from "react";
+// src/Pages/PersonTableDetailsPage.jsx
+
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import styles from "./PersonTableDetailsPage.module.css"; // Підключаємо стилі
+import AutocompleteInput from "../components/AutocompleteInput/AutocompleteInput";
+import styles from "./PersonTableDetailsPage.module.css";
 
 const PersonTableDetailsPage = () => {
   const { personId, tableId } = useParams();
   const navigate = useNavigate();
-  const [personName, setPersonName] = useState(""); // Додаємо стан для імені користувача
+  const [person, setPerson] = useState(null);
   const [table, setTable] = useState(null);
   const [newInvoice, setNewInvoice] = useState({
     address: "",
     date: "",
     total_income: 0,
   });
-  const [totalWithGST, setTotalWithGST] = useState(null); // Стан для Total with GST
-  const [wcb, setWcb] = useState(null); // Стан для WCB
-  const [isEditing, setIsEditing] = useState(false); // Стан для перемикання режиму редагування
-  const [showGST, setShowGST] = useState(false); // Стан для показу Total + GST
-  const [showWCB, setShowWCB] = useState(false); // Стан для показу WCB
-  const [isWCBCalculated, setIsWCBCalculated] = useState(false); // Стан для перевірки, чи обчислено WCB
-  const [isGSTCalculated, setIsGSTCalculated] = useState(false); // Стан для перевірки, чи обчислено GST
+  const [totalWithGST, setTotalWithGST] = useState(null);
+  const [wcb, setWcb] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showGST, setShowGST] = useState(false);
+  const [showWCB, setShowWCB] = useState(false);
+  const [isWCBCalculated, setIsWCBCalculated] = useState(false);
+  const [isGSTCalculated, setIsGSTCalculated] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchTableDetails = async () => {
+    const fetchPersonData = async () => {
       try {
         const response = await axios.get(
           `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`
         );
-        const selectedTable = response.data.tables.find(
+        const personData = response.data;
+        const selectedTable = personData.tables.find(
           (table) => table.tableId === tableId
         );
+        setPerson(personData);
         setTable(selectedTable);
-        setPersonName(response.data.name); // Встановлюємо ім'я людини
       } catch (error) {
         setError("Error fetching table details");
         console.error("Error fetching table details:", error);
       }
     };
 
-    fetchTableDetails();
+    fetchPersonData();
   }, [personId, tableId]);
+
+  const uniqueAddresses = useMemo(() => {
+    if (!person || !person.tables) return [];
+
+    const allAddresses = person.tables.flatMap((table) =>
+      table.invoices.map((invoice) => invoice.address)
+    );
+    return [...new Set(allAddresses)];
+  }, [person]);
 
   const handleInvoiceChange = (e, index, field) => {
     const updatedInvoices = [...table.invoices];
     updatedInvoices[index][field] = e.target.value;
 
-    // Перевірка, чи всі поля інвойсу пусті
     const isInvoiceEmpty =
       !updatedInvoices[index].address &&
       !updatedInvoices[index].date &&
       !updatedInvoices[index].total_income;
 
     if (isInvoiceEmpty) {
-      // Видаляємо інвойс, якщо всі поля порожні
       updatedInvoices.splice(index, 1);
     }
 
     setTable((prevTable) => ({
       ...prevTable,
       invoices: updatedInvoices,
+    }));
+  };
+
+  const handleNewInvoiceChange = (e) => {
+    const { name, value } = e.target;
+    setNewInvoice((prevInvoice) => ({
+      ...prevInvoice,
+      [name]: value,
     }));
   };
 
@@ -70,12 +89,8 @@ const PersonTableDetailsPage = () => {
     }
 
     try {
-      const updatedInvoices = [newInvoice, ...table.invoices]; // Додаємо новий інвойс на початок
-
-      const response = await axios.get(
-        `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`
-      );
-      const currentPersonData = response.data;
+      const updatedInvoices = [newInvoice, ...table.invoices];
+      const currentPersonData = person; // Використовуємо вже завантажені дані
 
       const updatedTables = currentPersonData.tables.map((tbl) =>
         tbl.tableId === tableId ? { ...tbl, invoices: updatedInvoices } : tbl
@@ -90,6 +105,8 @@ const PersonTableDetailsPage = () => {
         ...prevTable,
         invoices: updatedInvoices,
       }));
+      // Оновлюємо стан person, щоб унікальні адреси могли оновитись, якщо введено нову
+      setPerson((prevPerson) => ({ ...prevPerson, tables: updatedTables }));
 
       setNewInvoice({ address: "", date: "", total_income: 0 });
     } catch (error) {
@@ -98,59 +115,40 @@ const PersonTableDetailsPage = () => {
     }
   };
 
-  // Підрахунок загальної суми total_income
   const totalIncome = table?.invoices.reduce(
     (acc, invoice) => acc + parseFloat(invoice.total_income || 0),
     0
   );
 
-  // Обчислення WCB та Total with GST
   const calculateWCB = () => {
     const newWCB = (totalIncome - (totalIncome / 100) * 3).toFixed(2);
     setWcb(newWCB);
-    setShowWCB(true); // Показати поле з WCB
-    setIsWCBCalculated(true); // Позначаємо, що WCB вже обчислено
+    setShowWCB(true);
+    setIsWCBCalculated(true);
 
-    // Якщо GST вже обчислений, перераховуємо його від Total - WCB
     if (isGSTCalculated) {
-      setTotalWithGST((newWCB * 1.05).toFixed(2)); // Додаємо 5% GST до Total - WCB
+      setTotalWithGST((newWCB * 1.05).toFixed(2));
     }
   };
 
-  const handleNewInvoiceChange = (e) => {
-    const { name, value } = e.target;
-    setNewInvoice((prevInvoice) => ({
-      ...prevInvoice,
-      [name]: value,
-    }));
-  };
-
   const calculateTotalWithGST = () => {
-    // Перевіряємо, чи було обчислено WCB, щоб додати GST до Total - WCB або просто Total
     const baseIncome = isWCBCalculated ? wcb : totalIncome;
-    setTotalWithGST((baseIncome * 1.05).toFixed(2)); // Додаємо 5% GST до базової суми
-    setShowGST(true); // Показати поле з Total + GST
-    setIsGSTCalculated(true); // Позначаємо, що GST вже обчислено
+    setTotalWithGST((baseIncome * 1.05).toFixed(2));
+    setShowGST(true);
+    setIsGSTCalculated(true);
   };
 
-  // Функція для друку сторінки
   const handlePrint = () => {
     window.print();
   };
 
-  // Перемикання режиму редагування
   const toggleEditMode = () => {
     setIsEditing(!isEditing);
   };
 
-  // Збереження змін на бекенд
   const handleSaveChanges = async () => {
     try {
-      const response = await axios.get(
-        `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`
-      );
-      const currentPersonData = response.data;
-
+      const currentPersonData = person;
       const updatedTables = currentPersonData.tables.map((tbl) =>
         tbl.tableId === tableId ? { ...tbl, invoices: table.invoices } : tbl
       );
@@ -160,8 +158,7 @@ const PersonTableDetailsPage = () => {
         { ...currentPersonData, tables: updatedTables }
       );
 
-      console.log("Changes saved successfully");
-      setIsEditing(false); // Після збереження вимикаємо режим редагування
+      setIsEditing(false);
     } catch (error) {
       console.error("Error saving changes:", error);
       setError("Failed to save changes.");
@@ -187,18 +184,18 @@ const PersonTableDetailsPage = () => {
       {error && <p className={styles.error}>{error}</p>}
       {table ? (
         <>
-          <h2 className={styles.personName}>{personName} Details</h2>
-          {/* Форма для додавання нового інвойсу */}
+          <h2 className={styles.personName}>{person?.name} Details</h2>
           <div className={styles.addInvoiceForm}>
             <h3>Add New Invoice</h3>
-            <input
-              type="text"
+
+            <AutocompleteInput
               name="address"
               value={newInvoice.address}
               onChange={handleNewInvoiceChange}
               placeholder="Address"
-              className={styles.inputField}
+              suggestions={uniqueAddresses}
             />
+
             <input
               type="date"
               name="date"
@@ -223,7 +220,6 @@ const PersonTableDetailsPage = () => {
             </button>
           </div>
 
-          {/* Таблиця з інвойсами */}
           <table className={styles.invoiceTable}>
             <thead>
               <tr>
@@ -298,7 +294,6 @@ const PersonTableDetailsPage = () => {
             </tbody>
           </table>
 
-          {/* Кнопки для обчислення GST та WCB */}
           <button onClick={calculateTotalWithGST} className={styles.btnGst}>
             +GST
           </button>

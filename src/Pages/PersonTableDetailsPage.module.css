@@ -173,3 +173,46 @@
     font-size: 12px;
   }
 }
+.addInvoiceForm {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #f9fafc;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  display: grid; /* Змінено на grid */
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(200px, 1fr)
+  ); /* Адаптивні колонки */
+  gap: 15px; /* Проміжок між елементами */
+  align-items: center;
+}
+
+.addInvoiceForm h3 {
+  grid-column: 1 / -1; /* Заголовок займає всю ширину */
+  margin-bottom: 10px;
+}
+
+.inputField {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  box-sizing: border-box; /* Важливо для коректного розрахунку ширини */
+}
+
+.addInvoiceButton {
+  padding: 12px 20px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 5px;
+  grid-column: 1 / -1; /* Кнопка займає всю ширину */
+}
+
+.addInvoiceButton:hover {
+  background-color: #357ab8;
+}
