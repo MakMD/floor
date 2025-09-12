@@ -1,7 +1,8 @@
+/* src/components/PeopleList/PeopleList.module.css */
+
 .peopleListContainer {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
   font-family: "Roboto", Arial, sans-serif;
 }
 
@@ -21,7 +22,6 @@
   flex-wrap: wrap;
   gap: 20px;
   justify-content: center;
-
   font-family: "Roboto", Arial, sans-serif;
 }
 
@@ -37,9 +37,12 @@
   min-width: 180px;
   cursor: pointer;
   border: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.personItem:hover {
+.personItem:not(.editing):hover {
   transform: translateY(-5px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
@@ -53,6 +56,57 @@
   outline: none;
   border-color: #007bff;
 }
-.peopleTitle {
-  margin-top: 100px;
+
+.personItem.editing {
+  cursor: default;
+}
+
+.toggleStatusButton {
+  padding: 6px 12px;
+  background-color: #5c6ac4;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 12px;
+  transition: background-color 0.3s ease;
+}
+
+.toggleStatusButton:hover {
+  background-color: #4a57a3;
+}
+.personItem h3 {
+  font-size: 18px;
+  margin: 0;
+  word-break: break-word; /* Додаємо перенос слів, якщо ім'я занадто довге */
+}
+
+.editNameInput {
+  font-family: var(--font-main);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+  width: 90%; /* Займає майже всю ширину картки */
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2); /* Ефект фокусу */
+  outline: none;
+}
+
+.toggleStatusButton {
+  padding: 8px 14px;
+  background-color: var(--color-text-secondary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.toggleStatusButton:hover {
+  background-color: var(--color-text-primary);
 }

@@ -1,3 +1,5 @@
+// src/components/App/App.jsx
+
 import { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -6,7 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import axios from "axios";
-import PeopleList from "../PeopleList/PeopleList";
+import PeopleSection from "../PeopleSection/PeopleSection";
 import CreatePersonForm from "../CreatePersonForm/CreatePersonForm";
 import PersonPage from "../../Pages/PersonPage";
 import CompanyList from "../CompanyList/CompanyList";
@@ -15,9 +17,10 @@ import TableDetailsPage from "../../Pages/TableDetailsPage";
 import PersonTablesPage from "../../Pages/PersonTablesPage";
 import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage";
 import LoginModal from "../LoginModal/LoginModal";
-import BackupButton from "../BackupButton/BackupButton";
 import logo from "../../../public/Flooring.Boss.svg";
-import TemporaryCompaniesList from "../TemporaryCompaniesList/TemporaryCompaniesList"; // Додано
+import TemporaryCompaniesList from "../TemporaryCompaniesList/TemporaryCompaniesList";
+// Імпортуємо нову сторінку
+import InactiveWorkersPage from "../../Pages/InactiveWorkersPage";
 import styles from "./App.module.css";
 
 const AppContent = () => {
@@ -25,10 +28,8 @@ const AppContent = () => {
   const [companies, setCompanies] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredPeople, setFilteredPeople] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
 
-  // Додано нову компанію до загального списку ресурсів
   const companyResources = [
     "TouchtoneCanadaLTD",
     "SarefaHomesLTD",
@@ -38,71 +39,75 @@ const AppContent = () => {
     "TradesProSupplyDepotLTD",
     "NewEraFloorGalleryLTD",
     "LinhanDevelopments",
-    "TemporaryCompanies", // Додано нову компанію
+    "TemporaryCompanies",
   ];
 
   const location = useLocation();
 
-  useEffect(() => {
-    const fetchPeople = async () => {
-      try {
+  const fetchPeople = async () => {
+    try {
+      const response = await axios.get(
+        "https://66e3d74dd2405277ed1201b1.mockapi.io/people"
+      );
+      const peopleWithStatus = response.data.map((person) => ({
+        ...person,
+        status: person.status || "active",
+      }));
+      setPeople(peopleWithStatus);
+    } catch (error) {
+      console.error("Error fetching people:", error);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const companyPromises = companyResources.map(async (company) => {
         const response = await axios.get(
-          "https://66e3d74dd2405277ed1201b1.mockapi.io/people"
+          `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${company}`
         );
-        setPeople(response.data);
-        setFilteredPeople(response.data);
-      } catch (error) {
-        console.error("Error fetching people:", error);
-      }
-    };
+        return {
+          name: company,
+          tables: response.data[0]?.invoiceTables || [],
+        };
+      });
+      const companiesData = await Promise.all(companyPromises);
+      setCompanies(companiesData);
+      setFilteredCompanies(companiesData);
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+    }
+  };
 
-    const fetchCompanies = async () => {
-      try {
-        const companyPromises = companyResources.map(async (company) => {
-          const response = await axios.get(
-            `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${company}`
-          );
-          return {
-            name: company,
-            tables: response.data[0]?.invoiceTables || [],
-          };
-        });
-        const companiesData = await Promise.all(companyPromises);
-        setCompanies(companiesData);
-        setFilteredCompanies(companiesData);
-      } catch (error) {
-        console.error("Error fetching companies:", error);
-      }
-    };
-
+  useEffect(() => {
     fetchPeople();
     fetchCompanies();
   }, []);
 
+  const activePeople = people.filter((person) => person.status === "active");
+
+  const filteredActivePeople = activePeople.filter((person) => {
+    if (!searchTerm) return true;
+    return person.tables?.some((table) =>
+      table.invoices.some((invoice) =>
+        invoice.address?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  });
+
   useEffect(() => {
     if (searchTerm) {
-      const filteredPeople = people.filter((person) =>
-        person.tables?.some((table) =>
-          table.invoices.some((invoice) =>
-            invoice.address?.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-        )
-      );
-      setFilteredPeople(filteredPeople);
-
-      const filteredCompanies = companies.filter((company) =>
+      const filtered = companies.filter((company) =>
         company.tables?.some((table) =>
           table.invoices.some((invoice) =>
             invoice.address?.toLowerCase().includes(searchTerm.toLowerCase())
           )
         )
       );
-      setFilteredCompanies(filteredCompanies);
+      setFilteredCompanies(filtered);
     } else {
-      setFilteredPeople(people);
       setFilteredCompanies(companies);
     }
-  }, [searchTerm, people, companies]);
+  }, [searchTerm, companies]);
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
@@ -111,7 +116,6 @@ const AppContent = () => {
   return (
     <div className={styles.appContainer}>
       {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
-      {/* {isLoggedIn && <BackupButton />} */}
       <header className={styles.header}>
         <a href="https://flooring-boss.vercel.app/">
           <img src={logo} alt="App Logo" className={styles.logo} />
@@ -137,21 +141,28 @@ const AppContent = () => {
             element={
               <div className={styles.pageContent}>
                 <CompanyList companies={filteredCompanies} />
-                <PeopleList people={filteredPeople} />
+                <PeopleSection
+                  people={filteredActivePeople}
+                  onPeopleUpdate={fetchPeople}
+                />
                 <CreatePersonForm
-                  onPersonCreated={(newPerson) =>
-                    setPeople((prev) => [...prev, newPerson])
-                  }
+                  onPersonCreated={(newPerson) => {
+                    setPeople((prev) => [
+                      ...prev,
+                      { ...newPerson, status: "active" },
+                    ]);
+                  }}
                 />
               </div>
             }
           />
-          {/* Додано новий маршрут для тимчасових компаній */}
+          {/* Додаємо новий маршрут */}
+          <Route path="/inactive-workers" element={<InactiveWorkersPage />} />
+
           <Route
             path="/temporary-companies"
             element={<TemporaryCompaniesList />}
           />
-          {/* Інші маршрути */}
           <Route path="/company/:companyName" element={<CompanyTablesPage />} />
           <Route
             path="/company/:companyName/table/:tableId"
