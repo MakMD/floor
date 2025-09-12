@@ -254,7 +254,7 @@
   }
 
   /* Прибираємо відображення власних блоків */
-  .header,
+
   .footer,
   .navigationBar,
   .anyOtherBlockYouWantHidden {
