@@ -1,31 +1,23 @@
 // src/components/PersonDetailsModal/PersonDetailsModal.jsx
 
-import React from "react";
-import { FaTimes, FaRegListAlt } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import { FaTimes, FaRegListAlt, FaArrowLeft } from "react-icons/fa";
 import styles from "./PersonDetailsModal.module.css";
+import InvoiceDetailsModal from "../InvoiceDetailsModal/InvoiceDetailsModal";
 
 const PersonDetailsModal = ({ person, filterAddress, onClose }) => {
-  // --- ДІАГНОСТИКА ---
-  // Ми виведемо в консоль, які саме дані отримало модальне вікно
-  console.log("--- Modal Diagnostics ---");
-  console.log("Received person:", person?.name);
-  console.log("Received filterAddress:", filterAddress);
-  // ---------------------
+  const [loading, setLoading] = useState(true);
+  const [filteredTables, setFilteredTables] = useState([]);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
-  if (!person) return null;
+  useEffect(() => {
+    if (!person || !person.tables) return;
 
-  const getFilteredTables = () => {
-    const sourceTables = person.tables || [];
-
-    if (!filterAddress || filterAddress.trim() === "") {
-      console.log("Filter address is empty, showing all tables.");
-      return sourceTables;
-    }
-
+    setLoading(true);
     const lowercasedFilter = filterAddress.toLowerCase();
-    console.log("Filtering by address:", lowercasedFilter);
 
-    const filteredTables = sourceTables
+    const tablesWithMatchingInvoices = person.tables
       .map((table) => {
         const matchingInvoices = (table.invoices || []).filter(
           (invoice) =>
@@ -34,68 +26,146 @@ const PersonDetailsModal = ({ person, filterAddress, onClose }) => {
         );
         return { ...table, invoices: matchingInvoices };
       })
-      .filter((table) => table.invoices.length > 0);
+      .filter((table) => table.invoices.length > 0)
+      .sort((a, b) => b.name.localeCompare(a.name));
 
-    console.log("Filtered tables result:", filteredTables);
-    return filteredTables;
+    setFilteredTables(tablesWithMatchingInvoices);
+    setLoading(false);
+  }, [person, filterAddress]);
+
+  if (!person) return null;
+
+  const handleTableClick = (table) => {
+    setSelectedTable(table);
   };
 
-  const displayedTables = getFilteredTables().sort((a, b) =>
-    b.name.localeCompare(a.name)
-  );
+  const handleInvoiceClick = (invoice) => {
+    setSelectedInvoice(invoice);
+  };
+
+  const handleCloseInvoiceModal = () => {
+    setSelectedInvoice(null);
+  };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.closeButton} onClick={onClose}>
-          <FaTimes />
-        </button>
-        <h2 className={styles.title}>{person.name}</h2>
-        {filterAddress && (
-          <p className={styles.filterNotice}>
-            Showing invoices for: <strong>{filterAddress}</strong>
-          </p>
-        )}
+    <>
+      <div className={styles.overlay} onClick={onClose}>
+        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          <button className={styles.closeButton} onClick={onClose}>
+            <FaTimes />
+          </button>
 
-        <div className={styles.content}>
-          <h3 className={styles.subtitle}>Invoice Tables</h3>
-          {displayedTables.length > 0 ? (
-            <ul className={styles.tableList}>
-              {displayedTables.map((table) => {
-                const invoiceCount = table.invoices?.length || 0;
-                const totalIncome =
-                  table.invoices?.reduce(
-                    (sum, inv) => sum + parseFloat(inv.total_income || 0),
-                    0
-                  ) || 0;
-                return (
-                  <li key={table.tableId} className={styles.tableItem}>
-                    <div className={styles.tableIcon}>
-                      <FaRegListAlt />
-                    </div>
-                    <div className={styles.tableInfo}>
-                      <span className={styles.tableName}>{table.name}</span>
-                      <div className={styles.tableStats}>
-                        <span>
-                          Invoices: <strong>{invoiceCount}</strong>
-                        </span>
-                        <span>
-                          Total: <strong>${totalIncome.toFixed(2)}</strong>
-                        </span>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className={styles.noTablesMessage}>
-              No matching invoices found for this person.
+          <div className={styles.header}>
+            {selectedTable && (
+              <button
+                className={styles.backButton}
+                onClick={() => setSelectedTable(null)}
+              >
+                <FaArrowLeft /> Back
+              </button>
+            )}
+            <h2 className={styles.title}>{person.name}</h2>
+          </div>
+
+          {filterAddress && (
+            <p className={styles.filterNotice}>
+              Showing invoices for: <strong>{filterAddress}</strong>
             </p>
           )}
+
+          <div className={styles.content}>
+            {loading ? (
+              <p>Loading tables...</p>
+            ) : selectedTable ? (
+              // Stage 2: Display invoices of the selected table
+              <div className={styles.invoiceListContainer}>
+                <h3 className={styles.subtitle}>
+                  Invoices in "{selectedTable.name}"
+                </h3>
+                {selectedTable.invoices.length > 0 ? (
+                  <ul className={styles.invoiceList}>
+                    {selectedTable.invoices.map((invoice, index) => (
+                      <li
+                        key={index}
+                        className={styles.invoiceItem}
+                        onClick={() => handleInvoiceClick(invoice)}
+                      >
+                        <span className={styles.invoiceAddress}>
+                          {invoice.address}
+                        </span>
+                        <span className={styles.invoiceDate}>
+                          {invoice.date}
+                        </span>
+                        <span className={styles.invoiceIncome}>
+                          ${parseFloat(invoice.total_income || 0).toFixed(2)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={styles.noTablesMessage}>
+                    No invoices found for this address in this table.
+                  </p>
+                )}
+              </div>
+            ) : (
+              // Stage 1: Display filtered tables
+              <>
+                <h3 className={styles.subtitle}>Invoice Tables</h3>
+                {filteredTables.length > 0 ? (
+                  <ul className={styles.tableList}>
+                    {filteredTables.map((table) => {
+                      const invoiceCount = table.invoices?.length || 0;
+                      const totalIncome =
+                        table.invoices?.reduce(
+                          (sum, inv) => sum + parseFloat(inv.total_income || 0),
+                          0
+                        ) || 0;
+                      return (
+                        <li
+                          key={table.tableId}
+                          className={styles.tableItem}
+                          onClick={() => handleTableClick(table)}
+                        >
+                          <div className={styles.tableIcon}>
+                            <FaRegListAlt />
+                          </div>
+                          <div className={styles.tableInfo}>
+                            <span className={styles.tableName}>
+                              {table.name}
+                            </span>
+                            <div className={styles.tableStats}>
+                              <span>
+                                Invoices: <strong>{invoiceCount}</strong>
+                              </span>
+                              <span>
+                                Total:{" "}
+                                <strong>${totalIncome.toFixed(2)}</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className={styles.noTablesMessage}>
+                    No matching invoices found for this person.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+      {/* Умовний рендеринг другого модального вікна */}
+      {selectedInvoice && (
+        <InvoiceDetailsModal
+          invoice={selectedInvoice}
+          onClose={handleCloseInvoiceModal}
+        />
+      )}
+    </>
   );
 };
 

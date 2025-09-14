@@ -32,6 +32,9 @@
   position: relative;
   padding: 32px;
   animation: slideIn 0.3s ease-out;
+  max-height: 80vh; /* Обмеження висоти для прокручування */
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes slideIn {
@@ -60,6 +63,18 @@
   color: var(--color-text-primary);
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h2 {
+  font-size: 2rem;
+  margin: 0;
+}
+
 .title {
   font-size: 2rem;
   margin-top: 0;
@@ -73,7 +88,6 @@
 }
 
 .content {
-  max-height: 60vh;
   overflow-y: auto;
   padding-right: 10px; /* Для скролбару */
 }
@@ -92,6 +106,7 @@
   padding: 16px;
   border-radius: var(--border-radius-md);
   border: 1px solid var(--color-border);
+  cursor: pointer;
 }
 
 .tableIcon {
@@ -124,4 +139,52 @@
   text-align: center;
   padding: 30px;
   color: var(--color-text-secondary);
+}
+
+.invoiceListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invoiceList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invoiceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background-color: var(--color-background);
+  padding: 16px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.invoiceItem:hover {
+  background-color: #f0f0f0;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-secondary);
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.backButton:hover {
+  background-color: #5a6268;
 }

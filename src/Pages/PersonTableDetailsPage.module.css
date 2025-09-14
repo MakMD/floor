@@ -2,7 +2,7 @@
 
 .pageLayout {
   display: grid;
-  grid-template-columns: 2.5fr 1fr; /* Основна колонка ширша */
+  grid-template-columns: 2.5fr 1fr;
   gap: 30px;
   max-width: 1600px;
   margin: 0 auto;
@@ -20,6 +20,7 @@
 .sidebar {
   position: sticky;
   top: 20px;
+  height: fit-content; /* Забезпечує, що сайдбар не розтягується зайво */
 }
 
 .header {

@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { supabase } from "../supabaseClient";
 import AutocompleteInput from "../components/AutocompleteInput/AutocompleteInput";
 import AddressHistory from "../components/AddressHistory/AddressHistory";
+import PersonDetailsModal from "../components/PersonDetailsModal/PersonDetailsModal";
 import styles from "./PersonTableDetailsPage.module.css";
 
 const DeleteIcon = () => (
@@ -21,7 +22,7 @@ const DeleteIcon = () => (
   </svg>
 );
 
-const PersonTableDetailsPage = ({ onPersonClick }) => {
+const PersonTableDetailsPage = () => {
   const { personId, tableId } = useParams();
   const navigate = useNavigate();
   const [person, setPerson] = useState(null);
@@ -39,6 +40,10 @@ const PersonTableDetailsPage = ({ onPersonClick }) => {
   const [showWCB, setShowWCB] = useState(false);
   const [isWCBCalculated, setIsWCBCalculated] = useState(false);
   const [isGSTCalculated, setIsGSTCalculated] = useState(false);
+
+  // Стан для керування модальним вікном
+  const [selectedPersonForModal, setSelectedPersonForModal] = useState(null);
+  const [modalFilterAddress, setModalFilterAddress] = useState("");
 
   useEffect(() => {
     const fetchPageData = async () => {
@@ -147,6 +152,16 @@ const PersonTableDetailsPage = ({ onPersonClick }) => {
     setNewInvoice((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleHistoryPersonClick = (clickedPerson) => {
+    setSelectedPersonForModal(clickedPerson);
+    setModalFilterAddress(newInvoice.address);
+  };
+
+  const closeModal = () => {
+    setSelectedPersonForModal(null);
+    setModalFilterAddress("");
+  };
+
   const totalIncome = useMemo(() => {
     return (
       table?.invoices.reduce(
@@ -157,11 +172,22 @@ const PersonTableDetailsPage = ({ onPersonClick }) => {
   }, [table]);
 
   const calculateWCB = () => {
-    /* ... */
+    const newWCB = (totalIncome - (totalIncome / 100) * 3).toFixed(2);
+    setWcb(newWCB);
+    setShowWCB(true);
+    setIsWCBCalculated(true);
+    if (isGSTCalculated) {
+      setTotalWithGST((newWCB * 1.05).toFixed(2));
+    }
   };
+
   const calculateTotalWithGST = () => {
-    /* ... */
+    const baseIncome = isWCBCalculated ? wcb : totalIncome;
+    setTotalWithGST((baseIncome * 1.05).toFixed(2));
+    setShowGST(true);
+    setIsGSTCalculated(true);
   };
+
   const handlePrint = () => window.print();
   const toggleEditMode = () => setIsEditing(!isEditing);
 
@@ -338,9 +364,18 @@ const PersonTableDetailsPage = ({ onPersonClick }) => {
           allPeople={allPeople}
           currentAddress={newInvoice.address}
           currentPersonId={person.id}
-          onPersonClick={onPersonClick}
+          onPersonClick={handleHistoryPersonClick}
         />
       </aside>
+
+      {/* Умовний рендеринг модального вікна */}
+      {selectedPersonForModal && (
+        <PersonDetailsModal
+          person={selectedPersonForModal}
+          filterAddress={modalFilterAddress}
+          onClose={closeModal}
+        />
+      )}
     </div>
   );
 };
