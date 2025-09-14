@@ -1,0 +1,60 @@
+/* src/Pages/CompanyListPage.module.css */
+
+.pageContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.pageTitle {
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+}
+
+/* ЗАГАЛЬНИЙ СТИЛЬ ДЛЯ ВСІХ КНОПОК */
+.backButton,
+.editButton,
+.inactiveLink {
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  color: #ffffff;
+  background-color: var(--color-primary); /* Тепер цей колір існує! */
+}
+
+.backButton:hover,
+.editButton:hover,
+.inactiveLink:hover {
+  background-color: var(--color-primary-hover); /* І цей теж */
+}
+
+.searchContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.searchInput {
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 16px;
+  width: 50%;
+  max-width: 600px;
+}

@@ -1,32 +1,45 @@
+// src/components/LoginModal/LoginModal.jsx
+
 import { useState } from "react";
-import axios from "axios";
-import styles from "./LoginModal.module.css"; // Імпорт стилів
+import { supabase } from "../../supabaseClient"; // <-- ІМПОРТУЄМО SUPABASE
+import styles from "./LoginModal.module.css";
 
 const LoginModal = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    try {
-      const response = await axios.get(
-        "https://66ee7a0d3ed5bb4d0bf107d1.mockapi.io/Password"
-      );
+    setLoading(true);
+    setError("");
 
-      const storedPassword = response.data[0].passwords; // Отримуємо пароль з правильного ключа
+    // Робимо запит до таблиці 'password'
+    const { data, error: fetchError } = await supabase
+      .from("password")
+      .select("value")
+      .eq("id", 1) // Ми знаємо, що пароль - це перший і єдиний запис
+      .single();
 
-      if (password === storedPassword) {
-        onLoginSuccess(); // Якщо пароль правильний
-      } else {
-        setError("Incorrect password"); // Якщо пароль неправильний
-      }
-    } catch (error) {
-      setError("Error checking password");
-      console.error("Error logging in:", error);
+    if (fetchError) {
+      setError("Error checking password. Please try again.");
+      console.error("Error logging in:", fetchError);
+      setLoading(false);
+      return;
     }
+
+    const storedPassword = data.value;
+
+    if (password === storedPassword) {
+      onLoginSuccess(); // Пароль правильний
+    } else {
+      setError("Incorrect password"); // Пароль неправильний
+    }
+
+    setLoading(false);
   };
 
   return (
-    <div className={styles.modal}>
+    <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
         <h2>Enter Password</h2>
         <input
@@ -34,8 +47,17 @@ const LoginModal = ({ onLoginSuccess }) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Enter your password"
+          className={styles.inputField}
+          onKeyPress={(e) => e.key === "Enter" && handleLogin()} // Додано для входу по Enter
+          disabled={loading}
         />
-        <button onClick={handleLogin}>Login</button>
+        <button
+          onClick={handleLogin}
+          className={styles.loginButton}
+          disabled={loading}
+        >
+          {loading ? "Checking..." : "Login"}
+        </button>
         {error && <p className={styles.error}>{error}</p>}
       </div>
     </div>

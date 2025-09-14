@@ -2,38 +2,64 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { supabase } from "../../supabaseClient";
 import PeopleList from "../PeopleList/PeopleList";
+import SkeletonLoader from "../SkeletonLoader/SkeletonLoader";
+import EmptyState from "../EmptyState/EmptyState";
+import { FaPlus, FaUsersSlash, FaEdit, FaCheck } from "react-icons/fa";
 import styles from "./PeopleSection.module.css";
 
-const PeopleSection = ({ people, onPeopleUpdate }) => {
+const PeopleSection = ({
+  people,
+  isLoading,
+  onPeopleUpdate,
+  onPersonCreated,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleCreatePerson = async () => {
+    if (newName.trim() === "") return;
+    setLoading(true);
+    const newPersonData = {
+      name: newName.trim(),
+      status: "active",
+      tables: [],
+    };
+    const { data, error } = await supabase
+      .from("people")
+      .insert([newPersonData])
+      .select();
+    if (error) {
+      console.error("Error creating person:", error);
+    } else {
+      onPersonCreated(data[0]);
+      setNewName("");
+      setIsAdding(false);
+    }
+    setLoading(false);
+  };
 
   const handleToggleStatus = async (personId, currentStatus) => {
     const newStatus = currentStatus === "active" ? "inactive" : "active";
-    try {
-      await axios.put(
-        `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`,
-        { status: newStatus }
-      );
-      onPeopleUpdate();
-    } catch (error) {
-      console.error("Error updating person status:", error);
-    }
+    const { error } = await supabase
+      .from("people")
+      .update({ status: newStatus })
+      .eq("id", personId);
+    if (error) console.error("Error updating status:", error);
+    else onPeopleUpdate();
   };
 
-  // Нова функція для оновлення імені
   const handleUpdatePersonName = async (personId, newName) => {
-    try {
-      await axios.put(
-        `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`,
-        { name: newName }
-      );
-      onPeopleUpdate(); // Оновлюємо список, щоб побачити зміни
-    } catch (error) {
-      console.error("Error updating person name:", error);
-    }
+    const { error } = await supabase
+      .from("people")
+      .update({ name: newName })
+      .eq("id", personId);
+    if (error) console.error("Error updating name:", error);
+    else onPeopleUpdate();
   };
 
   return (
@@ -41,26 +67,82 @@ const PeopleSection = ({ people, onPeopleUpdate }) => {
       <div className={styles.titleContainer}>
         <h2 className={styles.sectionTitle}>People</h2>
         <div className={styles.controls}>
+          {!isAdding && (
+            <button
+              onClick={() => setIsAdding(true)}
+              className={`${styles.controlButton} ${styles.addButton}`}
+            >
+              <FaPlus /> Add Worker
+            </button>
+          )}
           <button
             onClick={() => navigate("/inactive-workers")}
-            className={styles.inactiveLink}
+            className={`${styles.controlButton} ${styles.inactiveLink}`}
           >
-            Inactive Workers
+            <FaUsersSlash /> Inactive
           </button>
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={styles.editButton}
+            className={`${styles.controlButton} ${styles.editButton}`}
           >
-            {isEditing ? "Done" : "Edit"}
+            {isEditing ? (
+              <>
+                <FaCheck /> Done
+              </>
+            ) : (
+              <>
+                <FaEdit /> Edit
+              </>
+            )}
           </button>
         </div>
       </div>
-      <PeopleList
-        people={people}
-        isEditing={isEditing}
-        onToggleStatus={handleToggleStatus}
-        onUpdatePersonName={handleUpdatePersonName} // Передаємо нову функцію
-      />
+
+      {isAdding && (
+        <div className={styles.createPersonForm}>
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Enter person name"
+            className={styles.inputField}
+            disabled={loading}
+          />
+          <button
+            onClick={handleCreatePerson}
+            className={styles.createButton}
+            disabled={loading}
+          >
+            {loading ? "Creating..." : "Create"}
+          </button>
+          <button
+            onClick={() => setIsAdding(false)}
+            className={styles.cancelButton}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {isLoading ? (
+        <SkeletonLoader count={6} />
+      ) : people.length > 0 ? (
+        <PeopleList
+          people={people}
+          isEditing={isEditing}
+          onToggleStatus={handleToggleStatus}
+          onUpdatePersonName={handleUpdatePersonName}
+        />
+      ) : (
+        <EmptyState message="No active workers found. Add one to get started!">
+          <button
+            onClick={() => setIsAdding(true)}
+            className={`${styles.controlButton} ${styles.addButton}`}
+          >
+            <FaPlus /> Add First Worker
+          </button>
+        </EmptyState>
+      )}
     </div>
   );
 };

@@ -1,106 +1,84 @@
-.companyList {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: "Roboto", Arial, sans-serif;
+/* src/components/CompanyList/CompanyList.module.css */
+.companyListContainer {
 }
 
-.companyList h2 {
-  font-size: 28px;
-  color: #333;
-  text-align: center;
-  margin-bottom: 20px;
-  font-weight: 500;
-}
-
-.companyList ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
+.companyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
 }
 
 .companyItem {
-  background-color: #f5f5f5;
-  padding: 15px 25px;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 500;
-  color: #333;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  min-width: 180px;
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease-out;
   cursor: pointer;
-  border: 1px solid #ddd;
-}
-
-.companyItem:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.companyItem:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-.companyItem:focus {
-  outline: none;
-  border-color: #007bff;
-}
-.companyList {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: "Roboto", Arial, sans-serif;
-}
-
-.companyList h2 {
-  font-size: 28px;
-  color: #333;
-  text-align: center;
-  margin-bottom: 20px;
-  font-weight: 500;
-}
-
-.companyList ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
 }
 
-.companyItem {
-  background-color: #f5f5f5;
-  padding: 15px 25px;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 18px;
+.companyItem:not(.editing):hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.companyItem.editing {
+  cursor: default;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.companyInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.companyName {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+
+.tableCount {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
   font-weight: 500;
-  color: #333;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  min-width: 180px;
-  cursor: pointer;
-  border: 1px solid #ddd;
 }
 
-.companyItem:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.companyItem:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-.companyItem:focus {
+.editNameInput {
+  font-family: var(--font-main);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--border-radius-md);
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box; /* Важливо для правильної ширини */
   outline: none;
-  border-color: #007bff;
+}
+
+.toggleStatusButton {
+  padding: 8px 14px;
+  background-color: var(--color-secondary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap; /* Щоб текст не переносився */
+}
+
+.toggleStatusButton:hover {
+  background-color: var(--color-text-primary);
 }

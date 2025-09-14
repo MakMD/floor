@@ -1,80 +1,52 @@
 /* src/components/PeopleList/PeopleList.module.css */
-
 .peopleListContainer {
-  max-width: 800px;
-  margin: 0 auto;
-  font-family: "Roboto", Arial, sans-serif;
-}
-
-.peopleListContainer h2 {
-  font-size: 28px;
-  color: #333;
-  text-align: center;
-  margin-bottom: 20px;
-  font-weight: 500;
+  width: 100%;
 }
 
 .peopleList {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-  font-family: "Roboto", Arial, sans-serif;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px; /* Трохи зменшено відстань */
 }
 
 .personItem {
-  background-color: #f5f5f5;
-  padding: 15px 25px;
-  border-radius: 8px;
+  background-color: var(--color-surface);
+  padding: 16px; /* Зменшено для більш компактного вигляду */
+  border-radius: var(--border-radius-md); /* Більш стандартний радіус */
   text-align: center;
-  font-size: 18px;
-  font-weight: 500;
-  color: #333;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  min-width: 180px;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   cursor: pointer;
-  border: 1px solid #ddd;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  justify-content: center; /* Центруємо по вертикалі */
+  align-items: center;
+  gap: 12px; /* Зменшено відстань між елементами */
+  /* min-height видалено, висота тепер залежить від контенту */
 }
 
 .personItem:not(.editing):hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.personItem:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-.personItem:focus {
-  outline: none;
-  border-color: #007bff;
-}
-
-.personItem.editing {
-  cursor: default;
+  transform: translateY(-3px); /* Зменшено ефект "підйому" */
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
 .personItem h3 {
-  font-size: 18px;
+  font-size: 1.1rem; /* Зроблено трохи меншим для акуратності */
+  font-weight: 500; /* Зроблено менш жирним */
   margin: 0;
-  word-break: break-word; /* Додаємо перенос слів, якщо ім'я занадто довге */
+  word-break: break-word;
 }
 
-/* Стилі для поля редагування, адаптовані під старий дизайн */
 .editNameInput {
-  font-family: "Roboto", Arial, sans-serif;
-  font-size: 18px;
+  font-family: var(--font-main);
+  font-size: 1.1rem;
   font-weight: 500;
-  color: #333;
-  border: 1px solid #007bff;
-  border-radius: 6px;
+  color: var(--color-text-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--border-radius-md);
   padding: 8px;
   text-align: center;
   width: 90%;
@@ -82,16 +54,17 @@
 }
 
 .toggleStatusButton {
-  padding: 6px 12px;
-  background-color: #5c6ac4;
+  padding: 6px 12px; /* Зроблено кнопку меншою */
+  background-color: var(--color-secondary);
   color: white;
   border: none;
   cursor: pointer;
-  border-radius: 5px;
-  font-size: 12px;
-  transition: background-color 0.3s ease;
+  border-radius: var(--border-radius-md);
+  font-size: 0.75rem; /* Зменшено шрифт */
+  font-weight: 500;
+  transition: background-color 0.2s ease;
 }
 
 .toggleStatusButton:hover {
-  background-color: #4a57a3;
+  background-color: var(--color-text-primary);
 }

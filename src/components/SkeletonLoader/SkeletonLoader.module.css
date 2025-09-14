@@ -1,0 +1,45 @@
+/* src/components/SkeletonLoader/SkeletonLoader.module.css */
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.skeletonCard {
+  background-color: var(--color-surface);
+  padding: 24px;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 120px;
+  gap: 15px;
+}
+
+.skeletonLine {
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeletonLine.title {
+  width: 70%;
+  height: 24px;
+}
+
+.skeletonLine.button {
+  width: 50%;
+  height: 32px;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

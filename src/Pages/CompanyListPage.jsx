@@ -1,0 +1,122 @@
+// src/Pages/CompanyListPage.jsx
+
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft, FaEdit, FaCheck, FaUsersSlash } from "react-icons/fa";
+import { supabase } from "../supabaseClient";
+import CompanyList from "../components/CompanyList/CompanyList";
+import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
+import EmptyState from "../components/EmptyState/EmptyState";
+import styles from "./CompanyListPage.module.css";
+
+const CompanyListPage = () => {
+  const [allCompanies, setAllCompanies] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const navigate = useNavigate();
+
+  const fetchCompanies = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("companies").select("*");
+
+    if (error) {
+      console.error("Error fetching companies:", error);
+      setAllCompanies([]);
+    } else {
+      const companiesWithStatus = data.map((c) => ({
+        ...c,
+        status: c.status || "active",
+      }));
+      setAllCompanies(companiesWithStatus);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const handleToggleCompanyStatus = async (companyId, currentStatus) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    const { error } = await supabase
+      .from("companies")
+      .update({ status: newStatus })
+      .eq("id", companyId);
+    if (error) console.error("Error updating status:", error);
+    else await fetchCompanies();
+  };
+
+  const handleUpdateCompanyName = async (companyId, newName) => {
+    const { error } = await supabase
+      .from("companies")
+      .update({ name: newName })
+      .eq("id", companyId);
+    if (error) console.error("Error updating name:", error);
+    else await fetchCompanies();
+  };
+
+  const activeCompanies = allCompanies.filter((c) => c.status === "active");
+
+  const filteredCompanies = activeCompanies.filter((company) =>
+    company.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className={styles.pageContainer}>
+      <div className={styles.header}>
+        <button className={styles.backButton} onClick={() => navigate("/")}>
+          <FaArrowLeft /> Back to Main
+        </button>
+        <h1 className={styles.pageTitle}>Companies</h1>
+        <div className={styles.controls}>
+          <button
+            onClick={() => navigate("/inactive-companies")}
+            className={styles.inactiveLink}
+          >
+            <FaUsersSlash /> Inactive
+          </button>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className={styles.editButton}
+          >
+            {isEditing ? (
+              <>
+                <FaCheck /> Done
+              </>
+            ) : (
+              <>
+                <FaEdit /> Edit
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.searchContainer}>
+        <input
+          type="text"
+          placeholder="Search company by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={styles.searchInput}
+        />
+      </div>
+
+      {loading ? (
+        <SkeletonLoader count={8} />
+      ) : activeCompanies.length > 0 ? (
+        <CompanyList
+          companies={filteredCompanies}
+          isEditing={isEditing}
+          onUpdateCompanyName={handleUpdateCompanyName}
+          onToggleCompanyStatus={handleToggleCompanyStatus}
+        />
+      ) : (
+        <EmptyState message="No active companies found." />
+      )}
+    </div>
+  );
+};
+
+export default CompanyListPage;

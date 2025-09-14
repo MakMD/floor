@@ -1,0 +1,20 @@
+/* src/components/EmptyState/EmptyState.module.css */
+.emptyStateContainer {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--border-radius-lg);
+  margin-top: 24px;
+}
+
+.icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.message {
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 24px;
+}

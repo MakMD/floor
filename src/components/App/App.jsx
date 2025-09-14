@@ -5,110 +5,56 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  useLocation,
-  Link,
+  NavLink,
 } from "react-router-dom";
-import axios from "axios";
+import { Toaster } from "react-hot-toast";
+import { FaRegAddressBook, FaRegBuilding } from "react-icons/fa";
+import { supabase } from "../../supabaseClient";
 import PeopleSection from "../PeopleSection/PeopleSection";
-import CreatePersonForm from "../CreatePersonForm/CreatePersonForm";
 import PersonPage from "../../Pages/PersonPage";
-import CompanyList from "../CompanyList/CompanyList";
 import CompanyTablesPage from "../../Pages/CompanyTablesPage";
 import TableDetailsPage from "../../Pages/TableDetailsPage";
-import PersonTablesPage from "../../Pages/PersonTablesPage";
 import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage";
 import LoginModal from "../LoginModal/LoginModal";
 import logo from "../../../public/Flooring.Boss.svg";
-import TemporaryCompaniesList from "../TemporaryCompaniesList/TemporaryCompaniesList";
-// Імпортуємо нову сторінку
 import InactiveWorkersPage from "../../Pages/InactiveWorkersPage";
+import InactiveCompaniesPage from "../../Pages/InactiveCompaniesPage";
+import CompanyListPage from "../../Pages/CompanyListPage";
+import AddressListPage from "../../Pages/AddressListPage";
+import AddressDetailsPage from "../../Pages/AddressDetailsPage";
 import styles from "./App.module.css";
 
 const AppContent = () => {
-  const [people, setPeople] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredCompanies, setFilteredCompanies] = useState([]);
-
-  const companyResources = [
-    "TouchtoneCanadaLTD",
-    "SarefaHomesLTD",
-    "BelvistaHomesLTD",
-    "NestHomesLTD",
-    "CenrurylandHomesLTD",
-    "TradesProSupplyDepotLTD",
-    "NewEraFloorGalleryLTD",
-    "LinhanDevelopments",
-    "TemporaryCompanies",
-  ];
-
-  const location = useLocation();
+  const [people, setPeople] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
 
   const fetchPeople = async () => {
-    try {
-      const response = await axios.get(
-        "https://66e3d74dd2405277ed1201b1.mockapi.io/people"
-      );
-      const peopleWithStatus = response.data.map((person) => ({
+    const { data, error } = await supabase.from("people").select("*");
+    if (error) {
+      console.error("Error fetching people:", error);
+      setPeople([]);
+    } else {
+      const peopleWithStatus = data.map((person) => ({
         ...person,
         status: person.status || "active",
       }));
       setPeople(peopleWithStatus);
-    } catch (error) {
-      console.error("Error fetching people:", error);
-    }
-  };
-
-  const fetchCompanies = async () => {
-    try {
-      const companyPromises = companyResources.map(async (company) => {
-        const response = await axios.get(
-          `https://66ac12f3f009b9d5c7310a1a.mockapi.io/${company}`
-        );
-        return {
-          name: company,
-          tables: response.data[0]?.invoiceTables || [],
-        };
-      });
-      const companiesData = await Promise.all(companyPromises);
-      setCompanies(companiesData);
-      setFilteredCompanies(companiesData);
-    } catch (error) {
-      console.error("Error fetching companies:", error);
     }
   };
 
   useEffect(() => {
-    fetchPeople();
-    fetchCompanies();
-  }, []);
-
-  const activePeople = people.filter((person) => person.status === "active");
-
-  const filteredActivePeople = activePeople.filter((person) => {
-    if (!searchTerm) return true;
-    return person.tables?.some((table) =>
-      table.invoices.some((invoice) =>
-        invoice.address?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-  });
-
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = companies.filter((company) =>
-        company.tables?.some((table) =>
-          table.invoices.some((invoice) =>
-            invoice.address?.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-        )
-      );
-      setFilteredCompanies(filtered);
-    } else {
-      setFilteredCompanies(companies);
+    if (isLoggedIn) {
+      fetchPeople();
     }
-  }, [searchTerm, companies]);
+  }, [isLoggedIn]);
+
+  const activePeople = people
+    ? people.filter((person) => person.status === "active")
+    : [];
+
+  const handlePersonCreated = (newPerson) => {
+    setPeople((prev) => [...prev, newPerson]);
+  };
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
@@ -116,80 +62,88 @@ const AppContent = () => {
 
   return (
     <div className={styles.appContainer}>
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+
       {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
+
       <header className={styles.header}>
-        <Link to="/">
+        <NavLink to="/" className={styles.logoLink}>
           <img src={logo} alt="App Logo" className={styles.logo} />
-        </Link>
+        </NavLink>
+        <nav className={styles.nav}>
+          <NavLink
+            to="/addresses"
+            className={({ isActive }) =>
+              isActive
+                ? `${styles.navLink} ${styles.activeLink}`
+                : styles.navLink
+            }
+          >
+            <FaRegAddressBook /> Address Notes
+          </NavLink>
+          <NavLink
+            to="/companies"
+            className={({ isActive }) =>
+              isActive
+                ? `${styles.navLink} ${styles.activeLink}`
+                : styles.navLink
+            }
+          >
+            <FaRegBuilding /> Companies
+          </NavLink>
+        </nav>
       </header>
 
-      {isLoggedIn && location.pathname === "/" && (
-        <div className={styles.searchContainer}>
-          <input
-            type="text"
-            placeholder="Search by address"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-      )}
-
       {isLoggedIn && (
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <div className={styles.pageContent}>
-                <CompanyList companies={filteredCompanies} />
+        <main className={styles.mainContent}>
+          <Routes>
+            <Route
+              path="/"
+              element={
                 <PeopleSection
-                  people={filteredActivePeople}
+                  people={activePeople}
+                  isLoading={people === null}
                   onPeopleUpdate={fetchPeople}
+                  onPersonCreated={handlePersonCreated}
                 />
-                <CreatePersonForm
-                  onPersonCreated={(newPerson) => {
-                    setPeople((prev) => [
-                      ...prev,
-                      { ...newPerson, status: "active" },
-                    ]);
-                  }}
-                />
-              </div>
-            }
-          />
-          {/* Додаємо новий маршрут */}
-          <Route path="/inactive-workers" element={<InactiveWorkersPage />} />
+              }
+            />
 
-          <Route
-            path="/temporary-companies"
-            element={<TemporaryCompaniesList />}
-          />
-          <Route path="/company/:companyName" element={<CompanyTablesPage />} />
-          <Route
-            path="/company/:companyName/table/:tableId"
-            element={<TableDetailsPage />}
-          />
-          <Route path="/person/:personId" element={<PersonPage />} />
-          <Route
-            path="/person/:personId/tables"
-            element={<PersonTablesPage />}
-          />
-          <Route
-            path="/person/:personId/tables/:tableId"
-            element={<PersonTableDetailsPage />}
-          />
-        </Routes>
+            <Route path="/companies" element={<CompanyListPage />} />
+            <Route path="/addresses" element={<AddressListPage />} />
+            <Route
+              path="/address/:addressId"
+              element={<AddressDetailsPage />}
+            />
+            <Route path="/inactive-workers" element={<InactiveWorkersPage />} />
+            <Route
+              path="/inactive-companies"
+              element={<InactiveCompaniesPage />}
+            />
+            <Route
+              path="/company/:companyName"
+              element={<CompanyTablesPage />}
+            />
+            <Route
+              path="/company/:companyName/table/:tableId"
+              element={<TableDetailsPage />}
+            />
+            <Route path="/person/:personId" element={<PersonPage />} />
+            <Route
+              path="/person/:personId/tables/:tableId"
+              element={<PersonTableDetailsPage />}
+            />
+          </Routes>
+        </main>
       )}
     </div>
   );
 };
 
-const App = () => {
-  return (
-    <Router>
-      <AppContent />
-    </Router>
-  );
-};
+const App = () => (
+  <Router>
+    <AppContent />
+  </Router>
+);
 
 export default App;

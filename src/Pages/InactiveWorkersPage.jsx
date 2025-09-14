@@ -2,46 +2,49 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { supabase } from "../supabaseClient";
 import PeopleList from "../components/PeopleList/PeopleList";
-import styles from "./InactiveWorkersPage.module.css";
+import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
+import EmptyState from "../components/EmptyState/EmptyState";
+import styles from "./CompanyListPage.module.css"; // Перевикористовуємо стилі
 
 const InactiveWorkersPage = () => {
   const [inactivePeople, setInactivePeople] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
 
   const fetchInactivePeople = async () => {
-    try {
-      const response = await axios.get(
-        "https://66e3d74dd2405277ed1201b1.mockapi.io/people"
-      );
-      const allPeople = response.data.map((person) => ({
-        ...person,
-        status: person.status || "active",
-      }));
-      setInactivePeople(allPeople.filter((p) => p.status === "inactive"));
-    } catch (error) {
-      console.error("Error fetching inactive people:", error);
-    }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("people")
+      .select("*")
+      .eq("status", "inactive");
+    if (error) console.error("Error fetching inactive people:", error);
+    else setInactivePeople(data);
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchInactivePeople();
   }, []);
 
-  const handleToggleStatus = async (personId, currentStatus) => {
-    const newStatus = currentStatus === "active" ? "inactive" : "active";
-    try {
-      await axios.put(
-        `https://66e3d74dd2405277ed1201b1.mockapi.io/people/${personId}`,
-        { status: newStatus }
-      );
-      // Оновлюємо список, щоб прибрати щойно активованого працівника
-      fetchInactivePeople();
-    } catch (error) {
-      console.error("Error updating person status:", error);
-    }
+  const handleToggleStatus = async (personId) => {
+    const { error } = await supabase
+      .from("people")
+      .update({ status: "active" })
+      .eq("id", personId);
+    if (error) console.error("Error updating person status:", error);
+    else await fetchInactivePeople();
+  };
+
+  const handleUpdatePersonName = async (personId, newName) => {
+    const { error } = await supabase
+      .from("people")
+      .update({ name: newName })
+      .eq("id", personId);
+    if (error) console.error("Error updating person name:", error);
+    else await fetchInactivePeople();
   };
 
   return (
@@ -51,18 +54,28 @@ const InactiveWorkersPage = () => {
           Back to Main
         </button>
         <h1 className={styles.pageTitle}>Inactive Workers</h1>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className={styles.editButton}
-        >
-          {isEditing ? "Done" : "Edit"}
-        </button>
+        <div className={styles.controls}>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className={styles.editButton}
+          >
+            {isEditing ? "Done" : "Edit"}
+          </button>
+        </div>
       </div>
-      <PeopleList
-        people={inactivePeople}
-        isEditing={isEditing}
-        onToggleStatus={handleToggleStatus}
-      />
+
+      {loading ? (
+        <SkeletonLoader count={4} />
+      ) : inactivePeople.length > 0 ? (
+        <PeopleList
+          people={inactivePeople}
+          isEditing={isEditing}
+          onToggleStatus={handleToggleStatus}
+          onUpdatePersonName={handleUpdatePersonName}
+        />
+      ) : (
+        <EmptyState message="There are no inactive workers." />
+      )}
     </div>
   );
 };
