@@ -49,7 +49,7 @@ const AppContent = () => {
   }, [isLoggedIn]);
 
   const activePeople = people
-    ? people.filter((person) => person.status === "active")
+    ? people.filter((p) => p.status === "active")
     : [];
 
   const handlePersonCreated = (newPerson) => {
@@ -63,7 +63,6 @@ const AppContent = () => {
   return (
     <div className={styles.appContainer}>
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-
       {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
 
       <header className={styles.header}>

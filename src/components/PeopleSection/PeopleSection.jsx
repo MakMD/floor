@@ -49,8 +49,11 @@ const PeopleSection = ({
       .from("people")
       .update({ status: newStatus })
       .eq("id", personId);
-    if (error) console.error("Error updating status:", error);
-    else onPeopleUpdate();
+    if (error) {
+      console.error("Error updating status:", error);
+    } else {
+      onPeopleUpdate();
+    }
   };
 
   const handleUpdatePersonName = async (personId, newName) => {
@@ -58,8 +61,11 @@ const PeopleSection = ({
       .from("people")
       .update({ name: newName })
       .eq("id", personId);
-    if (error) console.error("Error updating name:", error);
-    else onPeopleUpdate();
+    if (error) {
+      console.error("Error updating name:", error);
+    } else {
+      onPeopleUpdate();
+    }
   };
 
   return (

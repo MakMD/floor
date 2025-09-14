@@ -13,7 +13,6 @@ const PeopleList = ({
   const navigate = useNavigate();
   const [editedNames, setEditedNames] = useState({});
 
-  // Синхронізуємо імена, коли список людей оновлюється
   useEffect(() => {
     const namesMap = people.reduce((acc, person) => {
       acc[person.id] = person.name;
@@ -27,7 +26,6 @@ const PeopleList = ({
   };
 
   const handleNameSave = (id) => {
-    // Викликаємо функцію оновлення, тільки якщо ім'я змінилося
     const originalPerson = people.find((p) => p.id === id);
     if (
       originalPerson &&
@@ -36,7 +34,6 @@ const PeopleList = ({
     ) {
       onUpdatePersonName(id, editedNames[id].trim());
     } else {
-      // Якщо ім'я не змінилося або стало порожнім, повертаємо старе значення
       setEditedNames((prev) => ({ ...prev, [id]: originalPerson.name }));
     }
   };
@@ -64,8 +61,8 @@ const PeopleList = ({
                   value={editedNames[person.id] || ""}
                   className={styles.editNameInput}
                   onChange={(e) => handleNameChange(person.id, e.target.value)}
-                  onBlur={() => handleNameSave(person.id)} // Зберігаємо при втраті фокусу
-                  onClick={(e) => e.stopPropagation()} // Зупиняємо клік, щоб не перейти на сторінку
+                  onBlur={() => handleNameSave(person.id)}
+                  onClick={(e) => e.stopPropagation()}
                 />
               ) : (
                 <h3>{person.name}</h3>
@@ -79,9 +76,7 @@ const PeopleList = ({
                     onToggleStatus(person.id, person.status);
                   }}
                 >
-                  {person.status === "active"
-                    ? "Move to Inactive"
-                    : "Move to Active"}
+                  {person.status === "active" ? "To Inactive" : "To Active"}
                 </button>
               )}
             </li>

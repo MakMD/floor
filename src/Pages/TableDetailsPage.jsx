@@ -1,358 +1,362 @@
-// src/Pages/TableDetailsPage.jsx
+// src/Pages/PersonTableDetailsPage.jsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient"; // <-- ІМПОРТУЄМО SUPABASE
-import styles from "./TableDetailsPage.module.css";
+import toast from "react-hot-toast";
+import { supabase } from "../supabaseClient";
+import AutocompleteInput from "../components/AutocompleteInput/AutocompleteInput";
+import AddressHistory from "../components/AddressHistory/AddressHistory";
+import styles from "./PersonTableDetailsPage.module.css";
 
-const TableDetailsPage = () => {
-  const { companyName, tableId } = useParams();
+const DeleteIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    fill="currentColor"
+    viewBox="0 0 16 16"
+  >
+    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+  </svg>
+);
+
+const PersonTableDetailsPage = ({ onPersonClick }) => {
+  const { personId, tableId } = useParams();
   const navigate = useNavigate();
-  const [companyData, setCompanyData] = useState(null); // Зберігаємо всі дані про компанію
+  const [person, setPerson] = useState(null);
+  const [allPeople, setAllPeople] = useState([]);
   const [table, setTable] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [newInvoice, setNewInvoice] = useState({
-    date: "",
-    workOrder: "",
     address: "",
-    total: 0,
+    date: "",
+    total_income: 0,
   });
-
-  const calculateGSTAndTotal = (total) => {
-    if (!total) return { gst: "0.00", totalWithGst: "0.00" };
-    const gst = (total * 0.05).toFixed(2);
-    const totalWithGst = (parseFloat(total) + parseFloat(gst)).toFixed(2);
-    return { gst, totalWithGst };
-  };
-
-  // --- ОНОВЛЕНА ЛОГІКА ЗАВАНТАЖЕННЯ ДАНИХ ---
-  const fetchCompanyData = async () => {
-    const { data, error } = await supabase
-      .from("companies")
-      .select("*")
-      .eq("name", companyName)
-      .single();
-
-    if (error) {
-      console.error("Error fetching company data:", error);
-    } else {
-      const selectedTable = data.invoiceTables?.find(
-        (t) => t.tableId === tableId
-      );
-      setCompanyData(data);
-      setTable(selectedTable);
-    }
-  };
+  const [isEditing, setIsEditing] = useState(false);
+  const [totalWithGST, setTotalWithGST] = useState(null);
+  const [wcb, setWcb] = useState(null);
+  const [showGST, setShowGST] = useState(false);
+  const [showWCB, setShowWCB] = useState(false);
+  const [isWCBCalculated, setIsWCBCalculated] = useState(false);
+  const [isGSTCalculated, setIsGSTCalculated] = useState(false);
 
   useEffect(() => {
-    fetchCompanyData();
-  }, [companyName, tableId]);
+    const fetchPageData = async () => {
+      const { data: personData, error: personError } = await supabase
+        .from("people")
+        .select("*")
+        .eq("id", personId)
+        .single();
+      if (personError) {
+        console.error("Supabase error (person):", personError);
+        return;
+      }
 
-  // --- УНІВЕРСАЛЬНА ФУНКЦІЯ ОНОВЛЕННЯ ---
-  const updateCompanyTables = async (updatedTables) => {
+      const { data: allPeopleData, error: allPeopleError } = await supabase
+        .from("people")
+        .select("id, name, tables");
+      if (allPeopleError)
+        console.error("Supabase error (all people):", allPeopleError);
+      else setAllPeople(allPeopleData || []);
+
+      if (personData && personData.tables) {
+        const selectedTable = personData.tables.find(
+          (t) => String(t.tableId) === String(tableId)
+        );
+        if (selectedTable) {
+          setPerson(personData);
+          setTable(selectedTable);
+        } else {
+          console.error("Table not found inside person's data.");
+        }
+      }
+    };
+    fetchPageData();
+  }, [personId, tableId]);
+
+  const uniqueAddresses = useMemo(() => {
+    if (!person || !person.tables) return [];
+    const allAddresses = person.tables.flatMap((t) =>
+      t.invoices.map((inv) => inv.address)
+    );
+    return [...new Set(allAddresses)];
+  }, [person]);
+
+  const updateTablesOnServer = async (updatedTables, successMessage) => {
     const { error } = await supabase
-      .from("companies")
-      .update({ invoiceTables: updatedTables })
-      .eq("id", companyData.id);
-
+      .from("people")
+      .update({ tables: updatedTables })
+      .eq("id", person.id);
     if (error) {
-      console.error("Error updating company tables:", error);
+      toast.error("Failed to save changes.");
+      console.error(error);
     } else {
-      // Оновлюємо локальний стан для миттєвого відображення
+      if (successMessage) toast.success(successMessage);
+      setPerson((prev) => ({ ...prev, tables: updatedTables }));
       const updatedTable = updatedTables.find((t) => t.tableId === tableId);
       setTable(updatedTable);
-      // Також оновлюємо companyData, щоб наступні операції мали актуальні дані
-      setCompanyData((prev) => ({ ...prev, invoiceTables: updatedTables }));
     }
   };
 
-  const handleInputChange = (e) => {
-    setNewInvoice({ ...newInvoice, [e.target.name]: e.target.value });
+  const handleInvoiceChange = (e, index, field) => {
+    const updatedInvoices = [...table.invoices];
+    updatedInvoices[index][field] = e.target.value;
+    const isInvoiceEmpty =
+      !updatedInvoices[index].address &&
+      !updatedInvoices[index].date &&
+      !updatedInvoices[index].total_income;
+    if (isInvoiceEmpty) updatedInvoices.splice(index, 1);
+    setTable((prev) => ({ ...prev, invoices: updatedInvoices }));
   };
 
   const handleAddInvoice = async () => {
-    if (
-      !newInvoice.date ||
-      !newInvoice.workOrder ||
-      !newInvoice.address ||
-      !newInvoice.total
-    ) {
+    if (!newInvoice.address || !newInvoice.date || !newInvoice.total_income) {
+      toast.error("Please fill in all fields.");
       return;
     }
-    const { gst, totalWithGst } = calculateGSTAndTotal(newInvoice.total);
-    const invoiceToAdd = {
-      ...newInvoice,
-      GSTCollected: gst,
-      payablePerWorkOrder: totalWithGst,
-    };
-
-    const updatedTables = companyData.invoiceTables.map((tbl) =>
-      tbl.tableId === tableId
-        ? { ...tbl, invoices: [...(tbl.invoices || []), invoiceToAdd] }
-        : tbl
-    );
-
-    await updateCompanyTables(updatedTables);
-    setNewInvoice({ date: "", workOrder: "", address: "", total: 0 });
-  };
-
-  const handleInvoiceFieldChange = (e, index, field) => {
-    const updatedInvoices = [...table.invoices];
-    updatedInvoices[index][field] = e.target.value;
-
-    const isInvoiceEmpty =
-      !updatedInvoices[index].date &&
-      !updatedInvoices[index].workOrder &&
-      !updatedInvoices[index].address &&
-      !updatedInvoices[index].total;
-
-    if (isInvoiceEmpty) {
-      updatedInvoices.splice(index, 1);
-    }
-    setTable({ ...table, invoices: updatedInvoices });
-  };
-
-  const handleInvoiceBlur = async (index) => {
-    const updatedInvoices = [...table.invoices];
-    const invoice = updatedInvoices[index];
-
-    if (!invoice) return; // Якщо інвойс був видалений
-
-    const { gst, totalWithGst } = calculateGSTAndTotal(invoice.total);
-    updatedInvoices[index].GSTCollected = gst;
-    updatedInvoices[index].payablePerWorkOrder = totalWithGst;
-
-    const updatedTables = companyData.invoiceTables.map((tbl) =>
+    const updatedInvoices = [newInvoice, ...table.invoices];
+    const updatedTables = person.tables.map((tbl) =>
       tbl.tableId === tableId ? { ...tbl, invoices: updatedInvoices } : tbl
     );
-    await updateCompanyTables(updatedTables);
+    await updateTablesOnServer(updatedTables, "Invoice added successfully!");
+    setNewInvoice({ address: "", date: "", total_income: 0 });
   };
 
-  const calculateTotal = () => {
-    if (!table || !table.invoices) return { total: 0, gst: 0, totalWithGst: 0 };
-    return table.invoices.reduce(
-      (acc, inv) => ({
-        total: acc.total + parseFloat(inv.total || 0),
-        gst: acc.gst + parseFloat(inv.GSTCollected || 0),
-        totalWithGst:
-          acc.totalWithGst + parseFloat(inv.payablePerWorkOrder || 0),
-      }),
-      { total: 0, gst: 0, totalWithGst: 0 }
+  const handleDeleteInvoice = async (invoiceIndex) => {
+    if (!window.confirm("Are you sure you want to delete this invoice?"))
+      return;
+    const updatedInvoices = table.invoices.filter(
+      (_, index) => index !== invoiceIndex
     );
+    const updatedTables = person.tables.map((tbl) =>
+      tbl.tableId === tableId ? { ...tbl, invoices: updatedInvoices } : tbl
+    );
+    await updateTablesOnServer(updatedTables, "Invoice deleted!");
   };
 
-  const totals = calculateTotal();
-  const toggleEditMode = () => setIsEditing((prev) => !prev);
+  const handleSaveChanges = async () => {
+    const updatedTables = person.tables.map((tbl) =>
+      tbl.tableId === tableId ? { ...tbl, invoices: table.invoices } : tbl
+    );
+    await updateTablesOnServer(updatedTables, "Changes saved successfully!");
+    setIsEditing(false);
+  };
+
+  const handleNewInvoiceChange = (e) => {
+    const { name, value } = e.target;
+    setNewInvoice((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleHistoryPersonClick = (clickedPerson) => {
+    onPersonClick(clickedPerson, newInvoice.address);
+  };
+
+  const totalIncome = useMemo(() => {
+    return (
+      table?.invoices.reduce(
+        (acc, inv) => acc + parseFloat(inv.total_income || 0),
+        0
+      ) || 0
+    );
+  }, [table]);
+
+  const calculateWCB = () => {
+    const newWCB = (totalIncome - (totalIncome / 100) * 3).toFixed(2);
+    setWcb(newWCB);
+    setShowWCB(true);
+    setIsWCBCalculated(true);
+    if (isGSTCalculated) {
+      setTotalWithGST((newWCB * 1.05).toFixed(2));
+    }
+  };
+
+  const calculateTotalWithGST = () => {
+    const baseIncome = isWCBCalculated ? wcb : totalIncome;
+    setTotalWithGST((baseIncome * 1.05).toFixed(2));
+    setShowGST(true);
+    setIsGSTCalculated(true);
+  };
+
   const handlePrint = () => window.print();
+  const toggleEditMode = () => setIsEditing(!isEditing);
+
+  if (!table) {
+    return (
+      <div className={styles.pageContainer} style={{ textAlign: "center" }}>
+        <p>Loading table details...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className={styles.invoicePage}>
-      <div className={styles.btnBackPrintCont}>
-        <button className={styles.backButton} onClick={() => navigate(-1)}>
-          Back
-        </button>
-        <button onClick={handlePrint} className={styles.printButton}>
-          Print
-        </button>
-        <button onClick={toggleEditMode} className={styles.editButton}>
-          {isEditing ? "Save Changes" : "Edit Invoices"}
-        </button>
+    <div className={styles.pageLayout}>
+      <div className={styles.mainContent}>
+        <div className={styles.header}>
+          <button className={styles.backButton} onClick={() => navigate(-1)}>
+            Back
+          </button>
+          <h1 className={styles.pageTitle}>
+            {person?.name || "Employee"} Details
+          </h1>
+          <button
+            onClick={isEditing ? handleSaveChanges : toggleEditMode}
+            className={styles.editButton}
+          >
+            {isEditing ? "Save Changes" : "Edit"}
+          </button>
+        </div>
+
+        <div className={styles.addInvoiceForm}>
+          <h3>Add New Invoice</h3>
+          <AutocompleteInput
+            name="address"
+            value={newInvoice.address}
+            onChange={handleNewInvoiceChange}
+            placeholder="Address"
+            suggestions={uniqueAddresses}
+          />
+          <input
+            type="date"
+            name="date"
+            value={newInvoice.date}
+            onChange={handleNewInvoiceChange}
+            className={styles.inputField}
+          />
+          <input
+            type="number"
+            name="total_income"
+            value={newInvoice.total_income}
+            onChange={handleNewInvoiceChange}
+            placeholder="Total Income"
+            className={styles.inputField}
+          />
+          <button
+            onClick={handleAddInvoice}
+            className={styles.addInvoiceButton}
+          >
+            Add Invoice
+          </button>
+        </div>
+
+        <table className={styles.invoiceTable}>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Address</th>
+              <th>Date</th>
+              <th>Total Income</th>
+              {isEditing && <th>Actions</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {table.invoices.map((invoice, index) => (
+              <tr key={index}>
+                <td>{index + 1}</td>
+                <td>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={invoice.address}
+                      onChange={(e) => handleInvoiceChange(e, index, "address")}
+                      className={styles.inputField}
+                    />
+                  ) : (
+                    invoice.address
+                  )}
+                </td>
+                <td>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={invoice.date}
+                      onChange={(e) => handleInvoiceChange(e, index, "date")}
+                      className={styles.inputField}
+                    />
+                  ) : (
+                    invoice.date
+                  )}
+                </td>
+                <td>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={invoice.total_income}
+                      onChange={(e) =>
+                        handleInvoiceChange(e, index, "total_income")
+                      }
+                      className={styles.inputField}
+                    />
+                  ) : (
+                    `$${parseFloat(invoice.total_income || 0).toFixed(2)}`
+                  )}
+                </td>
+                {isEditing && (
+                  <td>
+                    <button
+                      className={styles.deleteInvoiceButton}
+                      onClick={() => handleDeleteInvoice(index)}
+                    >
+                      <DeleteIcon />
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
+            <tr className={styles.totalRow}>
+              <td colSpan={isEditing ? 3 : 2}></td>
+              <td style={{ textAlign: "right" }}>
+                <strong>Total:</strong>
+              </td>
+              <td>
+                <strong>${totalIncome.toFixed(2)}</strong>
+              </td>
+              {isEditing && <td></td>}
+            </tr>
+            {showGST && (
+              <tr className={styles.totalRow}>
+                <td colSpan={isEditing ? 3 : 2}></td>
+                <td style={{ textAlign: "right" }}>
+                  <strong>Total with GST:</strong>
+                </td>
+                <td>
+                  <strong>${totalWithGST}</strong>
+                </td>
+                {isEditing && <td></td>}
+              </tr>
+            )}
+            {showWCB && (
+              <tr className={styles.totalRow}>
+                <td colSpan={isEditing ? 3 : 2}></td>
+                <td style={{ textAlign: "right" }}>
+                  <strong>Total - WCB:</strong>
+                </td>
+                <td>
+                  <strong>${wcb}</strong>
+                </td>
+                {isEditing && <td></td>}
+              </tr>
+            )}
+          </tbody>
+        </table>
+        <div className={styles.calculationButtons}>
+          <button onClick={calculateTotalWithGST} className={styles.btnGst}>
+            +GST (5%)
+          </button>
+          <button onClick={calculateWCB} className={styles.btnWcb}>
+            -WCB (3%)
+          </button>
+        </div>
       </div>
 
-      <div className={styles.document}>
-        {table ? (
-          <>
-            <div className={styles.addInvoiceForm}>
-              <h3>Add New Invoice</h3>
-              <input
-                type="date"
-                name="date"
-                value={newInvoice.date}
-                onChange={handleInputChange}
-                placeholder="Date"
-                className={styles.inputField}
-              />
-              <input
-                type="text"
-                name="workOrder"
-                value={newInvoice.workOrder}
-                onChange={handleInputChange}
-                placeholder="Work Order"
-                className={styles.inputField}
-              />
-              <input
-                type="text"
-                name="address"
-                value={newInvoice.address}
-                onChange={handleInputChange}
-                placeholder="Address"
-                className={styles.inputField}
-              />
-              <input
-                type="number"
-                name="total"
-                value={newInvoice.total}
-                onChange={handleInputChange}
-                placeholder="Total"
-                className={styles.inputField}
-              />
-              <button
-                onClick={handleAddInvoice}
-                className={styles.addInvoiceButton}
-              >
-                Add Invoice
-              </button>
-            </div>
-
-            <div className={styles.header}>
-              <h1>FLOORING BOSS LTD.</h1>
-              <p>422 ALLARD BLVD SW, EDMONTON, ALBERTA, T6W3S7</p>
-              <p>
-                Contact Mykhailo: (587) 937 7862 | Contact Myroslav: (825) 461
-                1950
-              </p>
-              <p>
-                Email:{" "}
-                {companyName === "NewEraFloorGalleryLTD"
-                  ? "flooring.boss1@gmail.com"
-                  : "Flooringm8pservice@gmail.com"}
-              </p>
-              <p>GST: 704201813 RT 0001 | WCB: 9839473</p>
-            </div>
-
-            <div className={styles.invoiceHeader}>
-              <h2>Invoice Number: {table.invoiceDetails.invoiceNumber}</h2>
-              <p>Pay to: {table.invoiceDetails.payTo}</p>
-              <p>Date: {table.invoiceDetails.date}</p>
-              <p>Bill To: {table.invoiceDetails.billTo}</p>
-            </div>
-
-            <table className={styles.invoiceTable}>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Date</th>
-                  <th>Work Order</th>
-                  <th>Address</th>
-                  <th>Total</th>
-                  <th>GST (5%)</th>
-                  <th>Total with GST</th>
-                </tr>
-              </thead>
-              <tbody>
-                {table.invoices
-                  .slice()
-                  .reverse()
-                  .map((invoice, index) => (
-                    <tr key={index}>
-                      <td>{table.invoices.length - index}</td>
-                      <td>
-                        {isEditing ? (
-                          <input
-                            type="date"
-                            value={invoice.date}
-                            onChange={(e) =>
-                              handleInvoiceFieldChange(
-                                e,
-                                table.invoices.length - 1 - index,
-                                "date"
-                              )
-                            }
-                            onBlur={() =>
-                              handleInvoiceBlur(
-                                table.invoices.length - 1 - index
-                              )
-                            }
-                          />
-                        ) : (
-                          invoice.date
-                        )}
-                      </td>
-                      <td>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={invoice.workOrder}
-                            onChange={(e) =>
-                              handleInvoiceFieldChange(
-                                e,
-                                table.invoices.length - 1 - index,
-                                "workOrder"
-                              )
-                            }
-                            onBlur={() =>
-                              handleInvoiceBlur(
-                                table.invoices.length - 1 - index
-                              )
-                            }
-                          />
-                        ) : (
-                          invoice.workOrder
-                        )}
-                      </td>
-                      <td>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={invoice.address}
-                            onChange={(e) =>
-                              handleInvoiceFieldChange(
-                                e,
-                                table.invoices.length - 1 - index,
-                                "address"
-                              )
-                            }
-                            onBlur={() =>
-                              handleInvoiceBlur(
-                                table.invoices.length - 1 - index
-                              )
-                            }
-                          />
-                        ) : (
-                          invoice.address
-                        )}
-                      </td>
-                      <td>
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            value={invoice.total}
-                            onChange={(e) =>
-                              handleInvoiceFieldChange(
-                                e,
-                                table.invoices.length - 1 - index,
-                                "total"
-                              )
-                            }
-                            onBlur={() =>
-                              handleInvoiceBlur(
-                                table.invoices.length - 1 - index
-                              )
-                            }
-                          />
-                        ) : (
-                          invoice.total
-                        )}
-                      </td>
-                      <td>{invoice.GSTCollected}</td>
-                      <td>{invoice.payablePerWorkOrder}</td>
-                    </tr>
-                  ))}
-                <tr className={styles.totalRow}>
-                  <td colSpan="4">Total</td>
-                  <td>{totals.total.toFixed(2)}</td>
-                  <td>{totals.gst.toFixed(2)}</td>
-                  <td>{totals.totalWithGst.toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </>
-        ) : (
-          <p>Loading...</p>
-        )}
-      </div>
+      <aside className={styles.sidebar}>
+        <AddressHistory
+          allPeople={allPeople}
+          currentAddress={newInvoice.address}
+          currentPersonId={person.id}
+          onPersonClick={handleHistoryPersonClick}
+        />
+      </aside>
     </div>
   );
 };
-
-export default TableDetailsPage;
+export default PersonTableDetailsPage;

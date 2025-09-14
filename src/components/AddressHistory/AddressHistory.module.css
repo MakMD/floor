@@ -1,0 +1,46 @@
+/* src/components/AddressHistory/AddressHistory.module.css */
+
+.historyContainer {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  height: fit-content;
+}
+
+.title {
+  font-size: 1.25rem;
+  margin-top: 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+}
+
+.placeholder {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 20px 0;
+}
+
+.peopleList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.personItem {
+  background-color: var(--color-background);
+  padding: 12px;
+  border-radius: var(--border-radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.personItem:hover {
+  background-color: var(--color-primary);
+  color: white;
+}
