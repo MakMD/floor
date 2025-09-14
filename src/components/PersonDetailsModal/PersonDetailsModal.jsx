@@ -51,20 +51,22 @@ const PersonDetailsModal = ({ person, filterAddress, onClose }) => {
     <>
       <div className={styles.overlay} onClick={onClose}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-          <button className={styles.closeButton} onClick={onClose}>
-            <FaTimes />
-          </button>
-
+          {/* Оновлений заголовок модального вікна з правильним розташуванням елементів */}
           <div className={styles.header}>
-            {selectedTable && (
-              <button
-                className={styles.backButton}
-                onClick={() => setSelectedTable(null)}
-              >
-                <FaArrowLeft /> Back
-              </button>
-            )}
+            <div className={styles.headerLeft}>
+              {selectedTable && (
+                <button
+                  className={styles.backButton}
+                  onClick={() => setSelectedTable(null)}
+                >
+                  <FaArrowLeft /> Back
+                </button>
+              )}
+            </div>
             <h2 className={styles.title}>{person.name}</h2>
+            <button className={styles.closeButton} onClick={onClose}>
+              <FaTimes />
+            </button>
           </div>
 
           {filterAddress && (

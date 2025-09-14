@@ -32,7 +32,7 @@
   position: relative;
   padding: 32px;
   animation: slideIn 0.3s ease-out;
-  max-height: 80vh; /* Обмеження висоти для прокручування */
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
 }
@@ -48,21 +48,6 @@
   }
 }
 
-.closeButton {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-.closeButton:hover {
-  color: var(--color-text-primary);
-}
-
 .header {
   display: flex;
   justify-content: space-between;
@@ -70,16 +55,45 @@
   margin-bottom: 24px;
 }
 
-.header h2 {
-  font-size: 2rem;
-  margin: 0;
+.headerLeft {
+  min-width: 80px; /* Додав мінімальну ширину для Back Button */
 }
 
 .title {
   font-size: 2rem;
-  margin-top: 0;
-  margin-bottom: 24px;
+  margin: 0;
+  flex-grow: 1;
   text-align: center;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.closeButton:hover {
+  color: var(--color-text-primary);
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-secondary);
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.backButton:hover {
+  background-color: #5a6268;
 }
 
 .subtitle {
@@ -89,7 +103,7 @@
 
 .content {
   overflow-y: auto;
-  padding-right: 10px; /* Для скролбару */
+  padding-right: 10px;
 }
 
 .tableList {
@@ -170,21 +184,4 @@
 
 .invoiceItem:hover {
   background-color: #f0f0f0;
-}
-
-.backButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: var(--border-radius-md);
-  background-color: var(--color-secondary);
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.backButton:hover {
-  background-color: #5a6268;
 }
