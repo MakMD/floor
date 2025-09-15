@@ -1,3 +1,5 @@
+/* src/components/LoginModal/LoginModal.module.css */
+
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -8,38 +10,73 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 2000;
 }
 
 .modalContent {
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
+  background-color: var(--color-surface);
+  padding: 40px;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  width: 90%;
+  max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.modalHeader {
   text-align: center;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .inputField {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .loginButton {
-  background-color: #007bff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background-color: var(--color-primary);
   color: white;
-  padding: 10px 20px;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 .loginButton:hover {
-  background-color: #0056b3;
+  background-color: var(--color-primary-hover);
 }
 
 .error {
-  color: red;
-  margin-top: 10px;
+  color: #dc3545; /* Червоний колір для помилки */
+  text-align: center;
+  font-size: 0.9rem;
 }

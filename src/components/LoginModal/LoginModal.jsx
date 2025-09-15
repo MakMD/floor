@@ -1,8 +1,9 @@
 // src/components/LoginModal/LoginModal.jsx
 
 import { useState } from "react";
-import { supabase } from "../../supabaseClient"; // <-- ІМПОРТУЄМО SUPABASE
+import { supabase } from "../../supabaseClient";
 import styles from "./LoginModal.module.css";
+import { FaSignInAlt } from "react-icons/fa"; // Імпортуємо іконку
 
 const LoginModal = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState("");
@@ -13,11 +14,10 @@ const LoginModal = ({ onLoginSuccess }) => {
     setLoading(true);
     setError("");
 
-    // Робимо запит до таблиці 'password'
     const { data, error: fetchError } = await supabase
       .from("password")
       .select("value")
-      .eq("id", 1) // Ми знаємо, що пароль - це перший і єдиний запис
+      .eq("id", 1)
       .single();
 
     if (fetchError) {
@@ -30,9 +30,9 @@ const LoginModal = ({ onLoginSuccess }) => {
     const storedPassword = data.value;
 
     if (password === storedPassword) {
-      onLoginSuccess(); // Пароль правильний
+      onLoginSuccess();
     } else {
-      setError("Incorrect password"); // Пароль неправильний
+      setError("Incorrect password");
     }
 
     setLoading(false);
@@ -41,23 +41,36 @@ const LoginModal = ({ onLoginSuccess }) => {
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
-        <h2>Enter Password</h2>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter your password"
-          className={styles.inputField}
-          onKeyPress={(e) => e.key === "Enter" && handleLogin()} // Додано для входу по Enter
-          disabled={loading}
-        />
-        <button
-          onClick={handleLogin}
-          className={styles.loginButton}
-          disabled={loading}
-        >
-          {loading ? "Checking..." : "Login"}
-        </button>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.title}>Login</h2>
+          <p className={styles.subtitle}>
+            Please enter your password to continue.
+          </p>
+        </div>
+        <div className={styles.form}>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className={styles.inputField}
+            onKeyPress={(e) => e.key === "Enter" && handleLogin()}
+            disabled={loading}
+          />
+          <button
+            onClick={handleLogin}
+            className={styles.loginButton}
+            disabled={loading}
+          >
+            {loading ? (
+              "Logging in..."
+            ) : (
+              <>
+                <FaSignInAlt /> Log In
+              </>
+            )}
+          </button>
+        </div>
         {error && <p className={styles.error}>{error}</p>}
       </div>
     </div>

@@ -8,7 +8,12 @@ import {
   NavLink,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { FaRegAddressBook, FaRegBuilding } from "react-icons/fa";
+import {
+  FaRegAddressBook,
+  FaRegBuilding,
+  FaSignOutAlt,
+  FaUsers,
+} from "react-icons/fa";
 import { supabase } from "../../supabaseClient";
 import PeopleSection from "../PeopleSection/PeopleSection";
 import PersonPage from "../../Pages/PersonPage";
@@ -26,7 +31,21 @@ import styles from "./App.module.css";
 
 const AppContent = () => {
   const [people, setPeople] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Перевіряємо сесію при завантаженні
+    const checkSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (data.session) {
+        setIsLoggedIn(true);
+        fetchPeople();
+      } else {
+        setIsLoggedIn(false);
+      }
+    };
+    checkSession();
+  }, []);
 
   const fetchPeople = async () => {
     const { data, error } = await supabase.from("people").select("*");
@@ -42,23 +61,28 @@ const AppContent = () => {
     }
   };
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetchPeople();
-    }
-  }, [isLoggedIn]);
-
-  const activePeople = people
-    ? people.filter((p) => p.status === "active")
-    : [];
-
   const handlePersonCreated = (newPerson) => {
     setPeople((prev) => [...prev, newPerson]);
   };
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
+    fetchPeople();
   };
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Error logging out:", error);
+    } else {
+      setIsLoggedIn(false);
+      setPeople(null);
+    }
+  };
+
+  const activePeople = people
+    ? people.filter((p) => p.status === "active")
+    : [];
 
   return (
     <div className={styles.appContainer}>
@@ -70,26 +94,44 @@ const AppContent = () => {
           <img src={logo} alt="App Logo" className={styles.logo} />
         </NavLink>
         <nav className={styles.nav}>
-          <NavLink
-            to="/addresses"
-            className={({ isActive }) =>
-              isActive
-                ? `${styles.navLink} ${styles.activeLink}`
-                : styles.navLink
-            }
-          >
-            <FaRegAddressBook /> Address Notes
-          </NavLink>
-          <NavLink
-            to="/companies"
-            className={({ isActive }) =>
-              isActive
-                ? `${styles.navLink} ${styles.activeLink}`
-                : styles.navLink
-            }
-          >
-            <FaRegBuilding /> Companies
-          </NavLink>
+          {isLoggedIn && (
+            <>
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) =>
+                  isActive
+                    ? `${styles.navLink} ${styles.activeLink}`
+                    : styles.navLink
+                }
+              >
+                <FaUsers /> People
+              </NavLink>
+              <NavLink
+                to="/addresses"
+                className={({ isActive }) =>
+                  isActive
+                    ? `${styles.navLink} ${styles.activeLink}`
+                    : styles.navLink
+                }
+              >
+                <FaRegAddressBook /> Address Notes
+              </NavLink>
+              <NavLink
+                to="/companies"
+                className={({ isActive }) =>
+                  isActive
+                    ? `${styles.navLink} ${styles.activeLink}`
+                    : styles.navLink
+                }
+              >
+                <FaRegBuilding /> Companies
+              </NavLink>
+              <button onClick={handleLogout} className={styles.logoutButton}>
+                <FaSignOutAlt /> Log Out
+              </button>
+            </>
+          )}
         </nav>
       </header>
 
@@ -107,7 +149,6 @@ const AppContent = () => {
                 />
               }
             />
-
             <Route path="/companies" element={<CompanyListPage />} />
             <Route path="/addresses" element={<AddressListPage />} />
             <Route

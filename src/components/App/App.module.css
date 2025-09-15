@@ -52,6 +52,24 @@
   border-bottom-color: var(--color-primary);
 }
 
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 0;
+}
+
+.logoutButton:hover {
+  color: #dc3545; /* Червоний колір для кнопки виходу */
+}
+
 .mainContent {
   padding-top: 20px;
 }
