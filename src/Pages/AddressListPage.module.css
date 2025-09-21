@@ -61,26 +61,27 @@
 
 .toolbar {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column; /* Розташовує елементи один під одним */
+  gap: 20px; /* Відступ між секціями */
   margin-bottom: 32px;
-  gap: 20px;
-  flex-wrap: wrap;
+}
+
+.searchSection {
+  width: 100%;
 }
 
 .searchInput {
+  width: 100%;
   padding: 12px 16px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 16px;
-  flex-grow: 1;
-  min-width: 250px;
 }
 
 .addForm {
   display: flex;
   gap: 10px;
-  flex-grow: 1;
+  flex-wrap: wrap;
   align-items: center;
 }
 
@@ -89,7 +90,8 @@
   border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 16px;
-  width: 100%;
+  flex: 1;
+  min-width: 150px;
 }
 
 .addButton {

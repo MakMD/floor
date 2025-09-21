@@ -13,7 +13,7 @@ const AddressListPage = () => {
   const [addresses, setAddresses] = useState([]);
   const [filteredAddresses, setFilteredAddresses] = useState([]);
   const [newAddress, setNewAddress] = useState("");
-  const [newSquareFeet, setNewSquareFeet] = useState("");
+  const [newDate, setNewDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -53,8 +53,8 @@ const AddressListPage = () => {
   }, [searchTerm, addresses]);
 
   const handleAddAddress = async () => {
-    if (newAddress.trim() === "") {
-      toast.error("Address cannot be empty.");
+    if (newAddress.trim() === "" || newDate.trim() === "") {
+      toast.error("Address and Date cannot be empty.");
       return;
     }
     const { data, error } = await supabase
@@ -62,8 +62,10 @@ const AddressListPage = () => {
       .insert([
         {
           address: newAddress.trim(),
-          square_feet: newSquareFeet ? parseInt(newSquareFeet, 10) : null,
+          date: newDate,
+          builder: null,
           notes: [],
+          files: [],
         },
       ])
       .select();
@@ -73,7 +75,7 @@ const AddressListPage = () => {
     } else {
       setAddresses((prev) => [data[0], ...prev]);
       setNewAddress("");
-      setNewSquareFeet("");
+      setNewDate("");
       toast.success("Address added successfully!");
     }
   };
@@ -141,26 +143,27 @@ const AddressListPage = () => {
       </div>
 
       <div className={styles.toolbar}>
-        <input
-          type="text"
-          placeholder="Search address..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className={styles.searchInput}
-        />
-        <div className={styles.addForm}>
+        <div className={styles.searchSection}>
           <input
             type="text"
-            placeholder="Enter new address"
-            value={newAddress}
-            onChange={(e) => setNewAddress(e.target.value)}
+            placeholder="Search address..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={styles.searchInput}
+          />
+        </div>
+        <div className={styles.addForm}>
+          <input
+            type="date"
+            value={newDate}
+            onChange={(e) => setNewDate(e.target.value)}
             className={styles.addInput}
           />
           <input
-            type="number"
-            placeholder="Sq. ft."
-            value={newSquareFeet}
-            onChange={(e) => setNewSquareFeet(e.target.value)}
+            type="text"
+            placeholder="Address"
+            value={newAddress}
+            onChange={(e) => setNewAddress(e.target.value)}
             className={styles.addInput}
           />
           <button onClick={handleAddAddress} className={styles.addButton}>
@@ -205,8 +208,10 @@ const AddressListPage = () => {
                 </>
               ) : (
                 <span>
-                  {item.address}{" "}
-                  {item.square_feet ? `(${item.square_feet} sq.ft.)` : ""}
+                  <strong>{item.address}</strong>
+                  <br />
+                  {item.date && <span>Date: {item.date}</span>}
+                  {item.builder && <span> | Builder: {item.builder}</span>}
                 </span>
               )}
             </li>
