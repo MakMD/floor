@@ -12,7 +12,7 @@ export const useAddresses = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("addresses")
-      .select("id, address, date, builders")
+      .select("id, address, date")
       .order("address", { ascending: true });
 
     if (error) {
