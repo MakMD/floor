@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { supabase } from "../../supabaseClient";
 import styles from "./FileUpload.module.css";
-import { FaUpload, FaTimes } from "react-icons/fa";
+import { FaUpload } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const FileUpload = ({ bucketName, onUploadSuccess }) => {
@@ -16,6 +16,7 @@ const FileUpload = ({ bucketName, onUploadSuccess }) => {
     setLoading(true);
     const fileName = `${Date.now()}_${file.name}`;
 
+    // ЗАПИТ: Завантажуємо файл у сховище
     const { data, error } = await supabase.storage
       .from(bucketName)
       .upload(fileName, file);
@@ -24,11 +25,9 @@ const FileUpload = ({ bucketName, onUploadSuccess }) => {
       console.error("Error uploading file:", error);
       toast.error("Failed to upload file.");
     } else {
-      const { data: publicUrlData } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(fileName);
-
-      onUploadSuccess(publicUrlData.publicUrl);
+      // ПОВЕРТАЄМО РЕЗУЛЬТАТ: Замість публічного URL, повертаємо шлях до файлу (path)
+      // Це ключ до більш безпечної та гнучкої системи.
+      onUploadSuccess(data.path);
       toast.success("File uploaded successfully!");
     }
     setLoading(false);

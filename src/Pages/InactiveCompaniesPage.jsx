@@ -1,46 +1,26 @@
 // src/Pages/InactiveCompaniesPage.jsx
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { useCompanies } from "../hooks/useCompanies"; // ІМПОРТ
 import CompanyList from "../components/CompanyList/CompanyList";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
 import styles from "./CompanyListPage.module.css";
 
 const InactiveCompaniesPage = () => {
-  const [inactiveCompanies, setInactiveCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { companies, loading, refetch } = useCompanies(); // ВИКОРИСТАННЯ
   const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
 
-  const fetchInactiveCompanies = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("companies")
-      .select("*")
-      .eq("status", "inactive");
-
-    if (error) {
-      console.error("Error fetching inactive companies:", error);
-    } else {
-      setInactiveCompanies(data);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchInactiveCompanies();
-  }, []);
-
-  const handleToggleCompanyStatus = async (companyId, currentStatus) => {
-    const newStatus = currentStatus === "active" ? "inactive" : "active";
+  const handleToggleCompanyStatus = async (companyId) => {
     const { error } = await supabase
       .from("companies")
-      .update({ status: newStatus })
+      .update({ status: "active" })
       .eq("id", companyId);
     if (error) console.error("Error updating status:", error);
-    else await fetchInactiveCompanies();
+    else await refetch();
   };
 
   const handleUpdateCompanyName = async (companyId, newName) => {
@@ -49,8 +29,10 @@ const InactiveCompaniesPage = () => {
       .update({ name: newName })
       .eq("id", companyId);
     if (error) console.error("Error updating name:", error);
-    else await fetchInactiveCompanies();
+    else await refetch();
   };
+
+  const inactiveCompanies = companies.filter((c) => c.status === "inactive");
 
   return (
     <div className={styles.pageContainer}>

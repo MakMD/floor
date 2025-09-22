@@ -1,119 +1,136 @@
 /* src/Pages/AddressDetailsPage.module.css */
 
 .pageContainer {
-  max-width: 900px;
+  max-width: 1400px; /* Залишаємо більше простору */
   margin: 40px auto;
   padding: 32px;
-  background-color: var(--color-surface);
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
+  background-color: var(--color-background);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.backButton,
+.editButton {
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .backButton {
-  padding: 10px 20px;
   background-color: var(--color-secondary);
   color: #ffffff;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .editButton {
-  padding: 10px 20px;
   background-color: var(--color-primary);
   color: white;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.backButton:hover {
-  background-color: var(--color-secondary-hover);
-}
-
-.editButton:hover {
-  background-color: var(--color-primary-hover);
 }
 
 .pageTitle {
   font-size: 2rem;
-  margin-bottom: 0;
-  padding-bottom: 0;
-  word-break: break-word;
+  margin: 0;
+  text-align: center;
+  flex-grow: 1;
 }
 
-.detailsContainer {
+.detailsGrid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(420px, 1fr)
+  ); /* Адаптивна сітка */
+  gap: 32px; /* Збільшуємо відступ між колонками */
+  align-items: start;
+}
+
+.gridColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 32px; /* Збільшуємо відступ між картками */
 }
 
 .detailCard {
-  background-color: var(--color-background);
+  background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px; /* Відступ між елементами в картці */
+  box-shadow: var(--shadow-sm);
+}
+
+.detailCard h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 16px;
+  margin-bottom: 4px; /* Невеликий відступ після лінії */
 }
 
 .detailItem {
-  display: flex;
-  justify-content: space-between;
+  display: grid; /* Використовуємо grid для кращого вирівнювання */
+  grid-template-columns: 120px 1fr; /* Фіксована ширина для label */
   align-items: center;
   font-size: 1rem;
+  gap: 16px;
+}
+
+.detailItem label {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-align: left;
 }
 
 .detailItem p {
   margin: 0;
+  text-align: left;
+  font-weight: 500;
 }
 
 .editInput {
-  flex-grow: 1;
+  width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 1rem;
 }
 
-.notesSection,
-.filesSection {
-  margin-top: 32px;
-}
-
-.sectionHeader {
+/* ДОДАНО: Стиль для кнопки "Add Builder" */
+.actionButton {
+  padding: 8px 12px;
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px dashed var(--color-primary);
+  border-radius: 8px;
+  cursor: pointer;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  width: 100%;
 }
 
-.sectionHeader h2 {
-  font-size: 1.5rem;
-  margin: 0;
+.actionButton:hover {
+  background-color: var(--color-primary);
+  color: white;
+  border-style: solid;
 }
 
 .fileList,
@@ -121,16 +138,22 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 0; /* Прибираємо зайвий відступ */
 }
 
-.fileItem {
+.fileItem,
+.noteItem {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: var(--color-background);
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid var(--color-border);
+  font-size: 1rem;
+}
+
+.noteItem {
+  border-left: 4px solid var(--color-primary);
 }
 
 .fileLink {
@@ -145,102 +168,71 @@
   white-space: nowrap;
 }
 
-.deleteFileButton {
+.spinner {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.disabledLink {
+  color: var(--color-text-secondary);
+  cursor: wait;
+}
+
+.deleteFileButton,
+.deleteNoteButton {
   background-color: transparent;
   border: none;
-  color: #dc3545;
+  color: var(--color-text-secondary);
   padding: 4px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.deleteFileButton:hover {
-  background-color: #dc3545;
-  color: white;
+.deleteFileButton:hover,
+.deleteNoteButton:hover {
+  color: #dc3545;
+  transform: scale(1.1);
 }
 
 .addNoteForm {
   display: flex;
   gap: 10px;
-  margin-bottom: 24px;
   align-items: center;
 }
 
 .noteInput {
   flex-grow: 1;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .addButton {
-  padding: 12px 24px;
+  padding: 10px;
   background-color: var(--color-primary);
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 1rem;
   transition: background-color 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
 }
 
-.addButton:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.notesList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.noteItem {
-  background-color: var(--color-background);
-  padding: 16px;
-  border-radius: 8px;
-  border-left: 4px solid var(--color-primary);
-  font-size: 1rem;
-}
-
-.noteEditContainer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.editNoteInput {
-  flex-grow: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-.deleteNoteButton {
-  background-color: transparent;
-  color: #dc3545;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.deleteNoteButton:hover {
-  background-color: #dc3545;
-  color: white;
-}
-
-.noNotes,
-.noFiles {
+.noItemsMessage {
   color: var(--color-text-secondary);
   padding: 20px;
   text-align: center;

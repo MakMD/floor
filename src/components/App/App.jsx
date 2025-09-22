@@ -1,6 +1,6 @@
 // src/components/App/App.jsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -15,31 +15,36 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { supabase } from "../../supabaseClient";
-import PeopleSection from "../PeopleSection/PeopleSection";
-import PersonPage from "../../Pages/PersonPage";
-import CompanyTablesPage from "../../Pages/CompanyTablesPage";
-import TableDetailsPage from "../../Pages/TableDetailsPage";
-import PersonTableDetailsPage from "../../Pages/PersonTableDetailsPage";
 import LoginModal from "../LoginModal/LoginModal";
 import logo from "../../../public/Flooring.Boss.svg";
-import InactiveWorkersPage from "../../Pages/InactiveWorkersPage";
-import InactiveCompaniesPage from "../../Pages/InactiveCompaniesPage";
-import CompanyListPage from "../../Pages/CompanyListPage";
-import AddressListPage from "../../Pages/AddressListPage";
-import AddressDetailsPage from "../../Pages/AddressDetailsPage";
 import styles from "./App.module.css";
 
+// ДИНАМІЧНІ ІМПОРТИ: Замінюємо статичні імпорти на динамічні
+const PeopleSection = lazy(() => import("../PeopleSection/PeopleSection"));
+const PersonPage = lazy(() => import("../../Pages/PersonPage"));
+const CompanyListPage = lazy(() => import("../../Pages/CompanyListPage"));
+const CompanyTablesPage = lazy(() => import("../../Pages/CompanyTablesPage"));
+const TableDetailsPage = lazy(() => import("../../Pages/TableDetailsPage"));
+const PersonTableDetailsPage = lazy(() =>
+  import("../../Pages/PersonTableDetailsPage")
+);
+const InactiveWorkersPage = lazy(() =>
+  import("../../Pages/InactiveWorkersPage")
+);
+const InactiveCompaniesPage = lazy(() =>
+  import("../../Pages/InactiveCompaniesPage")
+);
+const AddressListPage = lazy(() => import("../../Pages/AddressListPage"));
+const AddressDetailsPage = lazy(() => import("../../Pages/AddressDetailsPage"));
+
 const AppContent = () => {
-  const [people, setPeople] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Перевіряємо сесію при завантаженні
     const checkSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
       if (data.session) {
         setIsLoggedIn(true);
-        fetchPeople();
       } else {
         setIsLoggedIn(false);
       }
@@ -47,42 +52,12 @@ const AppContent = () => {
     checkSession();
   }, []);
 
-  const fetchPeople = async () => {
-    const { data, error } = await supabase.from("people").select("*");
-    if (error) {
-      console.error("Error fetching people:", error);
-      setPeople([]);
-    } else {
-      const peopleWithStatus = data.map((person) => ({
-        ...person,
-        status: person.status || "active",
-      }));
-      setPeople(peopleWithStatus);
-    }
-  };
-
-  const handlePersonCreated = (newPerson) => {
-    setPeople((prev) => [...prev, newPerson]);
-  };
-
-  const handleLoginSuccess = () => {
-    setIsLoggedIn(true);
-    fetchPeople();
-  };
+  const handleLoginSuccess = () => setIsLoggedIn(true);
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Error logging out:", error);
-    } else {
-      setIsLoggedIn(false);
-      setPeople(null);
-    }
+    await supabase.auth.signOut();
+    setIsLoggedIn(false);
   };
-
-  const activePeople = people
-    ? people.filter((p) => p.status === "active")
-    : [];
 
   return (
     <div className={styles.appContainer}>
@@ -137,43 +112,45 @@ const AppContent = () => {
 
       {isLoggedIn && (
         <main className={styles.mainContent}>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <PeopleSection
-                  people={activePeople}
-                  isLoading={people === null}
-                  onPeopleUpdate={fetchPeople}
-                  onPersonCreated={handlePersonCreated}
-                />
-              }
-            />
-            <Route path="/companies" element={<CompanyListPage />} />
-            <Route path="/addresses" element={<AddressListPage />} />
-            <Route
-              path="/address/:addressId"
-              element={<AddressDetailsPage />}
-            />
-            <Route path="/inactive-workers" element={<InactiveWorkersPage />} />
-            <Route
-              path="/inactive-companies"
-              element={<InactiveCompaniesPage />}
-            />
-            <Route
-              path="/company/:companyName"
-              element={<CompanyTablesPage />}
-            />
-            <Route
-              path="/company/:companyName/table/:tableId"
-              element={<TableDetailsPage />}
-            />
-            <Route path="/person/:personId" element={<PersonPage />} />
-            <Route
-              path="/person/:personId/tables/:tableId"
-              element={<PersonTableDetailsPage />}
-            />
-          </Routes>
+          {/* SUSPENSE: Обгортаємо маршрути в Suspense з індикатором завантаження */}
+          <Suspense
+            fallback={
+              <div style={{ textAlign: "center", padding: "40px" }}>
+                Loading...
+              </div>
+            }
+          >
+            <Routes>
+              <Route path="/" element={<PeopleSection />} />
+              <Route path="/companies" element={<CompanyListPage />} />
+              <Route path="/addresses" element={<AddressListPage />} />
+              <Route
+                path="/address/:addressId"
+                element={<AddressDetailsPage />}
+              />
+              <Route
+                path="/inactive-workers"
+                element={<InactiveWorkersPage />}
+              />
+              <Route
+                path="/inactive-companies"
+                element={<InactiveCompaniesPage />}
+              />
+              <Route
+                path="/company/:companyId"
+                element={<CompanyTablesPage />}
+              />
+              <Route
+                path="/company/:companyId/table/:tableId"
+                element={<TableDetailsPage />}
+              />
+              <Route path="/person/:personId" element={<PersonPage />} />
+              <Route
+                path="/person/:personId/tables/:tableId"
+                element={<PersonTableDetailsPage />}
+              />
+            </Routes>
+          </Suspense>
         </main>
       )}
     </div>

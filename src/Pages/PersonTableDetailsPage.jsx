@@ -1,6 +1,6 @@
 // src/Pages/PersonTableDetailsPage.jsx
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../supabaseClient";
@@ -8,32 +8,26 @@ import AutocompleteInput from "../components/AutocompleteInput/AutocompleteInput
 import AddressHistory from "../components/AddressHistory/AddressHistory";
 import PersonDetailsModal from "../components/PersonDetailsModal/PersonDetailsModal";
 import styles from "./PersonTableDetailsPage.module.css";
-
-const DeleteIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
-    fill="currentColor"
-    viewBox="0 0 16 16"
-  >
-    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
-    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
-  </svg>
-);
+import { FaTrash } from "react-icons/fa";
 
 const PersonTableDetailsPage = () => {
   const { personId, tableId } = useParams();
   const navigate = useNavigate();
+
   const [person, setPerson] = useState(null);
+  const [tableInfo, setTableInfo] = useState(null);
+  const [invoices, setInvoices] = useState([]);
   const [allPeople, setAllPeople] = useState([]);
-  const [table, setTable] = useState(null);
+
   const [newInvoice, setNewInvoice] = useState({
     address: "",
     date: "",
-    total_income: 0,
+    total_income: "",
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // ОНОВЛЕНО: Повертаємо стан для розрахунків
   const [totalWithGST, setTotalWithGST] = useState(null);
   const [wcb, setWcb] = useState(null);
   const [showGST, setShowGST] = useState(false);
@@ -41,77 +35,64 @@ const PersonTableDetailsPage = () => {
   const [isWCBCalculated, setIsWCBCalculated] = useState(false);
   const [isGSTCalculated, setIsGSTCalculated] = useState(false);
 
-  // Стан для керування модальним вікном
   const [selectedPersonForModal, setSelectedPersonForModal] = useState(null);
   const [modalFilterAddress, setModalFilterAddress] = useState("");
 
+  const fetchInvoices = useCallback(async () => {
+    if (!tableId) return;
+    const { data, error } = await supabase
+      .from("invoices")
+      .select("*")
+      .eq("invoice_table_id", tableId)
+      .order("date", { ascending: false });
+
+    if (error) {
+      toast.error("Failed to load invoices.");
+    } else {
+      setInvoices(data || []);
+    }
+  }, [tableId]);
+
   useEffect(() => {
     const fetchPageData = async () => {
-      const { data: personData, error: personError } = await supabase
-        .from("people")
-        .select("*")
-        .eq("id", personId)
-        .single();
-      if (personError) {
-        console.error("Supabase error (person):", personError);
+      setLoading(true);
+      const [personResult, tableResult, allPeopleResult] = await Promise.all([
+        supabase.from("people").select("id, name").eq("id", personId).single(),
+        supabase
+          .from("invoice_tables")
+          .select("id, name")
+          .eq("id", tableId)
+          .single(),
+        supabase.from("people").select("id, name"),
+      ]);
+
+      if (personResult.error || tableResult.error) {
+        toast.error("Could not load page data.");
+        setLoading(false);
         return;
       }
 
-      const { data: allPeopleData, error: allPeopleError } = await supabase
-        .from("people")
-        .select("id, name, tables");
-      if (allPeopleError)
-        console.error("Supabase error (all people):", allPeopleError);
-      else setAllPeople(allPeopleData || []);
+      setPerson(personResult.data);
+      setTableInfo(tableResult.data);
+      setAllPeople(allPeopleResult.data || []);
 
-      if (personData && personData.tables) {
-        const selectedTable = personData.tables.find(
-          (t) => String(t.tableId) === String(tableId)
-        );
-        if (selectedTable) {
-          setPerson(personData);
-          setTable(selectedTable);
-        } else {
-          console.error("Table not found inside person's data.");
-        }
-      }
+      await fetchInvoices();
+      setLoading(false);
     };
+
     fetchPageData();
-  }, [personId, tableId]);
+  }, [personId, tableId, fetchInvoices]);
 
   const uniqueAddresses = useMemo(() => {
-    if (!person || !person.tables) return [];
-    const allAddresses = person.tables.flatMap((t) =>
-      t.invoices.map((inv) => inv.address)
-    );
+    const allAddresses = invoices.map((inv) => inv.address);
     return [...new Set(allAddresses)];
-  }, [person]);
+  }, [invoices]);
 
-  const updateTablesOnServer = async (updatedTables, successMessage) => {
-    const { error } = await supabase
-      .from("people")
-      .update({ tables: updatedTables })
-      .eq("id", person.id);
-    if (error) {
-      toast.error("Failed to save changes.");
-      console.error(error);
-    } else {
-      if (successMessage) toast.success(successMessage);
-      setPerson((prev) => ({ ...prev, tables: updatedTables }));
-      const updatedTable = updatedTables.find((t) => t.tableId === tableId);
-      setTable(updatedTable);
-    }
-  };
-
-  const handleInvoiceChange = (e, index, field) => {
-    const updatedInvoices = [...table.invoices];
-    updatedInvoices[index][field] = e.target.value;
-    const isInvoiceEmpty =
-      !updatedInvoices[index].address &&
-      !updatedInvoices[index].date &&
-      !updatedInvoices[index].total_income;
-    if (isInvoiceEmpty) updatedInvoices.splice(index, 1);
-    setTable((prev) => ({ ...prev, invoices: updatedInvoices }));
+  const handleInvoiceChange = (e, invoiceId, field) => {
+    const updatedInvoices = invoices.map((inv) =>
+      inv.id === invoiceId ? { ...inv, [field]: e.target.value } : inv
+    );
+    setInvoices(updatedInvoices);
   };
 
   const handleAddInvoice = async () => {
@@ -119,32 +100,56 @@ const PersonTableDetailsPage = () => {
       toast.error("Please fill in all fields.");
       return;
     }
-    const updatedInvoices = [newInvoice, ...table.invoices];
-    const updatedTables = person.tables.map((tbl) =>
-      tbl.tableId === tableId ? { ...tbl, invoices: updatedInvoices } : tbl
-    );
-    await updateTablesOnServer(updatedTables, "Invoice added successfully!");
-    setNewInvoice({ address: "", date: "", total_income: 0 });
+    const { error } = await supabase.from("invoices").insert({
+      invoice_table_id: tableId,
+      address: newInvoice.address,
+      date: newInvoice.date,
+      total_income: parseFloat(newInvoice.total_income),
+    });
+    if (error) {
+      toast.error("Failed to add invoice.");
+    } else {
+      toast.success("Invoice added successfully!");
+      setNewInvoice({ address: "", date: "", total_income: "" });
+      fetchInvoices();
+    }
   };
 
-  const handleDeleteInvoice = async (invoiceIndex) => {
+  const handleDeleteInvoice = async (invoiceId) => {
     if (!window.confirm("Are you sure you want to delete this invoice?"))
       return;
-    const updatedInvoices = table.invoices.filter(
-      (_, index) => index !== invoiceIndex
-    );
-    const updatedTables = person.tables.map((tbl) =>
-      tbl.tableId === tableId ? { ...tbl, invoices: updatedInvoices } : tbl
-    );
-    await updateTablesOnServer(updatedTables, "Invoice deleted!");
+    const { error } = await supabase
+      .from("invoices")
+      .delete()
+      .eq("id", invoiceId);
+    if (error) {
+      toast.error("Failed to delete invoice.");
+    } else {
+      toast.success("Invoice deleted!");
+      fetchInvoices();
+    }
   };
 
   const handleSaveChanges = async () => {
-    const updatedTables = person.tables.map((tbl) =>
-      tbl.tableId === tableId ? { ...tbl, invoices: table.invoices } : tbl
+    const updatePromises = invoices.map((inv) =>
+      supabase
+        .from("invoices")
+        .update({
+          address: inv.address,
+          date: inv.date,
+          total_income: parseFloat(inv.total_income || 0),
+        })
+        .eq("id", inv.id)
     );
-    await updateTablesOnServer(updatedTables, "Changes saved successfully!");
-    setIsEditing(false);
+    const results = await Promise.all(updatePromises);
+    const hasError = results.some((res) => res.error);
+    if (hasError) {
+      toast.error("Some changes could not be saved.");
+    } else {
+      toast.success("Changes saved successfully!");
+      setIsEditing(false);
+      fetchInvoices();
+    }
   };
 
   const handleNewInvoiceChange = (e) => {
@@ -163,14 +168,13 @@ const PersonTableDetailsPage = () => {
   };
 
   const totalIncome = useMemo(() => {
-    return (
-      table?.invoices.reduce(
-        (acc, inv) => acc + parseFloat(inv.total_income || 0),
-        0
-      ) || 0
+    return invoices.reduce(
+      (acc, inv) => acc + parseFloat(inv.total_income || 0),
+      0
     );
-  }, [table]);
+  }, [invoices]);
 
+  // ОНОВЛЕНО: Повертаємо логіку розрахунків
   const calculateWCB = () => {
     const newWCB = (totalIncome - (totalIncome / 100) * 3).toFixed(2);
     setWcb(newWCB);
@@ -188,13 +192,12 @@ const PersonTableDetailsPage = () => {
     setIsGSTCalculated(true);
   };
 
-  const handlePrint = () => window.print();
-  const toggleEditMode = () => setIsEditing(!isEditing);
-
-  if (!table) {
+  if (loading || !person || !tableInfo) {
     return (
-      <div className={styles.pageContainer} style={{ textAlign: "center" }}>
-        <p>Loading table details...</p>
+      <div className={styles.pageLayout}>
+        <div className={styles.mainContent} style={{ textAlign: "center" }}>
+          <p>Loading details...</p>
+        </div>
       </div>
     );
   }
@@ -207,10 +210,10 @@ const PersonTableDetailsPage = () => {
             Back
           </button>
           <h1 className={styles.pageTitle}>
-            {person?.name || "Employee"} Details
+            {person.name} - {tableInfo.name}
           </h1>
           <button
-            onClick={isEditing ? handleSaveChanges : toggleEditMode}
+            onClick={isEditing ? handleSaveChanges : () => setIsEditing(true)}
             className={styles.editButton}
           >
             {isEditing ? "Save Changes" : "Edit"}
@@ -252,7 +255,6 @@ const PersonTableDetailsPage = () => {
         <table className={styles.invoiceTable}>
           <thead>
             <tr>
-              <th>#</th>
               <th>Address</th>
               <th>Date</th>
               <th>Total Income</th>
@@ -260,15 +262,16 @@ const PersonTableDetailsPage = () => {
             </tr>
           </thead>
           <tbody>
-            {table.invoices.map((invoice, index) => (
-              <tr key={index}>
-                <td>{index + 1}</td>
+            {invoices.map((invoice) => (
+              <tr key={invoice.id}>
                 <td>
                   {isEditing ? (
                     <input
                       type="text"
                       value={invoice.address}
-                      onChange={(e) => handleInvoiceChange(e, index, "address")}
+                      onChange={(e) =>
+                        handleInvoiceChange(e, invoice.id, "address")
+                      }
                       className={styles.inputField}
                     />
                   ) : (
@@ -280,7 +283,9 @@ const PersonTableDetailsPage = () => {
                     <input
                       type="date"
                       value={invoice.date}
-                      onChange={(e) => handleInvoiceChange(e, index, "date")}
+                      onChange={(e) =>
+                        handleInvoiceChange(e, invoice.id, "date")
+                      }
                       className={styles.inputField}
                     />
                   ) : (
@@ -293,7 +298,7 @@ const PersonTableDetailsPage = () => {
                       type="number"
                       value={invoice.total_income}
                       onChange={(e) =>
-                        handleInvoiceChange(e, index, "total_income")
+                        handleInvoiceChange(e, invoice.id, "total_income")
                       }
                       className={styles.inputField}
                     />
@@ -305,16 +310,16 @@ const PersonTableDetailsPage = () => {
                   <td>
                     <button
                       className={styles.deleteInvoiceButton}
-                      onClick={() => handleDeleteInvoice(index)}
+                      onClick={() => handleDeleteInvoice(invoice.id)}
                     >
-                      <DeleteIcon />
+                      <FaTrash />
                     </button>
                   </td>
                 )}
               </tr>
             ))}
             <tr className={styles.totalRow}>
-              <td colSpan={isEditing ? 3 : 2}></td>
+              <td colSpan={isEditing ? 2 : 1}></td>
               <td style={{ textAlign: "right" }}>
                 <strong>Total:</strong>
               </td>
@@ -323,9 +328,10 @@ const PersonTableDetailsPage = () => {
               </td>
               {isEditing && <td></td>}
             </tr>
+            {/* ОНОВЛЕНО: Повертаємо відображення розрахунків */}
             {showGST && (
               <tr className={styles.totalRow}>
-                <td colSpan={isEditing ? 3 : 2}></td>
+                <td colSpan={isEditing ? 2 : 1}></td>
                 <td style={{ textAlign: "right" }}>
                   <strong>Total with GST:</strong>
                 </td>
@@ -337,7 +343,7 @@ const PersonTableDetailsPage = () => {
             )}
             {showWCB && (
               <tr className={styles.totalRow}>
-                <td colSpan={isEditing ? 3 : 2}></td>
+                <td colSpan={isEditing ? 2 : 1}></td>
                 <td style={{ textAlign: "right" }}>
                   <strong>Total - WCB:</strong>
                 </td>
@@ -349,6 +355,7 @@ const PersonTableDetailsPage = () => {
             )}
           </tbody>
         </table>
+        {/* ОНОВЛЕНО: Повертаємо кнопки */}
         <div className={styles.calculationButtons}>
           <button onClick={calculateTotalWithGST} className={styles.btnGst}>
             +GST (5%)
@@ -368,7 +375,6 @@ const PersonTableDetailsPage = () => {
         />
       </aside>
 
-      {/* Умовний рендеринг модального вікна */}
       {selectedPersonForModal && (
         <PersonDetailsModal
           person={selectedPersonForModal}

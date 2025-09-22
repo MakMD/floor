@@ -4,127 +4,111 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import styles from "./CompanyTablesPage.module.css";
+import toast from "react-hot-toast";
+import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
+import EmptyState from "../components/EmptyState/EmptyState";
+import { FaPlus, FaTrash, FaEdit, FaCheck, FaUsersSlash } from "react-icons/fa";
 
 const CompanyTablesPage = () => {
-  const { companyName } = useParams();
+  const { companyId } = useParams();
   const navigate = useNavigate();
-  const [companyData, setCompanyData] = useState(null);
+
+  const [company, setCompany] = useState(null);
   const [tables, setTables] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredTables, setFilteredTables] = useState([]);
-  const [newTable, setNewTable] = useState({
-    date: "",
-    invoiceNumber: "",
-    billTo: "",
-    payTo: "",
-  });
+  const [newTableName, setNewTableName] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [showHidden, setShowHidden] = useState(false);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [showInactive, setShowInactive] = useState(false);
 
   const fetchCompanyData = async () => {
-    const { data, error } = await supabase
-      .from("companies")
-      .select("*")
-      .eq("name", companyName)
-      .single();
+    if (!companyId) return;
+    setLoading(true);
 
-    if (error) {
-      setError("Error fetching company tables");
-      console.error("Error fetching company tables:", error);
-    } else {
-      const fetchedTables = data.invoiceTables || [];
-      const updatedTables = fetchedTables.map((table) => ({
-        ...table,
-        isHidden: table.isHidden || false,
+    try {
+      const desiredStatus = showInactive ? "inactive" : "active";
+      let tablesQuery = supabase
+        .from("invoice_tables")
+        .select(`id, name, status, invoices(count)`)
+        .eq("company_id", companyId)
+        .eq("status", desiredStatus)
+        .order("created_at", { ascending: false });
+
+      const [companyResult, tablesResult] = await Promise.all([
+        supabase
+          .from("companies")
+          .select("id, name")
+          .eq("id", companyId)
+          .single(),
+        tablesQuery,
+      ]);
+
+      if (companyResult.error) throw companyResult.error;
+      if (tablesResult.error) throw tablesResult.error;
+
+      setCompany(companyResult.data);
+      const formattedTables = tablesResult.data.map((t) => ({
+        id: t.id,
+        name: t.name,
+        status: t.status,
+        invoiceCount: t.invoices[0]?.count || 0,
       }));
-      updatedTables.sort(
-        (a, b) =>
-          new Date(b.invoiceDetails.date) - new Date(a.invoiceDetails.date)
-      );
-      setCompanyData(data);
-      setTables(updatedTables);
+      setTables(formattedTables);
+    } catch (error) {
+      toast.error("Could not fetch company data.");
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchCompanyData();
-  }, [companyName]);
-
-  // --- ВИПРАВЛЕНА ТА ПОКРАЩЕНА ЛОГІКА ФІЛЬТРАЦІЇ ---
-  useEffect(() => {
-    if (!tables) return;
-
-    const filtered = tables
-      .filter((table) => (showHidden ? table.isHidden : !table.isHidden))
-      .filter((table) => {
-        // Якщо рядок пошуку порожній, показуємо таблицю
-        if (!searchTerm.trim()) {
-          return true;
-        }
-        // Якщо рядок пошуку не порожній, перевіряємо інвойси
-        if (!table.invoices || table.invoices.length === 0) {
-          return false; // Не показуємо таблицю без інвойсів при пошуку
-        }
-        // Шукаємо збіг в адресах, безпечно перевіряючи наявність invoice.address
-        return table.invoices.some(
-          (invoice) =>
-            invoice.address &&
-            invoice.address.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      });
-    setFilteredTables(filtered);
-  }, [searchTerm, tables, showHidden]);
+  }, [companyId, showInactive]);
 
   const handleAddTable = async () => {
-    const { date, invoiceNumber, billTo, payTo } = newTable;
-    if (!date || !invoiceNumber || !billTo || !payTo) {
-      setError("All fields are required");
+    if (newTableName.trim() === "") {
+      toast.error("Table name is required");
       return;
     }
-    const newTableData = {
-      tableId: `${Date.now()}_${Math.random()}`,
-      name: `Invoices for ${new Date(date).toLocaleString("en-US", {
-        month: "long",
-        year: "numeric",
-      })}`,
-      invoiceDetails: { date, invoiceNumber, billTo, payTo },
-      invoices: [],
-      isHidden: false,
-    };
-    const updatedTables = [newTableData, ...tables];
-    const { error: updateError } = await supabase
-      .from("companies")
-      .update({ invoiceTables: updatedTables })
-      .eq("id", companyData.id);
-    if (updateError) {
-      setError("Error adding table");
-      console.error("Error adding table:", updateError);
+    const { error } = await supabase.from("invoice_tables").insert({
+      name: newTableName.trim(),
+      company_id: companyId,
+      status: "active",
+    });
+
+    if (error) {
+      toast.error("Error adding table");
     } else {
-      setTables(updatedTables);
-      setNewTable({ date: "", invoiceNumber: "", billTo: "", payTo: "" });
-      setError("");
-      setShowAddForm(false);
+      toast.success("Table added successfully!");
+      setNewTableName("");
+      fetchCompanyData();
     }
   };
 
-  const handleHideTable = async (tableId) => {
-    const updatedTables = tables.map((table) =>
-      table.tableId === tableId ? { ...table, isHidden: true } : table
-    );
-    const { error: updateError } = await supabase
-      .from("companies")
-      .update({ invoiceTables: updatedTables })
-      .eq("id", companyData.id);
-    if (updateError) console.error("Error hiding table:", updateError);
-    else setTables(updatedTables);
+  const handleToggleTableStatus = async (tableId, currentStatus) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    const { error } = await supabase
+      .from("invoice_tables")
+      .update({ status: newStatus })
+      .eq("id", tableId);
+
+    if (error) {
+      toast.error("Failed to update table status.");
+    } else {
+      toast.success(`Table status changed to ${newStatus}.`);
+      fetchCompanyData();
+    }
   };
 
-  const handleTableClick = (tableId, event) => {
-    if (event.target.tagName === "BUTTON") return;
-    navigate(`/company/${companyName}/table/${tableId}`);
+  const handleTableClick = (tableId) => {
+    if (isEditing) return;
+    navigate(`/company/${companyId}/table/${tableId}`);
   };
+
+  const filteredTables = tables.filter((table) =>
+    table.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className={styles.pageContainer}>
@@ -135,19 +119,21 @@ const CompanyTablesPage = () => {
         >
           Back
         </button>
-        <h1 className={styles.pageTitle}>{companyName} - Tables</h1>
+        <h1 className={styles.pageTitle}>{company?.name || ""} - Tables</h1>
         <div className={styles.headerControls}>
+          <button
+            onClick={() => setShowInactive(!showInactive)}
+            className={styles.showHiddenButton}
+          >
+            <FaUsersSlash /> {showInactive ? "Show Active" : "Show Inactive"}
+          </button>
           <button
             onClick={() => setIsEditing(!isEditing)}
             className={styles.editButton}
           >
-            {isEditing ? "Done" : "Edit"}
-          </button>
-          <button
-            onClick={() => setShowHidden(!showHidden)}
-            className={styles.showHiddenButton}
-          >
-            {showHidden ? "Show Active" : "Show Hidden"}
+            <FaCheck style={{ display: isEditing ? "inline" : "none" }} />
+            <FaEdit style={{ display: !isEditing ? "inline" : "none" }} />
+            {isEditing ? " Done" : " Edit"}
           </button>
         </div>
       </div>
@@ -155,93 +141,64 @@ const CompanyTablesPage = () => {
       <div className={styles.toolbar}>
         <input
           type="text"
-          placeholder="Search by address in invoices..."
+          placeholder="Search by table name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className={styles.searchInput}
         />
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className={styles.addTableButton}
-        >
-          {showAddForm ? "Close Form" : "Add New Table"}
+      </div>
+
+      {/* ВИПРАВЛЕНО: Форма додавання тепер завжди видима */}
+      <div className={styles.addTableForm}>
+        <input
+          type="text"
+          value={newTableName}
+          onChange={(e) => setNewTableName(e.target.value)}
+          placeholder="New table name"
+          className={styles.inputField}
+        />
+        <button onClick={handleAddTable} className={styles.addTableButton}>
+          <FaPlus /> Add Table
         </button>
       </div>
 
-      {showAddForm && (
-        <div className={styles.addTableForm}>
-          <input
-            type="date"
-            name="date"
-            value={newTable.date}
-            onChange={(e) => setNewTable({ ...newTable, date: e.target.value })}
-            className={styles.inputField}
-          />
-          <input
-            type="text"
-            name="invoiceNumber"
-            value={newTable.invoiceNumber}
-            onChange={(e) =>
-              setNewTable({ ...newTable, invoiceNumber: e.target.value })
-            }
-            placeholder="Invoice Number"
-            className={styles.inputField}
-          />
-          <input
-            type="text"
-            name="billTo"
-            value={newTable.billTo}
-            onChange={(e) =>
-              setNewTable({ ...newTable, billTo: e.target.value })
-            }
-            placeholder="Bill To"
-            className={styles.inputField}
-          />
-          <input
-            type="text"
-            name="payTo"
-            value={newTable.payTo}
-            onChange={(e) =>
-              setNewTable({ ...newTable, payTo: e.target.value })
-            }
-            placeholder="Pay To"
-            className={styles.inputField}
-          />
-          <button onClick={handleAddTable} className={styles.saveButton}>
-            Save New Table
-          </button>
-        </div>
+      {loading ? (
+        <SkeletonLoader count={4} />
+      ) : (
+        <ul className={styles.tableList}>
+          {filteredTables.length > 0 ? (
+            filteredTables.map((table) => (
+              <li
+                key={table.id}
+                className={styles.tableItem}
+                onClick={() => handleTableClick(table.id)}
+              >
+                <div className={styles.tableInfo}>
+                  <h3>{table.name}</h3>
+                  <p>Invoices: {table.invoiceCount}</p>
+                </div>
+                {isEditing && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleTableStatus(table.id, table.status);
+                    }}
+                    className={styles.hideButton}
+                  >
+                    {table.status === "active" ? "To Inactive" : "To Active"}
+                  </button>
+                )}
+              </li>
+            ))
+          ) : (
+            <EmptyState
+              message={`No ${
+                showInactive ? "inactive" : "active"
+              } tables found.`}
+            />
+          )}
+        </ul>
       )}
-
-      {error && <p>{error}</p>}
-
-      <ul className={styles.tableList}>
-        {filteredTables.length > 0 ? (
-          filteredTables.map((table) => (
-            <li
-              key={table.tableId}
-              className={styles.tableItem}
-              onClick={(event) => handleTableClick(table.tableId, event)}
-            >
-              <h3>{table.name}</h3>
-              <p>Invoice Number: {table.invoiceDetails.invoiceNumber}</p>
-              <p>Pay To: {table.invoiceDetails.payTo}</p>
-              <p>Bill To: {table.invoiceDetails.billTo}</p>
-              <p>Date: {table.invoiceDetails.date}</p>
-              {isEditing && (
-                <button
-                  onClick={() => handleHideTable(table.tableId)}
-                  className={styles.hideButton}
-                >
-                  Hide
-                </button>
-              )}
-            </li>
-          ))
-        ) : (
-          <p>No tables available.</p>
-        )}
-      </ul>
     </div>
   );
 };

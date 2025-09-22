@@ -1,39 +1,61 @@
 // src/components/AddCompanyForm/AddCompanyForm.jsx
 
 import { useState } from "react";
-import axios from "axios";
+import { supabase } from "../../supabaseClient"; // ІМПОРТ: Замінюємо axios на supabase
+import toast from "react-hot-toast"; // ІМПОРТ: Додаємо toast для сповіщень
 
-const AddCompanyForm = ({ onCompanyAdded }) => {
+// КОМПОНЕНТ: Перейменовано для ясності, що він створює, а не просто додає
+const CreateCompanyForm = ({ onCompanyCreated }) => {
   const [companyName, setCompanyName] = useState("");
   const [companyDetails, setCompanyDetails] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!companyName.trim()) {
+      toast.error("Company name cannot be empty.");
+      return;
+    }
+
+    setLoading(true);
+
     const newCompany = {
-      name: companyName,
-      details: companyDetails,
+      name: companyName.trim(),
+      details: companyDetails.trim(),
+      status: "active", // Явно вказуємо статус за замовчуванням
+      invoiceTables: [], // Ініціалізуємо порожнім масивом
     };
 
     try {
-      // Надсилаємо запит на сервер для додавання нової компанії
-      const response = await axios.post(
-        "https://66ac12f3f009b9d5c7310a1a.mockapi.io/TemporaryCompanies", // API для додавання нової компанії
-        newCompany
-      );
+      // ЗАПИТ: Використовуємо supabase для вставки даних
+      const { data, error } = await supabase
+        .from("companies")
+        .insert([newCompany])
+        .select()
+        .single(); // .select().single() одразу повертає створений об'єкт
 
-      // Оновлюємо список компаній в батьківському компоненті
-      onCompanyAdded(response.data);
+      if (error) {
+        throw error;
+      }
 
-      // Очищаємо поля форми
+      // Оновлюємо стан у батьківському компоненті
+      onCompanyCreated(data);
+      toast.success("Company created successfully!");
+
+      // Очищуємо поля форми
       setCompanyName("");
       setCompanyDetails("");
     } catch (error) {
       console.error("Error adding company:", error);
+      toast.error(error.message || "Failed to add company.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
+    // ФОРМА: Додано disabled стани для полів під час завантаження
     <form onSubmit={handleSubmit}>
       <div>
         <label>Company Name:</label>
@@ -41,6 +63,7 @@ const AddCompanyForm = ({ onCompanyAdded }) => {
           type="text"
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
+          disabled={loading}
           required
         />
       </div>
@@ -49,12 +72,14 @@ const AddCompanyForm = ({ onCompanyAdded }) => {
         <textarea
           value={companyDetails}
           onChange={(e) => setCompanyDetails(e.target.value)}
-          required
+          disabled={loading}
         />
       </div>
-      <button type="submit">Add Company</button>
+      <button type="submit" disabled={loading}>
+        {loading ? "Adding..." : "Add Company"}
+      </button>
     </form>
   );
 };
 
-export default AddCompanyForm;
+export default CreateCompanyForm;

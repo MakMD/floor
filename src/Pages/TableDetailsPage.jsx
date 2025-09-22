@@ -1,208 +1,343 @@
 // src/Pages/TableDetailsPage.jsx
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../supabaseClient";
-import StaticCompanyInfo from "../components/StaticCompanyInfo/StaticCompanyInfo"; // Додаємо імпорт
+import StaticCompanyInfo from "../components/StaticCompanyInfo/StaticCompanyInfo";
 import styles from "./TableDetailsPage.module.css";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaEdit, FaSave, FaPlus, FaTrash } from "react-icons/fa";
 
 const TableDetailsPage = () => {
-  const { companyName, tableId } = useParams();
+  const { companyId, tableId } = useParams();
   const navigate = useNavigate();
-  const [companyData, setCompanyData] = useState(null);
-  const [table, setTable] = useState(null);
+
+  const [company, setCompany] = useState(null);
+  const [tableInfo, setTableInfo] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
-  useEffect(() => {
-    const fetchTableDetails = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("companies")
-        .select("id, name, invoiceTables")
-        .eq("name", companyName)
-        .single();
+  const [newInvoice, setNewInvoice] = useState({
+    date: "",
+    address: "",
+    total: "",
+  });
 
-      if (error) {
-        console.error("Error fetching company data:", error);
-        setLoading(false);
-        return;
-      }
+  const fetchPageData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [companyResult, tableResult, invoicesResult] = await Promise.all([
+        supabase
+          .from("companies")
+          .select("id, name")
+          .eq("id", companyId)
+          .single(),
+        supabase
+          .from("invoice_tables")
+          .select("id, name")
+          .eq("id", tableId)
+          .single(),
+        supabase
+          .from("invoices")
+          .select("*")
+          .eq("invoice_table_id", tableId)
+          .order("date", { ascending: false }),
+      ]);
 
-      if (data && data.invoiceTables) {
-        const selectedTable = data.invoiceTables.find(
-          (t) => String(t.tableId) === String(tableId)
-        );
-        if (selectedTable) {
-          setCompanyData(data);
-          setTable(selectedTable);
-        } else {
-          console.error("Table not found in company data.");
-        }
-      }
+      if (companyResult.error) throw companyResult.error;
+      if (tableResult.error) throw tableResult.error;
+      if (invoicesResult.error) throw invoicesResult.error;
+
+      setCompany(companyResult.data);
+      setTableInfo(tableResult.data);
+      setInvoices(invoicesResult.data || []);
+    } catch (error) {
+      toast.error("Could not load page data.");
+      console.error(error);
+      navigate("/companies");
+    } finally {
       setLoading(false);
-    };
+    }
+  }, [companyId, tableId, navigate]);
 
-    fetchTableDetails();
-  }, [companyName, tableId]);
+  useEffect(() => {
+    fetchPageData();
+  }, [fetchPageData]);
 
-  const handleInvoiceChange = (e, index, field) => {
-    const updatedInvoices = [...table.invoices];
-    updatedInvoices[index][field] = e.target.value;
-    setTable((prev) => ({ ...prev, invoices: updatedInvoices }));
+  const handleInputChange = (e, invoiceId) => {
+    const { name, value } = e.target;
+    setInvoices((currentInvoices) =>
+      currentInvoices.map((inv) =>
+        inv.id === invoiceId ? { ...inv, [name]: value } : inv
+      )
+    );
   };
 
-  const handleSaveChanges = async () => {
-    const updatedTables = companyData.invoiceTables.map((tbl) =>
-      tbl.tableId === tableId ? { ...tbl, invoices: table.invoices } : tbl
-    );
-    const { error } = await supabase
-      .from("companies")
-      .update({ invoiceTables: updatedTables })
-      .eq("id", companyData.id);
+  const handleNewInvoiceChange = (e) => {
+    const { name, value } = e.target;
+    setNewInvoice((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddInvoice = async () => {
+    if (!newInvoice.date || !newInvoice.address || !newInvoice.total) {
+      toast.error("Please fill all fields for the new invoice.");
+      return;
+    }
+
+    const total = parseFloat(newInvoice.total);
+    const gst = total * 0.05;
+    const totalWithGst = total + gst;
+
+    const { error } = await supabase.from("invoices").insert({
+      invoice_table_id: tableId,
+      date: newInvoice.date,
+      address: newInvoice.address,
+      total: total,
+      GSTCollected: gst,
+      totalWithGst: totalWithGst,
+    });
 
     if (error) {
-      toast.error("Failed to save changes.");
-      console.error(error);
+      toast.error("Failed to add new invoice.");
     } else {
-      toast.success("Changes saved successfully!");
-      setCompanyData((prev) => ({ ...prev, invoiceTables: updatedTables }));
-      setIsEditing(false);
+      toast.success("Invoice added!");
+      setNewInvoice({ date: "", address: "", total: "" });
+      fetchPageData();
     }
   };
 
-  const totalWithoutGst = useMemo(() => {
-    return (
-      table?.invoices.reduce(
-        (acc, inv) => acc + parseFloat(inv.total || 0),
-        0
-      ) || 0
-    );
-  }, [table]);
+  const handleDeleteInvoice = async (invoiceId) => {
+    if (!window.confirm("Are you sure you want to delete this invoice?"))
+      return;
+    const { error } = await supabase
+      .from("invoices")
+      .delete()
+      .eq("id", invoiceId);
+    if (error) {
+      toast.error("Failed to delete invoice.");
+    } else {
+      toast.success("Invoice deleted.");
+      fetchPageData();
+    }
+  };
 
-  const totalGst = useMemo(() => {
-    return (
-      table?.invoices.reduce(
-        (acc, inv) => acc + parseFloat(inv.GSTCollected || 0),
-        0
-      ) || 0
-    );
-  }, [table]);
+  const handleSaveChanges = async () => {
+    const updatePromises = invoices.map((inv) => {
+      const total = parseFloat(inv.total || 0);
+      const gst = total * 0.05;
+      const totalWithGst = total + gst;
 
-  const totalWithGst = useMemo(() => {
-    return (
-      table?.invoices.reduce(
-        (acc, inv) => acc + parseFloat(inv.totalWithGst || 0),
-        0
-      ) || 0
-    );
-  }, [table]);
+      return supabase
+        .from("invoices")
+        .update({
+          date: inv.date,
+          address: inv.address,
+          total: total,
+          GSTCollected: gst,
+          totalWithGst: totalWithGst,
+        })
+        .eq("id", inv.id);
+    });
 
-  if (loading || !table) {
+    const results = await Promise.all(updatePromises);
+    if (results.some((res) => res.error)) {
+      toast.error("Some changes could not be saved.");
+    } else {
+      toast.success("All changes saved successfully!");
+      setIsEditing(false);
+      fetchPageData();
+    }
+  };
+
+  const totals = useMemo(() => {
+    return invoices.reduce(
+      (acc, inv) => {
+        acc.total += parseFloat(inv.total || 0);
+        acc.gst += parseFloat(inv.GSTCollected || 0);
+        acc.totalWithGst += parseFloat(inv.totalWithGst || 0);
+        return acc;
+      },
+      { total: 0, gst: 0, totalWithGst: 0 }
+    );
+  }, [invoices]);
+
+  if (loading || !company || !tableInfo) {
     return (
       <div className={styles.invoicePage} style={{ textAlign: "center" }}>
-        <p>Loading table details...</p>
+        <p>Loading...</p>
       </div>
     );
   }
 
   return (
     <div className={styles.invoicePage}>
-      <div className={styles.btnBackPrintCont}>
+      <div className={styles.controlsHeader}>
         <button className={styles.backButton} onClick={() => navigate(-1)}>
           <FaArrowLeft /> Back
         </button>
-        <button
-          className={styles.editButton}
-          onClick={() => setIsEditing(!isEditing)}
-        >
-          {isEditing ? "Save" : "Edit"}
-        </button>
+        <div className={styles.actionButtons}>
+          <button className={styles.printButton} onClick={() => window.print()}>
+            Print
+          </button>
+          <button
+            className={styles.editButton}
+            onClick={() =>
+              isEditing ? handleSaveChanges() : setIsEditing(true)
+            }
+          >
+            {isEditing ? (
+              <>
+                <FaSave /> Save
+              </>
+            ) : (
+              <>
+                <FaEdit /> Edit
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
       <div className={styles.document}>
         <div className={styles.header}>
           <StaticCompanyInfo />
         </div>
         <div className={styles.invoiceHeader}>
-          <h2>Invoice Details</h2>
-          <p>
-            <strong>Date:</strong> {table.invoiceDetails?.date}
-          </p>
-          <p>
-            <strong>Invoice #:</strong> {table.invoiceDetails?.invoiceNumber}
-          </p>
-          <p>
-            <strong>BILL TO:</strong> {table.invoiceDetails?.billTo}
-          </p>
-          <p>
-            <strong>PAY TO:</strong> {table.invoiceDetails?.payTo}
-          </p>
+          <h2>
+            {company.name} - {tableInfo.name}
+          </h2>
         </div>
-        <table className={styles.invoiceTable}>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Address</th>
-              <th>Price</th>
-              <th>SF/Stairs</th>
-              <th>Total</th>
-              <th>GST Collected (5%)</th>
-              <th>Total With Gst</th>
-            </tr>
-          </thead>
-          <tbody>
-            {table.invoices.map((invoice, index) => (
-              <tr key={index}>
-                <td>{invoice.date}</td>
-                <td>{invoice.address}</td>
-                <td>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      value={invoice.price}
-                      onChange={(e) => handleInvoiceChange(e, index, "price")}
-                    />
-                  ) : (
-                    invoice.price
-                  )}
-                </td>
-                <td>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={invoice["sf/stairs"]}
-                      onChange={(e) =>
-                        handleInvoiceChange(e, index, "sf/stairs")
-                      }
-                    />
-                  ) : (
-                    invoice["sf/stairs"]
-                  )}
-                </td>
-                <td>{invoice.total}</td>
-                <td>{invoice.GSTCollected}</td>
-                <td>{invoice.totalWithGst}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className={styles.totalRow}>
-              <td colSpan="4"></td>
-              <td>{totalWithoutGst.toFixed(2)}</td>
-              <td>{totalGst.toFixed(2)}</td>
-              <td>{totalWithGst.toFixed(2)}</td>
-            </tr>
-          </tfoot>
-        </table>
-        {isEditing && (
-          <div className={styles.btnSaveCont}>
-            <button className={styles.saveButton} onClick={handleSaveChanges}>
-              Save Changes
-            </button>
+
+        <div className={styles.addInvoiceSection}>
+          <h3 className={styles.sectionTitle}>Add New Invoice</h3>
+          <div className={styles.addInvoiceForm}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="new-date">Date</label>
+              <input
+                id="new-date"
+                type="date"
+                name="date"
+                value={newInvoice.date}
+                onChange={handleNewInvoiceChange}
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <label htmlFor="new-address">Address</label>
+              <input
+                id="new-address"
+                type="text"
+                name="address"
+                placeholder="Job site address"
+                value={newInvoice.address}
+                onChange={handleNewInvoiceChange}
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <label htmlFor="new-total">Total (before GST)</label>
+              <input
+                id="new-total"
+                type="number"
+                name="total"
+                placeholder="0.00"
+                value={newInvoice.total}
+                onChange={handleNewInvoiceChange}
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <button onClick={handleAddInvoice}>
+                <FaPlus /> Add Invoice
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+
+        <div className={styles.tableWrapper}>
+          <table className={styles.invoiceTable}>
+            <thead>
+              <tr>
+                <th style={{ width: "15%" }}>Date</th>
+                <th>Address</th>
+                <th style={{ width: "15%" }}>Total</th>
+                <th style={{ width: "15%" }}>GST (5%)</th>
+                <th style={{ width: "15%" }}>Total+GST</th>
+                {isEditing && <th style={{ width: "5%" }}></th>}
+              </tr>
+            </thead>
+            <tbody>
+              {invoices.map((invoice) => (
+                <tr key={invoice.id}>
+                  <td>
+                    {isEditing ? (
+                      <input
+                        type="date"
+                        name="date"
+                        value={invoice.date || ""}
+                        onChange={(e) => handleInputChange(e, invoice.id)}
+                      />
+                    ) : (
+                      invoice.date
+                    )}
+                  </td>
+                  <td>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="address"
+                        value={invoice.address || ""}
+                        onChange={(e) => handleInputChange(e, invoice.id)}
+                      />
+                    ) : (
+                      invoice.address
+                    )}
+                  </td>
+                  <td>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        name="total"
+                        value={invoice.total || ""}
+                        onChange={(e) => handleInputChange(e, invoice.id)}
+                      />
+                    ) : (
+                      `$${(invoice.total || 0).toFixed(2)}`
+                    )}
+                  </td>
+                  <td>${(invoice.GSTCollected || 0).toFixed(2)}</td>
+                  <td>${(invoice.totalWithGst || 0).toFixed(2)}</td>
+                  {isEditing && (
+                    <td>
+                      <button
+                        className={styles.deleteButton}
+                        onClick={() => handleDeleteInvoice(invoice.id)}
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className={styles.totalRow}>
+                <td colSpan="2" style={{ textAlign: "right" }}>
+                  <strong>TOTAL:</strong>
+                </td>
+                <td>
+                  <strong>${totals.total.toFixed(2)}</strong>
+                </td>
+                <td>
+                  <strong>${totals.gst.toFixed(2)}</strong>
+                </td>
+                <td>
+                  <strong>${totals.totalWithGst.toFixed(2)}</strong>
+                </td>
+                {isEditing && <td></td>}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
     </div>
   );

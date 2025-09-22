@@ -38,23 +38,24 @@ const CompanyList = ({
     }
   };
 
-  const handleCompanyClick = (companyName) => {
+  const handleCompanyClick = (companyId) => {
     if (isEditing) return;
-    navigate(`/company/${companyName}`);
+    navigate(`/company/${companyId}`);
   };
 
   return (
     <div className={styles.companyListContainer}>
       <ul className={styles.companyGrid}>
         {companies.map((company) => {
-          const tableCount = company.invoiceTables?.length || 0;
+          // ОНОВЛЕНО: Використовуємо нове поле 'table_count' з RPC-функції
+          const tableCount = company.table_count || 0;
           return (
             <li
               key={company.id}
               className={`${styles.companyItem} ${
                 isEditing ? styles.editing : ""
               }`}
-              onClick={() => handleCompanyClick(company.name)}
+              onClick={() => handleCompanyClick(company.id)}
             >
               <div className={styles.companyInfo}>
                 {isEditing ? (

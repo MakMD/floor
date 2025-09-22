@@ -93,3 +93,31 @@
 .cancelButton {
   background-color: var(--color-secondary);
 }
+/* src/components/PeopleSection/PeopleSection.module.css */
+
+/* ... (ваш існуючий код) ... */
+
+.adminButton {
+  background-color: #ffc107; /* Жовтий колір для адміністративних дій */
+  color: #212529;
+}
+.adminButton:hover {
+  background-color: #e0a800;
+}
+.adminButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -3,44 +3,35 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
+import { usePeople } from "../../hooks/usePeople"; // ІМПОРТ: Використовуємо хук
 import PeopleList from "../PeopleList/PeopleList";
 import SkeletonLoader from "../SkeletonLoader/SkeletonLoader";
 import EmptyState from "../EmptyState/EmptyState";
 import { FaPlus, FaUsersSlash, FaEdit, FaCheck } from "react-icons/fa";
 import styles from "./PeopleSection.module.css";
+import toast from "react-hot-toast";
 
-const PeopleSection = ({
-  people,
-  isLoading,
-  onPeopleUpdate,
-  onPersonCreated,
-}) => {
+const PeopleSection = () => {
+  const { people, loading: isLoading, refetch: onPeopleUpdate } = usePeople(); // ВИКОРИСТАННЯ ХУКА
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleCreatePerson = async () => {
     if (newName.trim() === "") return;
-    setLoading(true);
-    const newPersonData = {
-      name: newName.trim(),
-      status: "active",
-      tables: [],
-    };
-    const { data, error } = await supabase
-      .from("people")
-      .insert([newPersonData])
-      .select();
+    setAddLoading(true);
+    const newPersonData = { name: newName.trim(), status: "active" };
+    const { error } = await supabase.from("people").insert([newPersonData]);
     if (error) {
-      console.error("Error creating person:", error);
+      toast.error("Error creating person.");
     } else {
-      onPersonCreated(data[0]);
       setNewName("");
       setIsAdding(false);
+      onPeopleUpdate(); // Оновлюємо список через refetch
     }
-    setLoading(false);
+    setAddLoading(false);
   };
 
   const handleToggleStatus = async (personId, currentStatus) => {
@@ -49,11 +40,8 @@ const PeopleSection = ({
       .from("people")
       .update({ status: newStatus })
       .eq("id", personId);
-    if (error) {
-      console.error("Error updating status:", error);
-    } else {
-      onPeopleUpdate();
-    }
+    if (error) toast.error("Error updating status.");
+    else onPeopleUpdate();
   };
 
   const handleUpdatePersonName = async (personId, newName) => {
@@ -61,12 +49,11 @@ const PeopleSection = ({
       .from("people")
       .update({ name: newName })
       .eq("id", personId);
-    if (error) {
-      console.error("Error updating name:", error);
-    } else {
-      onPeopleUpdate();
-    }
+    if (error) toast.error("Error updating name.");
+    else onPeopleUpdate();
   };
+
+  const activePeople = people.filter((p) => p.status === "active");
 
   return (
     <div className={styles.peopleSectionContainer}>
@@ -112,14 +99,14 @@ const PeopleSection = ({
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Enter person name"
             className={styles.inputField}
-            disabled={loading}
+            disabled={addLoading}
           />
           <button
             onClick={handleCreatePerson}
             className={styles.createButton}
-            disabled={loading}
+            disabled={addLoading}
           >
-            {loading ? "Creating..." : "Create"}
+            {addLoading ? "Creating..." : "Create"}
           </button>
           <button
             onClick={() => setIsAdding(false)}
@@ -132,9 +119,9 @@ const PeopleSection = ({
 
       {isLoading ? (
         <SkeletonLoader count={6} />
-      ) : people.length > 0 ? (
+      ) : activePeople.length > 0 ? (
         <PeopleList
-          people={people}
+          people={activePeople}
           isEditing={isEditing}
           onToggleStatus={handleToggleStatus}
           onUpdatePersonName={handleUpdatePersonName}

@@ -7,62 +7,100 @@ import { supabase } from "../supabaseClient";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
 import styles from "./PersonPage.module.css";
+import toast from "react-hot-toast";
 
 const PersonPage = () => {
   const { personId } = useParams();
   const [person, setPerson] = useState(null);
+  const [tables, setTables] = useState([]); // Окремий стан для таблиць
   const [newTableName, setNewTableName] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true); // Додаємо стан завантаження
   const navigate = useNavigate();
 
-  const fetchPerson = async () => {
-    const { data, error } = await supabase
+  const fetchPersonData = async () => {
+    if (!personId) return;
+    setLoading(true);
+
+    // 1. Отримуємо дані про саму людину
+    const { data: personData, error: personError } = await supabase
       .from("people")
-      .select("*")
+      .select("id, name")
       .eq("id", personId)
       .single();
-    if (error) {
-      console.error("Error fetching person:", error);
-      setPerson({ tables: [] });
-    } else {
-      const sortedTables = (data.tables || []).sort((a, b) =>
-        b.name.localeCompare(a.name)
-      );
-      setPerson({ ...data, tables: sortedTables });
+
+    if (personError) {
+      toast.error("Could not fetch person data.");
+      setLoading(false);
+      return;
     }
+    setPerson(personData);
+
+    // 2. Отримуємо пов'язані з ним таблиці та кількість інвойсів в них
+    const { data: tablesData, error: tablesError } = await supabase
+      .from("invoice_tables")
+      .select(
+        `
+        id,
+        name,
+        invoices ( count )
+      `
+      )
+      .eq("person_id", personId)
+      .order("created_at", { ascending: false }); // Сортуємо за датою створення
+
+    if (tablesError) {
+      toast.error("Could not fetch person's tables.");
+    } else {
+      const formattedTables = tablesData.map((t) => ({
+        id: t.id,
+        name: t.name,
+        invoiceCount: t.invoices[0]?.count || 0,
+      }));
+      setTables(formattedTables);
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchPerson();
+    fetchPersonData();
   }, [personId]);
-
-  const updatePersonTables = async (updatedTables) => {
-    const { error } = await supabase
-      .from("people")
-      .update({ tables: updatedTables })
-      .eq("id", personId);
-    if (error) console.error("Error updating tables:", error);
-    else await fetchPerson();
-  };
 
   const handleAddTable = async () => {
     if (!newTableName.trim()) return;
-    const newTable = {
-      tableId: Date.now().toString(),
-      name: newTableName,
-      invoices: [],
-    };
-    const updatedTables = [...(person.tables || []), newTable];
-    await updatePersonTables(updatedTables);
-    setNewTableName("");
+
+    const { error } = await supabase
+      .from("invoice_tables")
+      .insert({ name: newTableName.trim(), person_id: personId });
+
+    if (error) {
+      toast.error("Failed to add new table.");
+    } else {
+      toast.success("Table added successfully!");
+      setNewTableName("");
+      fetchPersonData(); // Оновлюємо список
+    }
   };
 
   const handleDeleteTable = async (tableId) => {
-    if (!window.confirm("Are you sure you want to delete this table?")) return;
-    const updatedTables = person.tables.filter(
-      (table) => table.tableId !== tableId
-    );
-    await updatePersonTables(updatedTables);
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this table and all its invoices?"
+      )
+    )
+      return;
+
+    const { error } = await supabase
+      .from("invoice_tables")
+      .delete()
+      .eq("id", tableId);
+
+    if (error) {
+      toast.error("Failed to delete table.");
+    } else {
+      toast.success("Table deleted successfully!");
+      fetchPersonData(); // Оновлюємо список
+    }
   };
 
   return (
@@ -78,15 +116,7 @@ const PersonPage = () => {
           className={styles.editButton}
           onClick={() => setIsEditing(!isEditing)}
         >
-          {isEditing ? (
-            <>
-              <FaCheck /> Done
-            </>
-          ) : (
-            <>
-              <FaEdit /> Edit
-            </>
-          )}
+          {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
         </button>
       </div>
 
@@ -103,46 +133,35 @@ const PersonPage = () => {
         </button>
       </div>
 
-      {!person ? (
+      {loading ? (
         <SkeletonLoader count={3} />
-      ) : person.tables && person.tables.length > 0 ? (
+      ) : tables.length > 0 ? (
         <ul className={styles.tableList}>
-          {person.tables.map((table) => {
-            const invoiceCount = table.invoices?.length || 0;
-            const totalIncome =
-              table.invoices?.reduce(
-                (sum, inv) => sum + parseFloat(inv.total_income || 0),
-                0
-              ) || 0;
-            return (
-              <li key={table.tableId} className={styles.tableItem}>
-                <div
-                  className={styles.tableInfo}
-                  onClick={() =>
-                    navigate(`/person/${personId}/tables/${table.tableId}`)
-                  }
-                >
-                  <span className={styles.tableName}>{table.name}</span>
-                  <div className={styles.tableDetails}>
-                    <span>
-                      Invoices: <strong>{invoiceCount}</strong>
-                    </span>
-                    <span>
-                      Total: <strong>${totalIncome.toFixed(2)}</strong>
-                    </span>
-                  </div>
+          {tables.map((table) => (
+            <li key={table.id} className={styles.tableItem}>
+              <div
+                className={styles.tableInfo}
+                onClick={() =>
+                  navigate(`/person/${personId}/tables/${table.id}`)
+                }
+              >
+                <span className={styles.tableName}>{table.name}</span>
+                <div className={styles.tableDetails}>
+                  <span>
+                    Invoices: <strong>{table.invoiceCount}</strong>
+                  </span>
                 </div>
-                {isEditing && (
-                  <button
-                    onClick={() => handleDeleteTable(table.tableId)}
-                    className={styles.deleteButton}
-                  >
-                    <FaTrash />
-                  </button>
-                )}
-              </li>
-            );
-          })}
+              </div>
+              {isEditing && (
+                <button
+                  onClick={() => handleDeleteTable(table.id)}
+                  className={styles.deleteButton}
+                >
+                  <FaTrash />
+                </button>
+              )}
+            </li>
+          ))}
         </ul>
       ) : (
         <EmptyState message="No tables have been created for this person yet." />

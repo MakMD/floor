@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { useAddresses } from "../hooks/useAddresses"; // ІМПОРТ
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
 import { FaArrowLeft, FaPlus, FaEdit, FaCheck, FaTrash } from "react-icons/fa";
@@ -10,95 +11,77 @@ import styles from "./AddressListPage.module.css";
 import toast from "react-hot-toast";
 
 const AddressListPage = () => {
-  const [addresses, setAddresses] = useState([]);
-  const [filteredAddresses, setFilteredAddresses] = useState([]);
-  const [newAddress, setNewAddress] = useState("");
-  const [newDate, setNewDate] = useState("");
+  const { addresses, loading, refetch } = useAddresses(); // ВИКОРИСТАННЯ
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedAddresses, setEditedAddresses] = useState({});
   const navigate = useNavigate();
 
-  const fetchAddresses = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("addresses")
-      .select("*")
-      .order("address", { ascending: true });
-    if (error) {
-      console.error("Error fetching addresses:", error);
-      toast.error("Error fetching addresses.");
-    } else {
-      setAddresses(data);
-      setFilteredAddresses(data);
-      const namesMap = data.reduce((acc, item) => {
-        acc[item.id] = item.address;
-        return acc;
-      }, {});
-      setEditedAddresses(namesMap);
-    }
-    setLoading(false);
+  const [newAddressData, setNewAddressData] = useState({
+    date: "",
+    address: "",
+    square_feet: "",
+  });
+
+  useEffect(() => {
+    const namesMap = addresses.reduce((acc, item) => {
+      acc[item.id] = item.address;
+      return acc;
+    }, {});
+    setEditedAddresses(namesMap);
+  }, [addresses]);
+
+  const handleNewAddressChange = (e) => {
+    const { name, value } = e.target;
+    setNewAddressData((prev) => ({ ...prev, [name]: value }));
   };
 
-  useEffect(() => {
-    fetchAddresses();
-  }, []);
-
-  useEffect(() => {
-    const filtered = addresses.filter((item) =>
-      item.address.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredAddresses(filtered);
-  }, [searchTerm, addresses]);
-
   const handleAddAddress = async () => {
-    if (newAddress.trim() === "" || newDate.trim() === "") {
+    if (
+      newAddressData.address.trim() === "" ||
+      newAddressData.date.trim() === ""
+    ) {
       toast.error("Address and Date cannot be empty.");
       return;
     }
-    const { data, error } = await supabase
+
+    const newAddressObject = {
+      address: newAddressData.address.trim(),
+      date: newAddressData.date,
+      square_feet: newAddressData.square_feet
+        ? parseInt(newAddressData.square_feet, 10)
+        : null,
+      notes: [],
+      files: [],
+      builders: [],
+      material_notes: [],
+    };
+
+    const { error } = await supabase
       .from("addresses")
-      .insert([
-        {
-          address: newAddress.trim(),
-          date: newDate,
-          builder: null,
-          notes: [],
-          files: [],
-        },
-      ])
-      .select();
+      .insert([newAddressObject]);
     if (error) {
-      console.error("Error adding address:", error);
       toast.error(`Error adding address: ${error.message}`);
     } else {
-      setAddresses((prev) => [data[0], ...prev]);
-      setNewAddress("");
-      setNewDate("");
+      setNewAddressData({ date: "", address: "", square_feet: "" });
       toast.success("Address added successfully!");
+      refetch();
     }
   };
 
   const handleUpdateAddressName = async (id, newName) => {
     if (newName.trim() === "") {
       toast.error("Address name cannot be empty.");
-      setEditedAddresses((prev) => ({
-        ...prev,
-        [id]: addresses.find((a) => a.id === id).address,
-      }));
       return;
     }
     const { error } = await supabase
       .from("addresses")
       .update({ address: newName.trim() })
       .eq("id", id);
-    if (error) {
-      console.error("Error updating address name:", error);
-      toast.error("Failed to update address name.");
-    } else {
-      await fetchAddresses();
+    if (error) toast.error("Failed to update address name.");
+    else {
       toast.success("Address name updated successfully!");
+      refetch();
     }
   };
 
@@ -106,22 +89,16 @@ const AddressListPage = () => {
     if (!window.confirm("Are you sure you want to delete this address?"))
       return;
     const { error } = await supabase.from("addresses").delete().eq("id", id);
-    if (error) {
-      console.error("Error deleting address:", error);
-      toast.error("Failed to delete address.");
-    } else {
-      await fetchAddresses();
+    if (error) toast.error("Failed to delete address.");
+    else {
       toast.success("Address deleted successfully!");
+      refetch();
     }
   };
 
-  const handleNameChange = (id, value) => {
-    setEditedAddresses((prev) => ({ ...prev, [id]: value }));
-  };
-
-  const handleNameSave = (id) => {
-    handleUpdateAddressName(id, editedAddresses[id]);
-  };
+  const filteredAddresses = addresses.filter((item) =>
+    item.address.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className={styles.pageContainer}>
@@ -155,15 +132,25 @@ const AddressListPage = () => {
         <div className={styles.addForm}>
           <input
             type="date"
-            value={newDate}
-            onChange={(e) => setNewDate(e.target.value)}
+            name="date"
+            value={newAddressData.date}
+            onChange={handleNewAddressChange}
             className={styles.addInput}
           />
           <input
             type="text"
+            name="address"
             placeholder="Address"
-            value={newAddress}
-            onChange={(e) => setNewAddress(e.target.value)}
+            value={newAddressData.address}
+            onChange={handleNewAddressChange}
+            className={styles.addInput}
+          />
+          <input
+            type="number"
+            name="square_feet"
+            placeholder="Square Feet"
+            value={newAddressData.square_feet}
+            onChange={handleNewAddressChange}
             className={styles.addInput}
           />
           <button onClick={handleAddAddress} className={styles.addButton}>
@@ -191,8 +178,15 @@ const AddressListPage = () => {
                   <input
                     type="text"
                     value={editedAddresses[item.id] || ""}
-                    onChange={(e) => handleNameChange(item.id, e.target.value)}
-                    onBlur={() => handleNameSave(item.id)}
+                    onChange={(e) =>
+                      setEditedAddresses((p) => ({
+                        ...p,
+                        [item.id]: e.target.value,
+                      }))
+                    }
+                    onBlur={() =>
+                      handleUpdateAddressName(item.id, editedAddresses[item.id])
+                    }
                     onClick={(e) => e.stopPropagation()}
                     className={styles.editInput}
                   />
@@ -211,7 +205,9 @@ const AddressListPage = () => {
                   <strong>{item.address}</strong>
                   <br />
                   {item.date && <span>Date: {item.date}</span>}
-                  {item.builder && <span> | Builder: {item.builder}</span>}
+                  {item.builders && item.builders.length > 0 && (
+                    <span> | Builder: {item.builders[0]}</span>
+                  )}
                 </span>
               )}
             </li>
