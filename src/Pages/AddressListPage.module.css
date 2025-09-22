@@ -1,7 +1,7 @@
 /* src/Pages/AddressListPage.module.css */
 
 .pageContainer {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -14,7 +14,8 @@
 }
 
 .backButton,
-.editButton {
+.editButton,
+.doneButton {
   padding: 10px 20px;
   color: #ffffff;
   border: none;
@@ -33,14 +34,12 @@
 .backButton:hover {
   background-color: #5a6268;
 }
-
 .editButton {
   background-color: var(--color-primary);
 }
 .editButton:hover {
   background-color: var(--color-primary-hover);
 }
-
 .doneButton {
   background-color: #28a745;
 }
@@ -59,15 +58,73 @@
   gap: 10px;
 }
 
-.toolbar {
-  display: flex;
-  flex-direction: column; /* Розташовує елементи один під одним */
-  gap: 20px; /* Відступ між секціями */
+.addFormSection {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
   margin-bottom: 32px;
 }
+.addFormSection h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.5rem;
+}
 
-.searchSection {
+.addForm {
+  display: grid;
+  /* Адаптивна сітка для полів */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputGroup label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  padding-left: 4px;
+}
+
+.inputGroup input,
+.inputGroup select {
   width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white; /* для кращої видимості */
+  height: 45px; /* Фіксована висота для вирівнювання */
+}
+
+.inputGroup .addButton {
+  width: 100%;
+  height: 45px;
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.toolbar {
+  padding: 16px;
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border);
+  margin-bottom: 24px;
 }
 
 .searchInput {
@@ -76,40 +133,6 @@
   border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 16px;
-}
-
-.addForm {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.addInput {
-  padding: 12px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 16px;
-  flex: 1;
-  min-width: 150px;
-}
-
-.addButton {
-  padding: 12px 24px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.addButton:hover {
-  background-color: #218838;
 }
 
 .addressList {
@@ -124,8 +147,6 @@
   border: 1px solid var(--color-border);
   border-left: 5px solid transparent;
   box-shadow: var(--shadow-sm);
-  font-size: 1.1rem;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease-out;
   display: flex;
@@ -142,6 +163,12 @@
   cursor: default;
   background-color: #fff;
   border-left-color: var(--color-primary);
+}
+
+.itemMeta {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin-top: 8px;
 }
 
 .editInput {

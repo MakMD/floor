@@ -13,13 +13,14 @@ import {
   FaRegBuilding,
   FaSignOutAlt,
   FaUsers,
+  FaWrench, // Іконка для адмін-панелі
 } from "react-icons/fa";
 import { supabase } from "../../supabaseClient";
 import LoginModal from "../LoginModal/LoginModal";
 import logo from "../../../public/Flooring.Boss.svg";
 import styles from "./App.module.css";
 
-// ДИНАМІЧНІ ІМПОРТИ: Замінюємо статичні імпорти на динамічні
+// Динамічні імпорти
 const PeopleSection = lazy(() => import("../PeopleSection/PeopleSection"));
 const PersonPage = lazy(() => import("../../Pages/PersonPage"));
 const CompanyListPage = lazy(() => import("../../Pages/CompanyListPage"));
@@ -36,6 +37,7 @@ const InactiveCompaniesPage = lazy(() =>
 );
 const AddressListPage = lazy(() => import("../../Pages/AddressListPage"));
 const AddressDetailsPage = lazy(() => import("../../Pages/AddressDetailsPage"));
+const AdminPage = lazy(() => import("../../Pages/AdminPage")); // ОНОВЛЕНО: Додаємо нову сторінку
 
 const AppContent = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -43,11 +45,7 @@ const AppContent = () => {
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
-      }
+      setIsLoggedIn(!!data.session);
     };
     checkSession();
   }, []);
@@ -102,6 +100,17 @@ const AppContent = () => {
               >
                 <FaRegBuilding /> Companies
               </NavLink>
+              {/* ОНОВЛЕНО: Додаємо посилання на адмін-панель */}
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  isActive
+                    ? `${styles.navLink} ${styles.activeLink}`
+                    : styles.navLink
+                }
+              >
+                <FaWrench /> Admin
+              </NavLink>
               <button onClick={handleLogout} className={styles.logoutButton}>
                 <FaSignOutAlt /> Log Out
               </button>
@@ -112,7 +121,6 @@ const AppContent = () => {
 
       {isLoggedIn && (
         <main className={styles.mainContent}>
-          {/* SUSPENSE: Обгортаємо маршрути в Suspense з індикатором завантаження */}
           <Suspense
             fallback={
               <div style={{ textAlign: "center", padding: "40px" }}>
@@ -149,6 +157,8 @@ const AppContent = () => {
                 path="/person/:personId/tables/:tableId"
                 element={<PersonTableDetailsPage />}
               />
+              {/* ОНОВЛЕНО: Додаємо новий маршрут */}
+              <Route path="/admin" element={<AdminPage />} />
             </Routes>
           </Suspense>
         </main>
