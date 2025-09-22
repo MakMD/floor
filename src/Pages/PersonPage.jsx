@@ -12,17 +12,16 @@ import toast from "react-hot-toast";
 const PersonPage = () => {
   const { personId } = useParams();
   const [person, setPerson] = useState(null);
-  const [tables, setTables] = useState([]); // Окремий стан для таблиць
+  const [tables, setTables] = useState([]);
   const [newTableName, setNewTableName] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true); // Додаємо стан завантаження
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const fetchPersonData = async () => {
     if (!personId) return;
     setLoading(true);
 
-    // 1. Отримуємо дані про саму людину
     const { data: personData, error: personError } = await supabase
       .from("people")
       .select("id, name")
@@ -36,27 +35,38 @@ const PersonPage = () => {
     }
     setPerson(personData);
 
-    // 2. Отримуємо пов'язані з ним таблиці та кількість інвойсів в них
+    // Запит до БД залишається тим самим, сортування будемо робити в коді
     const { data: tablesData, error: tablesError } = await supabase
       .from("invoice_tables")
-      .select(
-        `
-        id,
-        name,
-        invoices ( count )
-      `
-      )
-      .eq("person_id", personId)
-      .order("created_at", { ascending: false }); // Сортуємо за датою створення
+      .select(`id, name, invoices ( count )`)
+      .eq("person_id", personId);
 
     if (tablesError) {
       toast.error("Could not fetch person's tables.");
     } else {
-      const formattedTables = tablesData.map((t) => ({
+      let formattedTables = tablesData.map((t) => ({
         id: t.id,
         name: t.name,
         invoiceCount: t.invoices[0]?.count || 0,
       }));
+
+      // ОНОВЛЕНО: Додаємо логіку сортування
+      formattedTables.sort((a, b) => {
+        try {
+          // Розбираємо дату з назви формату "DD.MM.YYYY"
+          const [dayA, monthA, yearA] = a.name.split(".").map(Number);
+          const [dayB, monthB, yearB] = b.name.split(".").map(Number);
+          const dateA = new Date(yearA, monthA - 1, dayA);
+          const dateB = new Date(yearB, monthB - 1, dayB);
+
+          // Сортуємо від новішої дати до старішої
+          return dateB - dateA;
+        } catch (e) {
+          // Якщо назва не є датою, сортуємо за алфавітом
+          return b.name.localeCompare(a.name);
+        }
+      });
+
       setTables(formattedTables);
     }
     setLoading(false);
@@ -78,7 +88,7 @@ const PersonPage = () => {
     } else {
       toast.success("Table added successfully!");
       setNewTableName("");
-      fetchPersonData(); // Оновлюємо список
+      fetchPersonData();
     }
   };
 
@@ -99,7 +109,7 @@ const PersonPage = () => {
       toast.error("Failed to delete table.");
     } else {
       toast.success("Table deleted successfully!");
-      fetchPersonData(); // Оновлюємо список
+      fetchPersonData();
     }
   };
 
@@ -125,7 +135,7 @@ const PersonPage = () => {
           type="text"
           value={newTableName}
           onChange={(e) => setNewTableName(e.target.value)}
-          placeholder="Enter new table name (e.g., Month YYYY)"
+          placeholder="Enter new table name (e.g., DD.MM.YYYY)"
           className={styles.inputField}
         />
         <button onClick={handleAddTable} className={styles.addTableButton}>
