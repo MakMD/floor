@@ -1,5 +1,6 @@
 /* src/Pages/PersonTableDetailsPage.module.css */
 
+/* --- ОСНОВНА СТРУКТУРА (DESKTOP) --- */
 .pageLayout {
   display: grid;
   grid-template-columns: 2.5fr 1fr;
@@ -20,19 +21,23 @@
 .sidebar {
   position: sticky;
   top: 20px;
-  height: fit-content;
 }
 
+/* --- ЗАГОЛОВОК --- */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .pageTitle {
   font-size: 2rem;
   margin: 0;
+  text-align: center;
+  flex-grow: 1;
 }
 
 .backButton,
@@ -45,6 +50,7 @@
   border-radius: var(--border-radius-md);
   transition: background-color 0.2s ease;
   color: #ffffff;
+  white-space: nowrap;
 }
 .backButton {
   background-color: var(--color-secondary);
@@ -53,24 +59,50 @@
   background-color: var(--color-primary);
 }
 
+/* --- ФОРМА ДОДАВАННЯ ІНВОЙСУ --- */
 .addInvoiceForm {
-  margin-top: 30px;
   padding: 20px;
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 15px;
-  align-items: center;
+  align-items: flex-end;
   margin-bottom: 24px;
 }
+
 .addInvoiceForm h3 {
   grid-column: 1 / -1;
   margin-bottom: 10px;
+  font-size: 1.25rem;
 }
 
-/* ОНОВЛЕНО: Стилі для таблиці */
+.addInvoiceForm .addInvoiceButton {
+  grid-column: 1 / -1;
+  margin-top: 10px;
+}
+
+.inputField {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.addInvoiceButton {
+  padding: 12px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  border-radius: var(--border-radius-md);
+}
+
+/* --- ТАБЛИЦЯ ІНВОЙСІВ --- */
 .tableWrapper {
   overflow-x: auto;
 }
@@ -106,7 +138,7 @@
   border: 1px solid var(--color-primary);
   border-radius: 4px;
   box-sizing: border-box;
-  min-width: 120px;
+  min-width: 150px;
 }
 
 .deleteButton {
@@ -115,6 +147,7 @@
   color: var(--color-text-secondary);
   cursor: pointer;
 }
+
 .deleteButton:hover {
   color: #dc3545;
 }
@@ -123,24 +156,81 @@
   font-weight: bold;
   background-color: #f8f9fa;
   border-top: 2px solid var(--color-border);
+  text-align: right;
 }
 
-.inputField {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: 1rem;
-  box-sizing: border-box;
+.totalRow td:first-child {
+  text-align: right;
 }
 
-.addInvoiceButton {
-  padding: 12px 20px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  border-radius: var(--border-radius-md);
-  grid-column: 1 / -1;
+/* --- МОБІЛЬНА АДАПТАЦІЯ --- */
+@media (max-width: 1024px) {
+  .pageLayout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+    margin-top: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pageTitle {
+    font-size: 1.5rem;
+    order: -1;
+  }
+  .addInvoiceForm {
+    grid-template-columns: 1fr;
+  }
+
+  /* --- Трансформація таблиці в картки --- */
+  .tableWrapper {
+    overflow-x: hidden;
+  }
+
+  .invoiceTable thead {
+    display: none;
+  }
+
+  .invoiceTable tr {
+    display: block;
+    margin-bottom: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    padding: 10px;
+  }
+
+  .invoiceTable td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: right;
+    padding: 10px 5px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .invoiceTable td:last-child {
+    border-bottom: none;
+  }
+
+  .invoiceTable td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    text-align: left;
+    margin-right: 10px;
+    color: var(--color-text-secondary);
+  }
+
+  .invoiceTable tfoot {
+    display: none; /* Ховаємо загальну суму в мобільному вигляді */
+  }
+
+  .invoiceTable input {
+    min-width: 100px;
+    text-align: right;
+  }
 }

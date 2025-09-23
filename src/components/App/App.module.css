@@ -3,7 +3,7 @@
 .appContainer {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 0 40px; /* Відступи для десктопної версії */
 }
 
 .header {
@@ -67,15 +67,32 @@
 }
 
 .logoutButton:hover {
-  color: #dc3545; /* Червоний колір для кнопки виходу */
+  color: #dc3545;
 }
 
 .mainContent {
   padding-top: 20px;
 }
 
-.pageContent {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
+/* --- МОБІЛЬНА АДАПТАЦІЯ --- */
+@media (max-width: 768px) {
+  .appContainer {
+    padding: 0 15px; /* Зменшуємо бічні відступи */
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 20px;
+    padding: 10px 0;
+  }
+
+  .nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .navLink {
+    font-size: 0.9rem;
+  }
 }

@@ -68,3 +68,9 @@
 .toggleStatusButton:hover {
   background-color: var(--color-text-primary);
 }
+/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
+@media (max-width: 768px) {
+  .peopleList {
+    grid-template-columns: 1fr; /* Одна колонка на мобільних */
+  }
+}

@@ -32,7 +32,6 @@ const PersonTableDetailsPage = () => {
 
   const fetchInvoices = useCallback(async () => {
     if (!tableId) return;
-    // ОНОВЛЕНО: Запит тепер включає назви магазину та типу робіт
     const { data, error } = await supabase
       .from("invoices")
       .select("*, stores(name), work_types(id, work_type_templates(name))")
@@ -57,7 +56,9 @@ const PersonTableDetailsPage = () => {
           .select("id, name")
           .eq("id", tableId)
           .single(),
-        supabase.from("people").select("id, name, tables(invoices)"),
+        supabase
+          .from("people")
+          .select("id, name, invoice_tables(invoices(address, date))"),
       ]);
 
       if (personResult.error || tableResult.error) {
@@ -192,7 +193,7 @@ const PersonTableDetailsPage = () => {
             onClick={isEditing ? handleSaveChanges : () => setIsEditing(true)}
             className={styles.editButton}
           >
-            {isEditing ? "Save Changes" : "Edit"}
+            {isEditing ? "Save" : "Edit"}
           </button>
         </div>
 
@@ -228,7 +229,6 @@ const PersonTableDetailsPage = () => {
           </button>
         </div>
 
-        {/* ОНОВЛЕНО: Повністю перероблена таблиця */}
         <div className={styles.tableWrapper}>
           <table className={styles.invoiceTable}>
             <thead>
@@ -244,7 +244,7 @@ const PersonTableDetailsPage = () => {
             <tbody>
               {invoices.map((invoice) => (
                 <tr key={invoice.id}>
-                  <td>
+                  <td data-label="Date">
                     {isEditing ? (
                       <input
                         type="date"
@@ -257,7 +257,7 @@ const PersonTableDetailsPage = () => {
                       invoice.date
                     )}
                   </td>
-                  <td>
+                  <td data-label="Address">
                     {isEditing ? (
                       <input
                         type="text"
@@ -270,11 +270,11 @@ const PersonTableDetailsPage = () => {
                       invoice.address
                     )}
                   </td>
-                  <td>{invoice.stores?.name || "N/A"}</td>
-                  <td>
+                  <td data-label="Store">{invoice.stores?.name || "N/A"}</td>
+                  <td data-label="Work Type">
                     {invoice.work_types?.work_type_templates?.name || "N/A"}
                   </td>
-                  <td>
+                  <td data-label="Total">
                     {isEditing ? (
                       <input
                         type="number"
@@ -288,7 +288,7 @@ const PersonTableDetailsPage = () => {
                     )}
                   </td>
                   {isEditing && (
-                    <td>
+                    <td data-label="Actions">
                       <button
                         className={styles.deleteButton}
                         onClick={() => handleDeleteInvoice(invoice.id)}
@@ -302,7 +302,7 @@ const PersonTableDetailsPage = () => {
             </tbody>
             <tfoot>
               <tr className={styles.totalRow}>
-                <td colSpan="4" style={{ textAlign: "right" }}>
+                <td colSpan="4">
                   <strong>TOTAL:</strong>
                 </td>
                 <td>

@@ -58,3 +58,27 @@
   width: 50%;
   max-width: 600px;
 }
+/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pageTitle {
+    order: -1;
+    font-size: 1.75rem;
+  }
+  .searchContainer {
+    margin-bottom: 24px;
+  }
+  .searchInput {
+    width: 100%;
+  }
+}
+/* --- Додаткові стилі для мобільної версії --- */
+@media (max-width: 768px) {
+  .controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

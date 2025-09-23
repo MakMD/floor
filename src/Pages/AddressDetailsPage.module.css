@@ -241,3 +241,45 @@
   background-color: var(--color-background);
   border-radius: 8px;
 }
+/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 10px;
+    margin-top: 20px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .pageTitle {
+    font-size: 1.5rem;
+    order: -1; /* Заголовок над кнопками */
+  }
+
+  /* Перетворюємо сітку на одну колонку */
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .detailCard {
+    padding: 16px;
+  }
+
+  .detailCard h3 {
+    font-size: 1.1rem;
+    padding-bottom: 12px;
+  }
+
+  /* Поля "label" і "value" тепер одне під одним */
+  .detailItem {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    align-items: flex-start;
+  }
+
+  .detailItem label {
+    font-size: 0.75rem;
+  }
+}

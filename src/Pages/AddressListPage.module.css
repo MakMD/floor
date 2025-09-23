@@ -71,43 +71,30 @@
   font-weight: 600;
 }
 
-/* --- НОВИЙ ПІДХІД ДО ФОРМИ З FLEXBOX --- */
 .addForm {
   display: flex;
   flex-direction: column;
-  gap: 16px; /* Відстань між рядками */
+  gap: 16px;
 }
 
 .formRow {
-  display: flex;
-  gap: 16px; /* Відстань між елементами в рядку */
+  display: grid;
+  gap: 16px;
   align-items: flex-end;
+}
+
+.formRow:first-child {
+  grid-template-columns: 1fr 1fr;
+}
+
+.formRow:last-child {
+  grid-template-columns: 4fr 1.5fr 1fr 1.5fr;
 }
 
 .inputGroup {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-/* Розподіл ширини для першого рядка */
-.formRow .inputGroup:nth-child(1),
-.formRow .inputGroup:nth-child(2) {
-  flex: 1 1 50%; /* Кожне поле займає 50% */
-}
-
-/* Розподіл ширини для другого рядка */
-.formRow .inputGroup:nth-child(1) {
-  flex: 1 1 40%; /* Address */
-}
-.formRow .inputGroup:nth-child(2) {
-  flex: 1 1 20%; /* Date */
-}
-.formRow .inputGroup:nth-child(3) {
-  flex: 1 1 20%; /* Total Amount */
-}
-.formRow .inputGroup:nth-child(4) {
-  flex: 1 1 20%; /* Add Project Button */
 }
 
 .inputGroup label {
@@ -126,6 +113,7 @@
   border-radius: 6px;
   font-size: 0.9rem;
   background-color: white;
+  height: auto;
 }
 
 .addButton {
@@ -144,8 +132,8 @@
   justify-content: center;
   gap: 8px;
   transition: background-color 0.2s ease;
+  height: 37px;
 }
-/* --- КІНЕЦЬ ЗМІН ДЛЯ ФОРМИ --- */
 
 .toolbar {
   padding: 16px;
@@ -207,6 +195,7 @@
   align-items: center;
   gap: 16px;
   flex-grow: 1;
+  min-width: 0; /* Допомагає flex-елементам правильно переносити текст */
 }
 
 .itemNumber {
@@ -219,12 +208,16 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .addressName {
   font-size: 1.1rem;
   font-weight: 500;
   color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .itemMeta {
@@ -283,4 +276,50 @@
 
 .deleteButton:hover {
   background-color: #c82333;
+}
+
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 10px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .pageTitle {
+    font-size: 1.75rem; /* Зменшуємо заголовок */
+    order: -1; /* Ставимо заголовок над кнопками */
+  }
+
+  .addFormSection {
+    padding: 16px;
+  }
+
+  /* Повністю змінюємо сітку форми на мобільних */
+  .formRow {
+    grid-template-columns: 1fr !important; /* Гарантуємо одну колонку */
+  }
+
+  /* Стилі для списку адрес */
+  .addressItem {
+    flex-direction: column; /* Ставимо елементи вертикально */
+    align-items: flex-start; /* Вирівнюємо по лівому краю */
+    gap: 12px;
+    padding: 15px;
+  }
+
+  .itemContent {
+    width: 100%;
+  }
+
+  .itemDetails {
+    align-items: flex-start;
+  }
+
+  .statusIndicator {
+    align-self: flex-end; /* Статус завжди справа */
+  }
 }

@@ -142,3 +142,24 @@
   padding: 6px 12px;
   border-radius: var(--border-radius-md);
 }
+/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
+@media (max-width: 768px) {
+  .pageHeader {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pageTitle {
+    order: -1;
+    font-size: 1.5rem;
+  }
+  .toolbar {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .searchInput {
+    width: 100%;
+  }
+  .addTableForm {
+    grid-template-columns: 1fr;
+  }
+}

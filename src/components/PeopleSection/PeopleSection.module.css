@@ -121,3 +121,22 @@
     transform: rotate(360deg);
   }
 }
+/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
+@media (max-width: 768px) {
+  .titleContainer {
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .controls {
+    position: static;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .createPersonForm {
+    flex-direction: column;
+  }
+}

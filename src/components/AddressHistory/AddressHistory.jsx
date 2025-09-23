@@ -23,7 +23,8 @@ const AddressHistory = ({
   const relevantPeople = allPeople.filter((person) => {
     if (person.id === currentPersonId) return false;
 
-    return person.tables?.some((table) =>
+    // ОНОВЛЕНО: Змінено 'tables' на 'invoice_tables' для відповідності новій структурі
+    return person.invoice_tables?.some((table) =>
       table.invoices?.some(
         (invoice) =>
           invoice.address &&

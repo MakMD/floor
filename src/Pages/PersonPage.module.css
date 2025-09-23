@@ -128,3 +128,33 @@
   background-color: var(--color-surface);
   border-radius: var(--border-radius-lg);
 }
+/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .pageTitle {
+    font-size: 1.75rem;
+    order: -1;
+  }
+
+  .addTableForm {
+    flex-direction: column;
+  }
+
+  .tableInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .deleteButton {
+    align-self: flex-end;
+    border-radius: var(--border-radius-md);
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+}
