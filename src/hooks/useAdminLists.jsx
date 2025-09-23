@@ -7,22 +7,27 @@ import toast from "react-hot-toast";
 export const useAdminLists = () => {
   const [builders, setBuilders] = useState([]);
   const [stores, setStores] = useState([]);
+  const [workTypeTemplates, setWorkTypeTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLists = useCallback(async () => {
     setLoading(true);
     try {
-      const [buildersRes, storesRes] = await Promise.all([
+      const [buildersRes, storesRes, workTypesRes] = await Promise.all([
         supabase.from("builders").select("id, name").order("name"),
         supabase.from("stores").select("id, name").order("name"),
+        supabase.from("work_type_templates").select("id, name").order("name"),
       ]);
 
       if (buildersRes.error) throw buildersRes.error;
       if (storesRes.error) throw storesRes.error;
+      if (workTypesRes.error) throw workTypesRes.error;
 
       setBuilders(buildersRes.data);
       setStores(storesRes.data);
+      setWorkTypeTemplates(workTypesRes.data);
     } catch (error) {
+      // ВИПРАВЛЕНО: Додано відсутню дужку
       toast.error("Could not load reference lists.");
       console.error(error);
     } finally {
@@ -34,5 +39,5 @@ export const useAdminLists = () => {
     fetchLists();
   }, [fetchLists]);
 
-  return { builders, stores, loading };
+  return { builders, stores, workTypeTemplates, loading };
 };

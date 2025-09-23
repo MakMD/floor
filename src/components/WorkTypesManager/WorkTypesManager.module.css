@@ -1,0 +1,91 @@
+/* src/components/WorkTypesManager/WorkTypesManager.module.css */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.workTypeList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.workTypeItem,
+.addWorkTypeForm {
+  display: grid;
+  grid-template-columns: 3fr 2fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.workTypeItem input,
+.workTypeItem select,
+.addWorkTypeForm input,
+.addWorkTypeForm select {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inputName {
+  flex-grow: 3;
+}
+
+.inputAmount {
+  max-width: 100px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.saveButton,
+.deleteButton,
+.addButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.saveButton {
+  color: var(--color-primary);
+}
+.saveButton:hover {
+  background-color: #e9f2ff;
+}
+
+.deleteButton {
+  color: #dc3545;
+}
+.deleteButton:hover {
+  background-color: #fbebee;
+}
+
+.addButton {
+  color: #198754;
+  border: 1px dashed #198754;
+}
+
+.addButton:hover {
+  background-color: #d1e7dd;
+}
+
+/* Адаптивність */
+@media (max-width: 768px) {
+  .workTypeItem,
+  .addWorkTypeForm {
+    grid-template-columns: 1fr;
+  }
+}

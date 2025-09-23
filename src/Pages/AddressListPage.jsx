@@ -4,23 +4,38 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAddresses } from "../hooks/useAddresses";
-import { useAdminLists } from "../hooks/useAdminLists"; // ІМПОРТ: Наш новий хук
+import { useAdminLists } from "../hooks/useAdminLists";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
 import { FaArrowLeft, FaPlus, FaEdit, FaCheck, FaTrash } from "react-icons/fa";
 import styles from "./AddressListPage.module.css";
 import toast from "react-hot-toast";
 
+// ОНОВЛЕНО: Створюємо компонент для статусу, щоб уникнути повторення коду
+const StatusIndicator = ({ status }) => {
+  const statusClass =
+    {
+      "In Process": styles.statusInProgress,
+      Ready: styles.statusReady,
+      "Not Finished": styles.statusNotFinished,
+    }[status] || "";
+
+  return (
+    <div className={`${styles.statusIndicator} ${statusClass}`}>
+      <span>{status || "No Status"}</span>
+    </div>
+  );
+};
+
 const AddressListPage = () => {
   const { addresses, loading: addressesLoading, refetch } = useAddresses();
-  const { builders, stores, loading: listsLoading } = useAdminLists(); // ВИКОРИСТАННЯ
+  const { builders, stores, loading: listsLoading } = useAdminLists();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editedAddresses, setEditedAddresses] = useState({});
   const navigate = useNavigate();
 
-  // ОНОВЛЕНО: Стан для нової, розширеної форми
   const [newAddressData, setNewAddressData] = useState({
     store_id: "",
     builder_id: "",
@@ -30,7 +45,6 @@ const AddressListPage = () => {
   });
 
   useEffect(() => {
-    // Синхронізуємо імена для редагування при завантаженні/оновленні списку
     const namesMap = addresses.reduce((acc, item) => {
       acc[item.id] = item.address;
       return acc;
@@ -51,14 +65,13 @@ const AddressListPage = () => {
       return;
     }
 
-    // ОНОВЛЕНО: Об'єкт для вставки відповідає новій структурі БД
     const newAddressObject = {
       address: address.trim(),
       date: date,
       total_amount: total_amount ? parseFloat(total_amount) : null,
       store_id: store_id ? parseInt(store_id) : null,
       builder_id: builder_id ? parseInt(builder_id) : null,
-      status: "In Process", // Статус за замовчуванням
+      status: "In Process",
     };
 
     const { error } = await supabase
@@ -82,7 +95,6 @@ const AddressListPage = () => {
   const handleUpdateAddressName = async (id, newName) => {
     if (!newName || newName.trim() === "") {
       toast.error("Address name cannot be empty.");
-      // Повертаємо старе значення в інпут, якщо нове порожнє
       setEditedAddresses((prev) => ({
         ...prev,
         [id]: addresses.find((a) => a.id === id).address,
@@ -140,7 +152,6 @@ const AddressListPage = () => {
         </div>
       </div>
 
-      {/* ОНОВЛЕНО: Повністю нова форма додавання */}
       <div className={styles.addFormSection}>
         <h3>Create New Project</h3>
         <div className={styles.addForm}>
@@ -234,7 +245,7 @@ const AddressListPage = () => {
         </div>
       ) : addresses.length > 0 ? (
         <ul className={styles.addressList}>
-          {filteredAddresses.map((item) => (
+          {filteredAddresses.map((item, index) => (
             <li
               key={item.id}
               className={`${styles.addressItem} ${
@@ -265,13 +276,24 @@ const AddressListPage = () => {
                   </button>
                 </>
               ) : (
-                <span>
-                  <strong>{item.address}</strong>
-                  <div className={styles.itemMeta}>
-                    {item.date && <span>Date: {item.date}</span>}
-                    {/* Тут можна буде додавати інші дані, наприклад, статус */}
+                <>
+                  <div className={styles.itemContent}>
+                    <span className={styles.itemNumber}>{index + 1}.</span>
+                    <div className={styles.itemDetails}>
+                      <strong>{item.address}</strong>
+                      <div className={styles.itemMeta}>
+                        {item.builders?.name && (
+                          <span>Builder: {item.builders.name}</span>
+                        )}
+                        {item.stores?.name && (
+                          <span>Store: {item.stores.name}</span>
+                        )}
+                        {item.date && <span>Date: {item.date}</span>}
+                      </div>
+                    </div>
                   </div>
-                </span>
+                  <StatusIndicator status={item.status} />
+                </>
               )}
             </li>
           ))}

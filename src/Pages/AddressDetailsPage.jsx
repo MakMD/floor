@@ -11,19 +11,14 @@ import {
   FaTrash,
   FaFileAlt,
   FaSpinner,
-  FaUserPlus,
 } from "react-icons/fa";
 import styles from "./AddressDetailsPage.module.css";
 import toast from "react-hot-toast";
 import FileUpload from "../components/FileUpload/FileUpload";
-import PersonPicker from "../components/PersonPicker/PersonPicker";
-// ОНОВЛЕНО: Імпортуємо обидві функції
-import {
-  addInvoiceForWorker,
-  removeInvoiceForWorker,
-} from "../services/invoiceService";
+import { useAdminLists } from "../hooks/useAdminLists";
+import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager"; // ІМПОРТ: Новий компонент
 
-// ... (Компонент FileListItem залишається без змін) ...
+// ... FileListItem component remains unchanged ...
 const FileListItem = ({ bucketName, fileIdentifier, onDelete }) => {
   const [signedUrl, setSignedUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,14 +90,16 @@ const AddressDetailsPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [newGeneralNote, setNewGeneralNote] = useState("");
   const [newMaterialNote, setNewMaterialNote] = useState("");
-  const [newBuilder, setNewBuilder] = useState("");
+  const { builders, stores, loading: listsLoading } = useAdminLists();
 
   const [editedData, setEditedData] = useState({
     notes: [],
     material_notes: [],
-    builders: [],
-    square_feet: "",
+    total_amount: "",
     date: "",
+    status: "",
+    builder_id: "",
+    store_id: "",
   });
 
   const BUCKET_NAME = "address-files";
@@ -111,7 +108,7 @@ const AddressDetailsPage = () => {
     if (!addressId) return;
     const { data, error } = await supabase
       .from("addresses")
-      .select("*")
+      .select("*, builders(name), stores(name)")
       .eq("id", addressId)
       .single();
     if (error) {
@@ -123,9 +120,11 @@ const AddressDetailsPage = () => {
       setEditedData({
         notes: data.notes || [],
         material_notes: data.material_notes || [],
-        builders: data.builders || [],
-        square_feet: data.square_feet || "",
+        total_amount: data.total_amount || "",
         date: data.date || "",
+        status: data.status || "In Process",
+        builder_id: data.builder_id || "",
+        store_id: data.store_id || "",
       });
     }
   }, [addressId, navigate]);
@@ -143,7 +142,7 @@ const AddressDetailsPage = () => {
       .from("addresses")
       .update(updates)
       .eq("id", addressId)
-      .select()
+      .select("*, builders(name), stores(name)")
       .single();
     if (error) {
       console.error("Error updating address:", error);
@@ -154,57 +153,20 @@ const AddressDetailsPage = () => {
     return data;
   };
 
-  const handleWorkersUpdate = async (newWorkersList) => {
-    const oldWorkersList = addressData.workers || [];
-    const updated = await updateAddress({ workers: newWorkersList });
-
-    if (updated) {
-      toast.success("Workers list updated!");
-
-      const addedWorkers = newWorkersList.filter(
-        (id) => !oldWorkersList.includes(id)
-      );
-      const removedWorkers = oldWorkersList.filter(
-        (id) => !newWorkersList.includes(id)
-      );
-
-      if (addedWorkers.length > 0 || removedWorkers.length > 0) {
-        if (!addressData.date || !addressData.address) {
-          toast.error(
-            "Cannot manage invoices without an address and date. Please fill them in."
-          );
-          return;
-        }
-
-        const invoiceData = {
-          address: addressData.address,
-          date: addressData.date,
-        };
-
-        // Створюємо інвойси для доданих працівників
-        for (const workerId of addedWorkers) {
-          await addInvoiceForWorker(workerId, invoiceData);
-        }
-
-        // ОНОВЛЕНО: Видаляємо інвойси для видалених працівників
-        for (const workerId of removedWorkers) {
-          await removeInvoiceForWorker(workerId, invoiceData);
-        }
-      }
-    }
-  };
-
-  // ... (решта функцій-обробників залишається без змін) ...
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedData((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSaveChanges = async () => {
     const updates = {
-      square_feet: editedData.square_feet
-        ? parseInt(editedData.square_feet, 10)
+      total_amount: editedData.total_amount
+        ? parseFloat(editedData.total_amount)
         : null,
       date: editedData.date || null,
+      status: editedData.status,
+      builder_id: editedData.builder_id || null,
+      store_id: editedData.store_id || null,
     };
     const updated = await updateAddress(updates);
     if (updated) {
@@ -212,26 +174,8 @@ const AddressDetailsPage = () => {
       toast.success("Details saved successfully!");
     }
   };
-  const handleAddBuilder = async () => {
-    if (newBuilder.trim() === "") return;
-    const updatedBuilders = [...editedData.builders, newBuilder.trim()];
-    const updated = await updateAddress({ builders: updatedBuilders });
-    if (updated) {
-      setEditedData((prev) => ({ ...prev, builders: updatedBuilders }));
-      setNewBuilder("");
-      toast.success("Builder added!");
-    }
-  };
-  const handleDeleteBuilder = async (index) => {
-    if (!window.confirm("Are you sure you want to delete this builder?"))
-      return;
-    const updatedBuilders = editedData.builders.filter((_, i) => i !== index);
-    const updated = await updateAddress({ builders: updatedBuilders });
-    if (updated) {
-      setEditedData((prev) => ({ ...prev, builders: updatedBuilders }));
-      toast.success("Builder deleted!");
-    }
-  };
+
+  // ... (note and file handlers remain unchanged) ...
   const handleAddMaterialNote = async () => {
     if (newMaterialNote.trim() === "") return;
     const updatedNotes = [...editedData.material_notes, newMaterialNote.trim()];
@@ -310,7 +254,6 @@ const AddressDetailsPage = () => {
   if (!addressData) return <p>Loading...</p>;
 
   return (
-    // ... (JSX розмітка залишається без змін) ...
     <div className={styles.pageContainer}>
       <div className={styles.header}>
         <button
@@ -333,49 +276,66 @@ const AddressDetailsPage = () => {
         {/* ЛІВА КОЛОНКА */}
         <div className={styles.gridColumn}>
           <div className={styles.detailCard}>
-            <h3>
-              <FaUserPlus /> Builders
-            </h3>
-            {(isEditing || editedData.builders.length === 0) && (
-              <div className={styles.addNoteForm}>
-                <input
-                  type="text"
-                  value={newBuilder}
-                  onChange={(e) => setNewBuilder(e.target.value)}
-                  placeholder="Add builder name..."
-                  className={styles.noteInput}
-                />
-                <button onClick={handleAddBuilder} className={styles.addButton}>
-                  <FaPlus />
-                </button>
-              </div>
-            )}
-
-            {editedData.builders.length > 0 ? (
-              <ul className={styles.notesList}>
-                {editedData.builders.map((builder, index) => (
-                  <li key={index} className={styles.noteItem}>
-                    <span>{builder}</span>
-                    {isEditing && (
-                      <button
-                        onClick={() => handleDeleteBuilder(index)}
-                        className={styles.deleteNoteButton}
-                      >
-                        <FaTrash />
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              !isEditing && (
-                <p className={styles.noItemsMessage}>No builders added yet.</p>
-              )
-            )}
-          </div>
-
-          <div className={styles.detailCard}>
             <h3>Project Details</h3>
+            <div className={styles.detailItem}>
+              <label>Status</label>
+              {isEditing ? (
+                <select
+                  name="status"
+                  value={editedData.status}
+                  onChange={handleInputChange}
+                  className={styles.editInput}
+                >
+                  <option value="In Process">In Process</option>
+                  <option value="Ready">Ready</option>
+                  <option value="Not Finished">Not Finished</option>
+                </select>
+              ) : (
+                <p>{addressData.status || "N/A"}</p>
+              )}
+            </div>
+            <div className={styles.detailItem}>
+              <label>Store</label>
+              {isEditing ? (
+                <select
+                  name="store_id"
+                  value={editedData.store_id}
+                  onChange={handleInputChange}
+                  className={styles.editInput}
+                  disabled={listsLoading}
+                >
+                  <option value="">Select a store</option>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p>{addressData.stores?.name || "N/A"}</p>
+              )}
+            </div>
+            <div className={styles.detailItem}>
+              <label>Builder</label>
+              {isEditing ? (
+                <select
+                  name="builder_id"
+                  value={editedData.builder_id}
+                  onChange={handleInputChange}
+                  className={styles.editInput}
+                  disabled={listsLoading}
+                >
+                  <option value="">Select a builder</option>
+                  {builders.map((builder) => (
+                    <option key={builder.id} value={builder.id}>
+                      {builder.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p>{addressData.builders?.name || "N/A"}</p>
+              )}
+            </div>
             <div className={styles.detailItem}>
               <label>Date</label>
               {isEditing ? (
@@ -391,32 +351,34 @@ const AddressDetailsPage = () => {
               )}
             </div>
             <div className={styles.detailItem}>
-              <label>Square Feet</label>
+              <label>Total Amount</label>
               {isEditing ? (
                 <input
                   type="number"
-                  name="square_feet"
-                  value={editedData.square_feet}
+                  name="total_amount"
+                  value={editedData.total_amount}
                   onChange={handleInputChange}
                   className={styles.editInput}
                 />
               ) : (
-                <p>{addressData.square_feet || "N/A"}</p>
+                <p>
+                  {addressData.total_amount
+                    ? `$${addressData.total_amount.toFixed(2)}`
+                    : "N/A"}
+                </p>
               )}
             </div>
           </div>
+          {/* ОНОВЛЕНО: Замінюємо PersonPicker на WorkTypesManager */}
           <div className={styles.detailCard}>
-            <h3>Workers</h3>
-            <PersonPicker
-              addressId={addressId}
-              attachedWorkers={addressData.workers || []}
-              onWorkersUpdate={handleWorkersUpdate}
-            />
+            <h3>Work Types & Payments</h3>
+            <WorkTypesManager addressId={addressId} />
           </div>
         </div>
 
         {/* ПРАВА КОЛОНКА */}
         <div className={styles.gridColumn}>
+          {/* ... General Notes and Files sections remain unchanged ... */}
           <div className={styles.detailCard}>
             <h3>Material Notes</h3>
             <div className={styles.addNoteForm}>
