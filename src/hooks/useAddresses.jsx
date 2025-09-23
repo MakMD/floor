@@ -10,14 +10,15 @@ export const useAddresses = () => {
 
   const fetchAddresses = useCallback(async () => {
     setLoading(true);
-    // ОНОВЛЕНО: Запитуємо статус та імена з пов'язаних таблиць
+    // ВИПРАВЛЕНО: Змінено сортування з 'created_at' на 'date'
     const { data, error } = await supabase
       .from("addresses")
-      .select("id, address, date, status, builders(name), stores(name)")
-      .order("created_at", { ascending: false }); // Сортуємо за датою створення
+      .select("*, builders(*), stores(*)")
+      .order("date", { ascending: false }); // Сортуємо за датою
 
     if (error) {
       toast.error("Error fetching addresses.");
+      console.error("Supabase error:", error);
       setAddresses([]);
     } else {
       setAddresses(data);

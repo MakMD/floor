@@ -27,27 +27,21 @@ const PersonTableDetailsPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // ОНОВЛЕНО: Повертаємо стан для розрахунків
-  const [totalWithGST, setTotalWithGST] = useState(null);
-  const [wcb, setWcb] = useState(null);
-  const [showGST, setShowGST] = useState(false);
-  const [showWCB, setShowWCB] = useState(false);
-  const [isWCBCalculated, setIsWCBCalculated] = useState(false);
-  const [isGSTCalculated, setIsGSTCalculated] = useState(false);
-
   const [selectedPersonForModal, setSelectedPersonForModal] = useState(null);
   const [modalFilterAddress, setModalFilterAddress] = useState("");
 
   const fetchInvoices = useCallback(async () => {
     if (!tableId) return;
+    // ОНОВЛЕНО: Запит тепер включає назви магазину та типу робіт
     const { data, error } = await supabase
       .from("invoices")
-      .select("*")
+      .select("*, stores(name), work_types(id, work_type_templates(name))")
       .eq("invoice_table_id", tableId)
       .order("date", { ascending: false });
 
     if (error) {
       toast.error("Failed to load invoices.");
+      console.error(error);
     } else {
       setInvoices(data || []);
     }
@@ -63,7 +57,7 @@ const PersonTableDetailsPage = () => {
           .select("id, name")
           .eq("id", tableId)
           .single(),
-        supabase.from("people").select("id, name"),
+        supabase.from("people").select("id, name, tables(invoices)"),
       ]);
 
       if (personResult.error || tableResult.error) {
@@ -174,24 +168,6 @@ const PersonTableDetailsPage = () => {
     );
   }, [invoices]);
 
-  // ОНОВЛЕНО: Повертаємо логіку розрахунків
-  const calculateWCB = () => {
-    const newWCB = (totalIncome - (totalIncome / 100) * 3).toFixed(2);
-    setWcb(newWCB);
-    setShowWCB(true);
-    setIsWCBCalculated(true);
-    if (isGSTCalculated) {
-      setTotalWithGST((newWCB * 1.05).toFixed(2));
-    }
-  };
-
-  const calculateTotalWithGST = () => {
-    const baseIncome = isWCBCalculated ? wcb : totalIncome;
-    setTotalWithGST((baseIncome * 1.05).toFixed(2));
-    setShowGST(true);
-    setIsGSTCalculated(true);
-  };
-
   if (loading || !person || !tableInfo) {
     return (
       <div className={styles.pageLayout}>
@@ -252,117 +228,90 @@ const PersonTableDetailsPage = () => {
           </button>
         </div>
 
-        <table className={styles.invoiceTable}>
-          <thead>
-            <tr>
-              <th>Address</th>
-              <th>Date</th>
-              <th>Total Income</th>
-              {isEditing && <th>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {invoices.map((invoice) => (
-              <tr key={invoice.id}>
-                <td>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={invoice.address}
-                      onChange={(e) =>
-                        handleInvoiceChange(e, invoice.id, "address")
-                      }
-                      className={styles.inputField}
-                    />
-                  ) : (
-                    invoice.address
-                  )}
-                </td>
-                <td>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      value={invoice.date}
-                      onChange={(e) =>
-                        handleInvoiceChange(e, invoice.id, "date")
-                      }
-                      className={styles.inputField}
-                    />
-                  ) : (
-                    invoice.date
-                  )}
-                </td>
-                <td>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      value={invoice.total_income}
-                      onChange={(e) =>
-                        handleInvoiceChange(e, invoice.id, "total_income")
-                      }
-                      className={styles.inputField}
-                    />
-                  ) : (
-                    `$${parseFloat(invoice.total_income || 0).toFixed(2)}`
-                  )}
-                </td>
-                {isEditing && (
+        {/* ОНОВЛЕНО: Повністю перероблена таблиця */}
+        <div className={styles.tableWrapper}>
+          <table className={styles.invoiceTable}>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Address</th>
+                <th>Store</th>
+                <th>Work Type</th>
+                <th>Total</th>
+                {isEditing && <th></th>}
+              </tr>
+            </thead>
+            <tbody>
+              {invoices.map((invoice) => (
+                <tr key={invoice.id}>
                   <td>
-                    <button
-                      className={styles.deleteInvoiceButton}
-                      onClick={() => handleDeleteInvoice(invoice.id)}
-                    >
-                      <FaTrash />
-                    </button>
+                    {isEditing ? (
+                      <input
+                        type="date"
+                        value={invoice.date}
+                        onChange={(e) =>
+                          handleInvoiceChange(e, invoice.id, "date")
+                        }
+                      />
+                    ) : (
+                      invoice.date
+                    )}
                   </td>
-                )}
-              </tr>
-            ))}
-            <tr className={styles.totalRow}>
-              <td colSpan={isEditing ? 2 : 1}></td>
-              <td style={{ textAlign: "right" }}>
-                <strong>Total:</strong>
-              </td>
-              <td>
-                <strong>${totalIncome.toFixed(2)}</strong>
-              </td>
-              {isEditing && <td></td>}
-            </tr>
-            {/* ОНОВЛЕНО: Повертаємо відображення розрахунків */}
-            {showGST && (
+                  <td>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={invoice.address}
+                        onChange={(e) =>
+                          handleInvoiceChange(e, invoice.id, "address")
+                        }
+                      />
+                    ) : (
+                      invoice.address
+                    )}
+                  </td>
+                  <td>{invoice.stores?.name || "N/A"}</td>
+                  <td>
+                    {invoice.work_types?.work_type_templates?.name || "N/A"}
+                  </td>
+                  <td>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        value={invoice.total_income}
+                        onChange={(e) =>
+                          handleInvoiceChange(e, invoice.id, "total_income")
+                        }
+                      />
+                    ) : (
+                      `$${parseFloat(invoice.total_income || 0).toFixed(2)}`
+                    )}
+                  </td>
+                  {isEditing && (
+                    <td>
+                      <button
+                        className={styles.deleteButton}
+                        onClick={() => handleDeleteInvoice(invoice.id)}
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
               <tr className={styles.totalRow}>
-                <td colSpan={isEditing ? 2 : 1}></td>
-                <td style={{ textAlign: "right" }}>
-                  <strong>Total with GST:</strong>
+                <td colSpan="4" style={{ textAlign: "right" }}>
+                  <strong>TOTAL:</strong>
                 </td>
                 <td>
-                  <strong>${totalWithGST}</strong>
+                  <strong>${totalIncome.toFixed(2)}</strong>
                 </td>
                 {isEditing && <td></td>}
               </tr>
-            )}
-            {showWCB && (
-              <tr className={styles.totalRow}>
-                <td colSpan={isEditing ? 2 : 1}></td>
-                <td style={{ textAlign: "right" }}>
-                  <strong>Total - WCB:</strong>
-                </td>
-                <td>
-                  <strong>${wcb}</strong>
-                </td>
-                {isEditing && <td></td>}
-              </tr>
-            )}
-          </tbody>
-        </table>
-        {/* ОНОВЛЕНО: Повертаємо кнопки */}
-        <div className={styles.calculationButtons}>
-          <button onClick={calculateTotalWithGST} className={styles.btnGst}>
-            +GST (5%)
-          </button>
-          <button onClick={calculateWCB} className={styles.btnWcb}>
-            -WCB (3%)
-          </button>
+            </tfoot>
+          </table>
         </div>
       </div>
 

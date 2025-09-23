@@ -62,19 +62,25 @@
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
-  padding: 24px;
+  padding: 20px;
   margin-bottom: 32px;
 }
 .addFormSection h3 {
   margin: 0 0 16px 0;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
+/* --- НОВИЙ ПІДХІД ДО ФОРМИ З FLEXBOX --- */
 .addForm {
-  display: grid;
-  /* Адаптивна сітка для полів */
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* Відстань між рядками */
+}
+
+.formRow {
+  display: flex;
+  gap: 16px; /* Відстань між елементами в рядку */
   align-items: flex-end;
 }
 
@@ -84,8 +90,28 @@
   gap: 6px;
 }
 
+/* Розподіл ширини для першого рядка */
+.formRow .inputGroup:nth-child(1),
+.formRow .inputGroup:nth-child(2) {
+  flex: 1 1 50%; /* Кожне поле займає 50% */
+}
+
+/* Розподіл ширини для другого рядка */
+.formRow .inputGroup:nth-child(1) {
+  flex: 1 1 40%; /* Address */
+}
+.formRow .inputGroup:nth-child(2) {
+  flex: 1 1 20%; /* Date */
+}
+.formRow .inputGroup:nth-child(3) {
+  flex: 1 1 20%; /* Total Amount */
+}
+.formRow .inputGroup:nth-child(4) {
+  flex: 1 1 20%; /* Add Project Button */
+}
+
 .inputGroup label {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--color-text-secondary);
   padding-left: 4px;
@@ -94,30 +120,32 @@
 .inputGroup input,
 .inputGroup select {
   width: 100%;
-  padding: 10px 14px;
+  box-sizing: border-box;
+  padding: 8px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 1rem;
-  background-color: white; /* для кращої видимості */
-  height: 45px; /* Фіксована висота для вирівнювання */
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: white;
 }
 
-.inputGroup .addButton {
+.addButton {
   width: 100%;
-  height: 45px;
-  padding: 10px 20px;
+  box-sizing: border-box;
+  padding: 8px 12px;
   background-color: #28a745;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   transition: background-color 0.2s ease;
 }
+/* --- КІНЕЦЬ ЗМІН ДЛЯ ФОРМИ --- */
 
 .toolbar {
   padding: 16px;
@@ -155,14 +183,23 @@
 }
 
 .addressItem:hover:not(.editing) {
-  transform: translateX(5px);
-  border-left-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.readyBorder {
+  border-left-color: #198754;
+}
+.inProcessBorder {
+  border-left-color: #ffc107;
+}
+.notFinishedBorder {
+  border-left-color: #dc3545;
 }
 
 .addressItem.editing {
   cursor: default;
   background-color: #fff;
-  border-left-color: var(--color-primary);
 }
 
 .itemContent {
@@ -181,15 +218,21 @@
 .itemDetails {
   display: flex;
   flex-direction: column;
+  gap: 4px;
+}
+
+.addressName {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
 }
 
 .itemMeta {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: var(--color-text-secondary);
-  margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
 }
 
 .statusIndicator {
@@ -202,18 +245,18 @@
 }
 
 .statusInProgress {
-  background-color: #e9f2ff;
-  color: #0d6efd;
+  background-color: #fff3cd;
+  color: #664d03;
 }
 
 .statusReady {
   background-color: #d1e7dd;
-  color: #198754;
+  color: #0f5132;
 }
 
 .statusNotFinished {
-  background-color: #fff3cd;
-  color: #664d03;
+  background-color: #f8d7da;
+  color: #721c24;
 }
 
 .editInput {

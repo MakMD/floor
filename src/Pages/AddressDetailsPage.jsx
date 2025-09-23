@@ -13,12 +13,28 @@ import {
   FaSpinner,
 } from "react-icons/fa";
 import styles from "./AddressDetailsPage.module.css";
+import listStyles from "./AddressListPage.module.css"; // ІМПОРТ: стилі для індикатора
 import toast from "react-hot-toast";
 import FileUpload from "../components/FileUpload/FileUpload";
 import { useAdminLists } from "../hooks/useAdminLists";
-import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager"; // ІМПОРТ: Новий компонент
+import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager";
 
-// ... FileListItem component remains unchanged ...
+// ДОДАНО: Компонент для візуального відображення статусу
+const StatusIndicator = ({ status }) => {
+  const statusClass =
+    {
+      "In Process": listStyles.statusInProgress,
+      Ready: listStyles.statusReady,
+      "Not Finished": listStyles.statusNotFinished,
+    }[status] || "";
+
+  return (
+    <div className={`${listStyles.statusIndicator} ${statusClass}`}>
+      <span>{status || "No Status"}</span>
+    </div>
+  );
+};
+
 const FileListItem = ({ bucketName, fileIdentifier, onDelete }) => {
   const [signedUrl, setSignedUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -175,7 +191,6 @@ const AddressDetailsPage = () => {
     }
   };
 
-  // ... (note and file handlers remain unchanged) ...
   const handleAddMaterialNote = async () => {
     if (newMaterialNote.trim() === "") return;
     const updatedNotes = [...editedData.material_notes, newMaterialNote.trim()];
@@ -273,26 +288,27 @@ const AddressDetailsPage = () => {
       </div>
 
       <div className={styles.detailsGrid}>
-        {/* ЛІВА КОЛОНКА */}
         <div className={styles.gridColumn}>
           <div className={styles.detailCard}>
             <h3>Project Details</h3>
             <div className={styles.detailItem}>
               <label>Status</label>
-              {isEditing ? (
-                <select
-                  name="status"
-                  value={editedData.status}
-                  onChange={handleInputChange}
-                  className={styles.editInput}
-                >
-                  <option value="In Process">In Process</option>
-                  <option value="Ready">Ready</option>
-                  <option value="Not Finished">Not Finished</option>
-                </select>
-              ) : (
-                <p>{addressData.status || "N/A"}</p>
-              )}
+              <div className={styles.statusCell}>
+                {isEditing ? (
+                  <select
+                    name="status"
+                    value={editedData.status}
+                    onChange={handleInputChange}
+                    className={styles.editInput}
+                  >
+                    <option value="In Process">In Process</option>
+                    <option value="Ready">Ready</option>
+                    <option value="Not Finished">Not Finished</option>
+                  </select>
+                ) : (
+                  <StatusIndicator status={addressData.status} />
+                )}
+              </div>
             </div>
             <div className={styles.detailItem}>
               <label>Store</label>
@@ -369,16 +385,13 @@ const AddressDetailsPage = () => {
               )}
             </div>
           </div>
-          {/* ОНОВЛЕНО: Замінюємо PersonPicker на WorkTypesManager */}
           <div className={styles.detailCard}>
             <h3>Work Types & Payments</h3>
             <WorkTypesManager addressId={addressId} />
           </div>
         </div>
 
-        {/* ПРАВА КОЛОНКА */}
         <div className={styles.gridColumn}>
-          {/* ... General Notes and Files sections remain unchanged ... */}
           <div className={styles.detailCard}>
             <h3>Material Notes</h3>
             <div className={styles.addNoteForm}>

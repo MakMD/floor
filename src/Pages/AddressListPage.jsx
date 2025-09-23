@@ -11,7 +11,6 @@ import { FaArrowLeft, FaPlus, FaEdit, FaCheck, FaTrash } from "react-icons/fa";
 import styles from "./AddressListPage.module.css";
 import toast from "react-hot-toast";
 
-// ОНОВЛЕНО: Створюємо компонент для статусу, щоб уникнути повторення коду
 const StatusIndicator = ({ status }) => {
   const statusClass =
     {
@@ -152,79 +151,85 @@ const AddressListPage = () => {
         </div>
       </div>
 
+      {/* ОНОВЛЕНО: JSX структура форми змінена для відповідності макету */}
       <div className={styles.addFormSection}>
         <h3>Create New Project</h3>
         <div className={styles.addForm}>
-          <div className={styles.inputGroup}>
-            <label htmlFor="store_id">Store</label>
-            <select
-              id="store_id"
-              name="store_id"
-              value={newAddressData.store_id}
-              onChange={handleNewAddressChange}
-              disabled={listsLoading}
-            >
-              <option value="">Select a store</option>
-              {stores.map((store) => (
-                <option key={store.id} value={store.id}>
-                  {store.name}
-                </option>
-              ))}
-            </select>
+          <div className={styles.formRow}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="store_id">Store</label>
+              <select
+                id="store_id"
+                name="store_id"
+                value={newAddressData.store_id}
+                onChange={handleNewAddressChange}
+                disabled={listsLoading}
+              >
+                <option value="">Select a store</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.inputGroup}>
+              <label htmlFor="builder_id">Builder</label>
+              <select
+                id="builder_id"
+                name="builder_id"
+                value={newAddressData.builder_id}
+                onChange={handleNewAddressChange}
+                disabled={listsLoading}
+              >
+                <option value="">Select a builder</option>
+                {builders.map((builder) => (
+                  <option key={builder.id} value={builder.id}>
+                    {builder.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className={styles.inputGroup}>
-            <label htmlFor="builder_id">Builder</label>
-            <select
-              id="builder_id"
-              name="builder_id"
-              value={newAddressData.builder_id}
-              onChange={handleNewAddressChange}
-              disabled={listsLoading}
-            >
-              <option value="">Select a builder</option>
-              {builders.map((builder) => (
-                <option key={builder.id} value={builder.id}>
-                  {builder.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.inputGroup}>
-            <label htmlFor="address">Address</label>
-            <input
-              id="address"
-              type="text"
-              name="address"
-              placeholder="Job site address"
-              value={newAddressData.address}
-              onChange={handleNewAddressChange}
-            />
-          </div>
-          <div className={styles.inputGroup}>
-            <label htmlFor="date">Date</label>
-            <input
-              id="date"
-              type="date"
-              name="date"
-              value={newAddressData.date}
-              onChange={handleNewAddressChange}
-            />
-          </div>
-          <div className={styles.inputGroup}>
-            <label htmlFor="total_amount">Total Amount</label>
-            <input
-              id="total_amount"
-              type="number"
-              name="total_amount"
-              placeholder="0.00"
-              value={newAddressData.total_amount}
-              onChange={handleNewAddressChange}
-            />
-          </div>
-          <div className={styles.inputGroup}>
-            <button onClick={handleAddAddress} className={styles.addButton}>
-              <FaPlus /> Add Project
-            </button>
+          <div className={styles.formRow}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="address">Address</label>
+              <input
+                id="address"
+                type="text"
+                name="address"
+                placeholder="Job site address"
+                value={newAddressData.address}
+                onChange={handleNewAddressChange}
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <label htmlFor="date">Date</label>
+              <input
+                id="date"
+                type="date"
+                name="date"
+                value={newAddressData.date}
+                onChange={handleNewAddressChange}
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <label htmlFor="total_amount">Total Amount</label>
+              <input
+                id="total_amount"
+                type="number"
+                name="total_amount"
+                placeholder="0.00"
+                value={newAddressData.total_amount}
+                onChange={handleNewAddressChange}
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <label>&nbsp;</label>
+              <button onClick={handleAddAddress} className={styles.addButton}>
+                <FaPlus /> Add Project
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -245,58 +250,74 @@ const AddressListPage = () => {
         </div>
       ) : addresses.length > 0 ? (
         <ul className={styles.addressList}>
-          {filteredAddresses.map((item, index) => (
-            <li
-              key={item.id}
-              className={`${styles.addressItem} ${
-                isEditing ? styles.editing : ""
-              }`}
-              onClick={() => !isEditing && navigate(`/address/${item.id}`)}
-            >
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    value={editedAddresses[item.id] || ""}
-                    onChange={(e) => handleNameChange(item.id, e.target.value)}
-                    onBlur={() =>
-                      handleUpdateAddressName(item.id, editedAddresses[item.id])
-                    }
-                    onClick={(e) => e.stopPropagation()}
-                    className={styles.editInput}
-                  />
-                  <button
-                    className={styles.deleteButton}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteAddress(item.id);
-                    }}
-                  >
-                    <FaTrash />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className={styles.itemContent}>
-                    <span className={styles.itemNumber}>{index + 1}.</span>
-                    <div className={styles.itemDetails}>
-                      <strong>{item.address}</strong>
-                      <div className={styles.itemMeta}>
-                        {item.builders?.name && (
-                          <span>Builder: {item.builders.name}</span>
-                        )}
-                        {item.stores?.name && (
-                          <span>Store: {item.stores.name}</span>
-                        )}
-                        {item.date && <span>Date: {item.date}</span>}
+          {filteredAddresses.map((item, index) => {
+            const statusBorderClass =
+              {
+                "In Process": styles.inProcessBorder,
+                Ready: styles.readyBorder,
+                "Not Finished": styles.notFinishedBorder,
+              }[item.status] || "";
+
+            return (
+              <li
+                key={item.id}
+                className={`${styles.addressItem} ${
+                  isEditing ? styles.editing : ""
+                } ${statusBorderClass}`}
+                onClick={() => !isEditing && navigate(`/address/${item.id}`)}
+              >
+                {isEditing ? (
+                  <>
+                    <input
+                      type="text"
+                      value={editedAddresses[item.id] || ""}
+                      onChange={(e) =>
+                        handleNameChange(item.id, e.target.value)
+                      }
+                      onBlur={() =>
+                        handleUpdateAddressName(
+                          item.id,
+                          editedAddresses[item.id]
+                        )
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                      className={styles.editInput}
+                    />
+                    <button
+                      className={styles.deleteButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteAddress(item.id);
+                      }}
+                    >
+                      <FaTrash />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className={styles.itemContent}>
+                      <span className={styles.itemNumber}>{index + 1}.</span>
+                      <div className={styles.itemDetails}>
+                        <span className={styles.addressName}>
+                          {item.address}
+                        </span>
+                        <div className={styles.itemMeta}>
+                          {item.builders?.name && (
+                            <span>Builder: {item.builders.name}</span>
+                          )}
+                          {item.stores?.name && (
+                            <span>Store: {item.stores.name}</span>
+                          )}
+                          {item.date && <span>Date: {item.date}</span>}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <StatusIndicator status={item.status} />
-                </>
-              )}
-            </li>
-          ))}
+                    <StatusIndicator status={item.status} />
+                  </>
+                )}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <EmptyState message="No addresses found. Add one to get started!" />

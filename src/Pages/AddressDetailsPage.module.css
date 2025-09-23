@@ -1,7 +1,7 @@
 /* src/Pages/AddressDetailsPage.module.css */
 
 .pageContainer {
-  max-width: 1400px; /* Залишаємо більше простору */
+  max-width: 1400px;
   margin: 40px auto;
   padding: 32px;
   background-color: var(--color-background);
@@ -49,18 +49,15 @@
 
 .detailsGrid {
   display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(420px, 1fr)
-  ); /* Адаптивна сітка */
-  gap: 32px; /* Збільшуємо відступ між колонками */
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 32px;
   align-items: start;
 }
 
 .gridColumn {
   display: flex;
   flex-direction: column;
-  gap: 32px; /* Збільшуємо відступ між картками */
+  gap: 32px;
 }
 
 .detailCard {
@@ -70,7 +67,7 @@
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Відступ між елементами в картці */
+  gap: 20px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -79,12 +76,12 @@
   font-size: 1.25rem;
   border-bottom: 1px solid var(--color-border);
   padding-bottom: 16px;
-  margin-bottom: 4px; /* Невеликий відступ після лінії */
+  margin-bottom: 4px;
 }
 
 .detailItem {
-  display: grid; /* Використовуємо grid для кращого вирівнювання */
-  grid-template-columns: 120px 1fr; /* Фіксована ширина для label */
+  display: grid;
+  grid-template-columns: 120px 1fr;
   align-items: center;
   font-size: 1rem;
   gap: 16px;
@@ -102,6 +99,12 @@
   font-weight: 500;
 }
 
+/* ДОДАНО: Контейнер для індикатора статусу, щоб він не розтягувався */
+.statusCell {
+  display: flex;
+  align-items: flex-start;
+}
+
 .editInput {
   width: 100%;
   padding: 8px 12px;
@@ -110,7 +113,6 @@
   font-size: 1rem;
 }
 
-/* ДОДАНО: Стиль для кнопки "Add Builder" */
 .actionButton {
   padding: 8px 12px;
   background-color: transparent;
@@ -138,7 +140,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 0; /* Прибираємо зайвий відступ */
+  margin-top: 0;
 }
 
 .fileItem,
