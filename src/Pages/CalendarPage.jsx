@@ -11,7 +11,6 @@ import {
   addWeeks,
   isSameDay,
   isSameMonth,
-  parseISO,
 } from "date-fns";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { supabase } from "../supabaseClient";
@@ -63,7 +62,7 @@ const CalendarPage = () => {
 
   const stats = useMemo(() => {
     const currentWeekEvents = events;
-    const prevWeekEvents = []; // В реальному додатку тут був би запит за попередній тиждень
+    const prevWeekEvents = [];
 
     const calculateTotals = (eventList) => {
       return eventList.reduce(
@@ -179,16 +178,28 @@ const CalendarPage = () => {
         </h3>
         {eventsForSelectedDay.length > 0 ? (
           <ul className={styles.infoList}>
-            {eventsForSelectedDay.map((event) => (
-              <li
-                key={event.id}
-                className={styles.infoItem}
-                onClick={() => navigate(`/address/${event.id}`)}
-              >
-                <span className={styles.infoAddress}>{event.address}</span>
-                <span className={styles.infoStatus}>{event.status}</span>
-              </li>
-            ))}
+            {eventsForSelectedDay.map((event) => {
+              // ОНОВЛЕНО: Додаємо логіку для визначення CSS-класу статусу
+              const statusClass =
+                {
+                  "In Process": styles.statusInProgress,
+                  Ready: styles.statusReady,
+                  "Not Finished": styles.statusNotFinished,
+                }[event.status] || "";
+
+              return (
+                <li
+                  key={event.id}
+                  className={styles.infoItem}
+                  onClick={() => navigate(`/address/${event.id}`)}
+                >
+                  <span className={styles.infoAddress}>{event.address}</span>
+                  <span className={`${styles.infoStatus} ${statusClass}`}>
+                    {event.status}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className={styles.noEventsMessage}>No projects for this day.</p>

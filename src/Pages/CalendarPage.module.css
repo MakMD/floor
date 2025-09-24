@@ -1,7 +1,7 @@
 /* src/Pages/CalendarPage/CalendarPage.module.css */
 
 .calendarContainer {
-  max-width: 1600px; /* Збільшуємо максимальну ширину */
+  max-width: 1600px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -12,7 +12,6 @@
   margin-bottom: 24px;
 }
 
-/* ОНОВЛЕНО: Додано основну сітку для сторінки */
 .layout {
   display: grid;
   grid-template-columns: 3fr 1fr;
@@ -151,7 +150,6 @@
   font-weight: 500;
 }
 
-/* --- СТИЛІ ДЛЯ ІНФОРМАЦІЙНОЇ ПАНЕЛІ --- */
 .infoPanel {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -191,7 +189,7 @@
   font-weight: 700;
   padding: 4px 8px;
   border-radius: 12px;
-  background-color: #eee;
+  text-transform: uppercase;
 }
 .noEventsMessage {
   text-align: center;
@@ -199,7 +197,20 @@
   padding: 20px;
 }
 
-/* --- СТИЛІ ДЛЯ ПАНЕЛІ СТАТИСТИКИ --- */
+/* ОНОВЛЕНО: Додано кольори для статусів */
+.statusInProgress {
+  background-color: #fff3cd;
+  color: #664d03;
+}
+.statusReady {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+.statusNotFinished {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
 .sidebar {
   position: sticky;
   top: 20px;
@@ -242,67 +253,12 @@
 .negative {
   color: #dc3545;
 }
-/* --- МОБІЛЬНА АДАПТАЦІЯ --- */
+
 @media (max-width: 1024px) {
   .layout {
-    grid-template-columns: 1fr; /* Перехід в одну колонку на планшетах */
+    grid-template-columns: 1fr;
   }
-
   .sidebar {
-    position: static; /* Скидаємо "липке" позиціонування */
-  }
-}
-
-@media (max-width: 768px) {
-  .calendarContainer {
-    padding: 10px;
-  }
-
-  .pageTitle {
-    font-size: 1.75rem;
-    margin-bottom: 16px;
-  }
-
-  .calendar {
-    padding: 10px;
-  }
-
-  .headerDate {
-    font-size: 1.1rem;
-  }
-
-  .dayLabel {
-    font-size: 0.8rem;
-  }
-
-  .cell {
-    height: 100px; /* Робимо комірки календаря меншими по висоті */
-    padding: 5px;
-  }
-
-  .today .number {
-    padding: 2px 6px;
-    font-size: 0.8rem;
-  }
-
-  .eventIndicator {
-    width: 20px;
-    height: 20px;
-    font-size: 0.75rem;
-    top: 5px;
-    right: 5px;
-  }
-
-  .eventItem,
-  .moreEvents {
-    font-size: 0.7rem;
-  }
-
-  .infoPanel {
-    padding: 15px;
-  }
-
-  .infoPanel h3 {
-    font-size: 1.1rem;
+    position: static;
   }
 }
