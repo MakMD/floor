@@ -149,6 +149,7 @@
   border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 16px;
+  box-sizing: border-box;
 }
 
 .addressList {
@@ -168,6 +169,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* ОНОВЛЕНО: Стиль для розділювача */
+.todaySeparator {
+  margin-bottom: 32px;
+  border-bottom: 2px solid var(--color-primary);
+  padding-bottom: 16px;
 }
 
 .addressItem:hover:not(.editing) {
@@ -195,7 +203,7 @@
   align-items: center;
   gap: 16px;
   flex-grow: 1;
-  min-width: 0; /* Допомагає flex-елементам правильно переносити текст */
+  min-width: 0;
 }
 
 .itemNumber {
@@ -215,9 +223,8 @@
   font-size: 1.1rem;
   font-weight: 500;
   color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .itemMeta {
@@ -290,36 +297,28 @@
   }
 
   .pageTitle {
-    font-size: 1.75rem; /* Зменшуємо заголовок */
-    order: -1; /* Ставимо заголовок над кнопками */
+    font-size: 1.75rem;
+    order: -1;
   }
 
   .addFormSection {
     padding: 16px;
   }
 
-  /* Повністю змінюємо сітку форми на мобільних */
-  .formRow {
-    grid-template-columns: 1fr !important; /* Гарантуємо одну колонку */
+  .formRow:first-child,
+  .formRow:last-child {
+    grid-template-columns: 1fr;
   }
 
-  /* Стилі для списку адрес */
   .addressItem {
-    flex-direction: column; /* Ставимо елементи вертикально */
-    align-items: flex-start; /* Вирівнюємо по лівому краю */
-    gap: 12px;
     padding: 15px;
   }
 
-  .itemContent {
-    width: 100%;
+  .addressName {
+    font-size: 1rem;
   }
 
-  .itemDetails {
-    align-items: flex-start;
-  }
-
-  .statusIndicator {
-    align-self: flex-end; /* Статус завжди справа */
+  .itemMeta {
+    font-size: 0.75rem;
   }
 }

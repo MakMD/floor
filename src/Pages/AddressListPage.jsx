@@ -10,6 +10,7 @@ import EmptyState from "../components/EmptyState/EmptyState";
 import { FaArrowLeft, FaPlus, FaEdit, FaCheck, FaTrash } from "react-icons/fa";
 import styles from "./AddressListPage.module.css";
 import toast from "react-hot-toast";
+import { format } from "date-fns"; // ІМПОРТ: Для роботи з датою
 
 const StatusIndicator = ({ status }) => {
   const statusClass =
@@ -151,7 +152,6 @@ const AddressListPage = () => {
         </div>
       </div>
 
-      {/* ОНОВЛЕНО: JSX структура форми змінена для відповідності макету */}
       <div className={styles.addFormSection}>
         <h3>Create New Project</h3>
         <div className={styles.addForm}>
@@ -251,6 +251,11 @@ const AddressListPage = () => {
       ) : addresses.length > 0 ? (
         <ul className={styles.addressList}>
           {filteredAddresses.map((item, index) => {
+            const todayString = format(new Date(), "yyyy-MM-dd");
+            const isToday = item.date === todayString;
+            const nextItem = filteredAddresses[index + 1];
+            const isLastToday = isToday && nextItem?.date !== todayString;
+
             const statusBorderClass =
               {
                 "In Process": styles.inProcessBorder,
@@ -263,7 +268,9 @@ const AddressListPage = () => {
                 key={item.id}
                 className={`${styles.addressItem} ${
                   isEditing ? styles.editing : ""
-                } ${statusBorderClass}`}
+                } ${statusBorderClass} ${
+                  isLastToday ? styles.todaySeparator : ""
+                }`} // ОНОВЛЕНО: Додано клас-розділювач
                 onClick={() => !isEditing && navigate(`/address/${item.id}`)}
               >
                 {isEditing ? (

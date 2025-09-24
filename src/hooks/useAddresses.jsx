@@ -1,8 +1,9 @@
-// src/hooks/useAddresses.js
+// src/hooks/useAddresses.jsx
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabaseClient";
 import toast from "react-hot-toast";
+import { format, parseISO } from "date-fns";
 
 export const useAddresses = () => {
   const [addresses, setAddresses] = useState([]);
@@ -10,18 +11,31 @@ export const useAddresses = () => {
 
   const fetchAddresses = useCallback(async () => {
     setLoading(true);
-    // ВИПРАВЛЕНО: Змінено сортування з 'created_at' на 'date'
     const { data, error } = await supabase
       .from("addresses")
-      .select("*, builders(*), stores(*)")
-      .order("date", { ascending: false }); // Сортуємо за датою
+      .select("*, builders(*), stores(*)");
 
     if (error) {
       toast.error("Error fetching addresses.");
       console.error("Supabase error:", error);
       setAddresses([]);
     } else {
-      setAddresses(data);
+      // ОНОВЛЕНО: Додано нову логіку сортування
+      const todayString = format(new Date(), "yyyy-MM-dd");
+
+      const todayAddresses = data.filter(
+        (address) => address.date === todayString
+      );
+      const otherAddresses = data.filter(
+        (address) => address.date !== todayString
+      );
+
+      // Сортуємо решту адрес за датою
+      otherAddresses.sort((a, b) => {
+        return parseISO(b.date) - parseISO(a.date);
+      });
+
+      setAddresses([...todayAddresses, ...otherAddresses]);
     }
     setLoading(false);
   }, []);
