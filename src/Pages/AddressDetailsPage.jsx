@@ -13,13 +13,12 @@ import {
   FaSpinner,
 } from "react-icons/fa";
 import styles from "./AddressDetailsPage.module.css";
-import listStyles from "./AddressListPage.module.css"; // ІМПОРТ: стилі для індикатора
+import listStyles from "./AddressListPage.module.css";
 import toast from "react-hot-toast";
 import FileUpload from "../components/FileUpload/FileUpload";
 import { useAdminLists } from "../hooks/useAdminLists";
 import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager";
 
-// ДОДАНО: Компонент для візуального відображення статусу
 const StatusIndicator = ({ status }) => {
   const statusClass =
     {
@@ -109,6 +108,7 @@ const AddressDetailsPage = () => {
   const { builders, stores, loading: listsLoading } = useAdminLists();
 
   const [editedData, setEditedData] = useState({
+    address: "", // ОНОВЛЕНО: Додано поле адреси
     notes: [],
     material_notes: [],
     total_amount: "",
@@ -134,6 +134,7 @@ const AddressDetailsPage = () => {
     } else {
       setAddressData(data);
       setEditedData({
+        address: data.address || "", // ОНОВЛЕНО: Ініціалізуємо адресу
         notes: data.notes || [],
         material_notes: data.material_notes || [],
         total_amount: data.total_amount || "",
@@ -176,6 +177,7 @@ const AddressDetailsPage = () => {
 
   const handleSaveChanges = async () => {
     const updates = {
+      address: editedData.address.trim(), // ОНОВЛЕНО: Додано адресу до об'єкта оновлень
       total_amount: editedData.total_amount
         ? parseFloat(editedData.total_amount)
         : null,
@@ -277,7 +279,18 @@ const AddressDetailsPage = () => {
         >
           <FaArrowLeft /> Back
         </button>
-        <h1 className={styles.pageTitle}>{addressData.address}</h1>
+        {/* ОНОВЛЕНО: Заголовок тепер редагується */}
+        {isEditing ? (
+          <input
+            type="text"
+            name="address"
+            value={editedData.address}
+            onChange={handleInputChange}
+            className={styles.titleInput}
+          />
+        ) : (
+          <h1 className={styles.pageTitle}>{addressData.address}</h1>
+        )}
         <button
           className={styles.editButton}
           onClick={() => (isEditing ? handleSaveChanges() : setIsEditing(true))}
