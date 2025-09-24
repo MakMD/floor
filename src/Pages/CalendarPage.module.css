@@ -242,3 +242,67 @@
 .negative {
   color: #dc3545;
 }
+/* --- МОБІЛЬНА АДАПТАЦІЯ --- */
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr; /* Перехід в одну колонку на планшетах */
+  }
+
+  .sidebar {
+    position: static; /* Скидаємо "липке" позиціонування */
+  }
+}
+
+@media (max-width: 768px) {
+  .calendarContainer {
+    padding: 10px;
+  }
+
+  .pageTitle {
+    font-size: 1.75rem;
+    margin-bottom: 16px;
+  }
+
+  .calendar {
+    padding: 10px;
+  }
+
+  .headerDate {
+    font-size: 1.1rem;
+  }
+
+  .dayLabel {
+    font-size: 0.8rem;
+  }
+
+  .cell {
+    height: 100px; /* Робимо комірки календаря меншими по висоті */
+    padding: 5px;
+  }
+
+  .today .number {
+    padding: 2px 6px;
+    font-size: 0.8rem;
+  }
+
+  .eventIndicator {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+    top: 5px;
+    right: 5px;
+  }
+
+  .eventItem,
+  .moreEvents {
+    font-size: 0.7rem;
+  }
+
+  .infoPanel {
+    padding: 15px;
+  }
+
+  .infoPanel h3 {
+    font-size: 1.1rem;
+  }
+}
