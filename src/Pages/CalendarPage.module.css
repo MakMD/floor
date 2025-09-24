@@ -1,0 +1,244 @@
+/* src/Pages/CalendarPage/CalendarPage.module.css */
+
+.calendarContainer {
+  max-width: 1600px; /* Збільшуємо максимальну ширину */
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.pageTitle {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* ОНОВЛЕНО: Додано основну сітку для сторінки */
+.layout {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.calendar {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  user-select: none;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.headerDate {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.navButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.navButton:hover {
+  background-color: var(--color-background);
+}
+
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.dayLabel {
+  text-align: center;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  padding-bottom: 10px;
+}
+
+.cell {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  height: 120px;
+  padding: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  overflow: hidden;
+}
+.cell:hover {
+  background-color: #f8f9fa;
+}
+
+.number {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.disabled {
+  background-color: #f8f9fa;
+  color: var(--color-text-secondary);
+}
+
+.today .number {
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  padding: 4px 8px;
+  font-weight: 700;
+}
+
+.selected {
+  background-color: #e9f2ff;
+  border: 2px solid var(--color-primary);
+}
+
+.eventIndicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.eventsList {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eventItem,
+.moreEvents {
+  background-color: #e9f2ff;
+  color: #0b5ed7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.moreEvents {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/* --- СТИЛІ ДЛЯ ІНФОРМАЦІЙНОЇ ПАНЕЛІ --- */
+.infoPanel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+}
+.infoPanel h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.25rem;
+}
+.panelDate {
+  color: var(--color-primary);
+}
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.infoItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: var(--color-background);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.infoItem:hover {
+  box-shadow: var(--shadow-sm);
+}
+.infoAddress {
+  font-weight: 500;
+}
+.infoStatus {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background-color: #eee;
+}
+.noEventsMessage {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 20px;
+}
+
+/* --- СТИЛІ ДЛЯ ПАНЕЛІ СТАТИСТИКИ --- */
+.sidebar {
+  position: sticky;
+  top: 20px;
+}
+.statsPanel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.statsPanel h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.25rem;
+  text-align: center;
+}
+.statItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-background);
+}
+.statItem:last-child {
+  border-bottom: none;
+}
+.statItem strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.netProfit {
+  color: #198754;
+}
+.positive {
+  color: #198754;
+}
+.negative {
+  color: #dc3545;
+}

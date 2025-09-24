@@ -1,14 +1,30 @@
-// src/services/workTypeService.jsx
-
+// src/services/workTypeService.js
 import { supabase } from "../supabaseClient";
 import toast from "react-hot-toast";
 
+/**
+ * Finds or creates an invoice table for a person based on a date.
+ * @param {string} personId - The ID of the person.
+ * @param {Date} date - The date to determine the table name.
+ * @returns {object} The found or newly created invoice table object.
+ */
 const findOrCreateInvoiceTable = async (personId, date) => {
   const month = date.toLocaleString("en-US", { month: "long" });
   const year = date.getFullYear();
   const day = date.getDate();
-  const tableName =
-    day <= 15 ? `${month} 1-15 ${year}` : `${month} 16-30 ${year}`;
+
+  // ОНОВЛЕНО: Додано коректний розрахунок останнього дня місяця
+  let tableName;
+  if (day <= 15) {
+    tableName = `${month} 1-15 ${year}`;
+  } else {
+    const lastDay = new Date(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      0
+    ).getDate();
+    tableName = `${month} 16-${lastDay} ${year}`;
+  }
 
   const { data: existingTable, error: findError } = await supabase
     .from("invoice_tables")
@@ -18,6 +34,7 @@ const findOrCreateInvoiceTable = async (personId, date) => {
     .single();
 
   if (findError && findError.code !== "PGRST116") {
+    // PGRST116 means no rows found, which is fine.
     throw findError;
   }
 
@@ -37,7 +54,11 @@ const findOrCreateInvoiceTable = async (personId, date) => {
   return newTable;
 };
 
+/**
+ * Creates a work type and its corresponding invoice.
+ */
 export const addWorkTypeAndInvoice = async (workTypeData) => {
+  // 1. Create the work type
   const { data: newWorkType, error: workTypeError } = await supabase
     .from("work_types")
     .insert(workTypeData)
@@ -49,10 +70,11 @@ export const addWorkTypeAndInvoice = async (workTypeData) => {
     return null;
   }
 
+  // 2. If a person is assigned, create/update their invoice
   if (newWorkType.person_id) {
     const { data: address } = await supabase
       .from("addresses")
-      .select("date, address, store_id") // ОНОВЛЕНО: Отримуємо store_id
+      .select("date, address, store_id")
       .eq("id", newWorkType.address_id)
       .single();
 
@@ -66,8 +88,8 @@ export const addWorkTypeAndInvoice = async (workTypeData) => {
       address: address.address,
       date: address.date,
       total_income: newWorkType.payment_amount,
-      work_type_id: newWorkType.id,
-      store_id: address.store_id, // ОНОВЛЕНО: Додаємо store_id
+      work_type_id: newWorkType.id, // Link to the work type
+      store_id: address.store_id,
     });
 
     if (invoiceError) {
@@ -78,7 +100,11 @@ export const addWorkTypeAndInvoice = async (workTypeData) => {
   return newWorkType;
 };
 
+/**
+ * Updates a work type and its corresponding invoice.
+ */
 export const updateWorkTypeAndInvoice = async (workType) => {
+  // 1. Update the work type
   const { error: workTypeError } = await supabase
     .from("work_types")
     .update({
@@ -93,17 +119,19 @@ export const updateWorkTypeAndInvoice = async (workType) => {
     return;
   }
 
+  // 2. Find the existing invoice linked to this work type
   const { data: existingInvoice, error: findError } = await supabase
     .from("invoices")
     .select("id")
     .eq("work_type_id", workType.id)
-    .maybeSingle();
+    .maybeSingle(); // Use maybeSingle to not error if not found
 
   if (findError) {
     toast.error(`Error finding invoice: ${findError.message}`);
     return;
   }
 
+  // 3. Update the invoice
   if (existingInvoice) {
     const { error: updateInvoiceError } = await supabase
       .from("invoices")
@@ -118,7 +146,12 @@ export const updateWorkTypeAndInvoice = async (workType) => {
   toast.success("Work type saved!");
 };
 
+/**
+ * Deletes a work type and its corresponding invoice.
+ */
 export const deleteWorkTypeAndInvoice = async (workTypeId) => {
+  // The foreign key on `invoices` is ON DELETE SET NULL, so we delete manually.
+
   const { error: invoiceError } = await supabase
     .from("invoices")
     .delete()

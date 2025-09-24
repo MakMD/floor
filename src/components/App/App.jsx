@@ -13,7 +13,8 @@ import {
   FaRegBuilding,
   FaSignOutAlt,
   FaUsers,
-  FaWrench, // Іконка для адмін-панелі
+  FaWrench,
+  FaCalendarAlt, // ІМПОРТ: Нова іконка
 } from "react-icons/fa";
 import { supabase } from "../../supabaseClient";
 import LoginModal from "../LoginModal/LoginModal";
@@ -37,7 +38,8 @@ const InactiveCompaniesPage = lazy(() =>
 );
 const AddressListPage = lazy(() => import("../../Pages/AddressListPage"));
 const AddressDetailsPage = lazy(() => import("../../Pages/AddressDetailsPage"));
-const AdminPage = lazy(() => import("../../Pages/AdminPage")); // ОНОВЛЕНО: Додаємо нову сторінку
+const AdminPage = lazy(() => import("../../Pages/AdminPage"));
+const CalendarPage = lazy(() => import("../../Pages/CalendarPage")); // ІМПОРТ: Нова сторінка
 
 const AppContent = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -90,6 +92,17 @@ const AppContent = () => {
               >
                 <FaRegAddressBook /> Address Notes
               </NavLink>
+              {/* ОНОВЛЕНО: Додано посилання на календар */}
+              <NavLink
+                to="/calendar"
+                className={({ isActive }) =>
+                  isActive
+                    ? `${styles.navLink} ${styles.activeLink}`
+                    : styles.navLink
+                }
+              >
+                <FaCalendarAlt /> Calendar
+              </NavLink>
               <NavLink
                 to="/companies"
                 className={({ isActive }) =>
@@ -100,7 +113,6 @@ const AppContent = () => {
               >
                 <FaRegBuilding /> Companies
               </NavLink>
-              {/* ОНОВЛЕНО: Додаємо посилання на адмін-панель */}
               <NavLink
                 to="/admin"
                 className={({ isActive }) =>
@@ -157,8 +169,9 @@ const AppContent = () => {
                 path="/person/:personId/tables/:tableId"
                 element={<PersonTableDetailsPage />}
               />
-              {/* ОНОВЛЕНО: Додаємо новий маршрут */}
               <Route path="/admin" element={<AdminPage />} />
+              {/* ОНОВЛЕНО: Додано новий маршрут */}
+              <Route path="/calendar" element={<CalendarPage />} />
             </Routes>
           </Suspense>
         </main>

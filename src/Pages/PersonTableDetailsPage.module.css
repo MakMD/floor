@@ -118,6 +118,7 @@
   padding: 14px 16px;
   text-align: left;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .invoiceTable th {
@@ -156,11 +157,35 @@
   font-weight: bold;
   background-color: #f8f9fa;
   border-top: 2px solid var(--color-border);
-  text-align: right;
 }
 
 .totalRow td:first-child {
   text-align: right;
+}
+
+/* ОНОВЛЕНО: Стилі для кнопок розрахунків */
+.calculationButtons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.btnGst,
+.btnWcb {
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: var(--border-radius-md);
+  transition: background-color 0.2s ease;
+  color: #ffffff;
+}
+.btnGst {
+  background-color: #17a2b8;
+}
+.btnWcb {
+  background-color: #6c757d;
 }
 
 /* --- МОБІЛЬНА АДАПТАЦІЯ --- */
@@ -187,11 +212,6 @@
     grid-template-columns: 1fr;
   }
 
-  /* --- Трансформація таблиці в картки --- */
-  .tableWrapper {
-    overflow-x: hidden;
-  }
-
   .invoiceTable thead {
     display: none;
   }
@@ -211,6 +231,7 @@
     text-align: right;
     padding: 10px 5px;
     border-bottom: 1px solid #f0f0f0;
+    white-space: normal;
   }
 
   .invoiceTable td:last-child {
@@ -226,11 +247,23 @@
   }
 
   .invoiceTable tfoot {
-    display: none; /* Ховаємо загальну суму в мобільному вигляді */
+    display: contents; /* Дозволяє <tfoot> рендеритись на мобільних */
+  }
+
+  .invoiceTable tfoot .totalRow td {
+    display: flex;
+    justify-content: space-between;
+  }
+  .invoiceTable tfoot .totalRow td:first-child::before {
+    content: "TOTAL";
   }
 
   .invoiceTable input {
     min-width: 100px;
     text-align: right;
+  }
+
+  .calculationButtons {
+    justify-content: center;
   }
 }

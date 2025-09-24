@@ -27,6 +27,14 @@ const PersonTableDetailsPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // ОНОВЛЕНО: Повертаємо стан для розрахунків
+  const [totalWithGST, setTotalWithGST] = useState(null);
+  const [wcb, setWcb] = useState(null);
+  const [showGST, setShowGST] = useState(false);
+  const [showWCB, setShowWCB] = useState(false);
+  const [isWCBCalculated, setIsWCBCalculated] = useState(false);
+  const [isGSTCalculated, setIsGSTCalculated] = useState(false);
+
   const [selectedPersonForModal, setSelectedPersonForModal] = useState(null);
   const [modalFilterAddress, setModalFilterAddress] = useState("");
 
@@ -143,7 +151,6 @@ const PersonTableDetailsPage = () => {
     } else {
       toast.success("Changes saved successfully!");
       setIsEditing(false);
-      fetchInvoices();
     }
   };
 
@@ -168,6 +175,24 @@ const PersonTableDetailsPage = () => {
       0
     );
   }, [invoices]);
+
+  // ОНОВЛЕНО: Повертаємо логіку розрахунків
+  const calculateWCB = () => {
+    const newWCB = (totalIncome - (totalIncome / 100) * 3).toFixed(2);
+    setWcb(newWCB);
+    setShowWCB(true);
+    setIsWCBCalculated(true);
+    if (isGSTCalculated) {
+      setTotalWithGST((newWCB * 1.05).toFixed(2));
+    }
+  };
+
+  const calculateTotalWithGST = () => {
+    const baseIncome = isWCBCalculated ? wcb : totalIncome;
+    setTotalWithGST((baseIncome * 1.05).toFixed(2));
+    setShowGST(true);
+    setIsGSTCalculated(true);
+  };
 
   if (loading || !person || !tableInfo) {
     return (
@@ -310,8 +335,40 @@ const PersonTableDetailsPage = () => {
                 </td>
                 {isEditing && <td></td>}
               </tr>
+              {/* ОНОВЛЕНО: Повертаємо відображення розрахунків */}
+              {showGST && (
+                <tr className={styles.totalRow}>
+                  <td colSpan="4">
+                    <strong>Total with GST:</strong>
+                  </td>
+                  <td>
+                    <strong>${totalWithGST}</strong>
+                  </td>
+                  {isEditing && <td></td>}
+                </tr>
+              )}
+              {showWCB && (
+                <tr className={styles.totalRow}>
+                  <td colSpan="4">
+                    <strong>Total - WCB:</strong>
+                  </td>
+                  <td>
+                    <strong>${wcb}</strong>
+                  </td>
+                  {isEditing && <td></td>}
+                </tr>
+              )}
             </tfoot>
           </table>
+        </div>
+        {/* ОНОВЛЕНО: Повертаємо кнопки */}
+        <div className={styles.calculationButtons}>
+          <button onClick={calculateTotalWithGST} className={styles.btnGst}>
+            +GST (5%)
+          </button>
+          <button onClick={calculateWCB} className={styles.btnWcb}>
+            -WCB (3%)
+          </button>
         </div>
       </div>
 
