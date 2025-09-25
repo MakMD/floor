@@ -1,0 +1,91 @@
+/* src/components/ReminderPanel/ReminderPanel.module.css */
+.panelContainer {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  margin-bottom: 32px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.icon {
+  color: #ffc107; /* Warning color */
+  font-size: 1.25rem;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.noReminders {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 20px 0;
+}
+
+.reminderList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reminderItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-background);
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.reminderItem:hover {
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.itemContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.addressName {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.dateInfo {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.statusTag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Specific status colors if needed in the future */
+[data-theme="dark"] .statusTag {
+  background-color: #58151c;
+  color: #f8d7da;
+}

@@ -3,7 +3,12 @@
 import React from "react";
 import AdminListManager from "../components/AdminListManager/AdminListManager";
 import styles from "./AdminPage.module.css";
-import { FaStore, FaHardHat, FaPaintRoller } from "react-icons/fa";
+import {
+  FaStore,
+  FaHardHat,
+  FaPaintRoller,
+  FaClipboardList,
+} from "react-icons/fa"; // ІМПОРТ: Нова іконка
 
 const AdminPage = () => {
   return (
@@ -33,6 +38,17 @@ const AdminPage = () => {
             <h2>Materials</h2>
           </div>
           <AdminListManager tableName="materials" itemName="material" />
+        </div>
+        {/* --- НОВА КАРТКА ДЛЯ ТИПІВ РОБІТ --- */}
+        <div className={styles.managerCard}>
+          <div className={styles.cardHeader}>
+            <FaClipboardList className={styles.cardIcon} />
+            <h2>Work Types</h2>
+          </div>
+          <AdminListManager
+            tableName="work_type_templates"
+            itemName="work type"
+          />
         </div>
       </div>
     </div>

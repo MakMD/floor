@@ -60,44 +60,6 @@ const CalendarPage = () => {
     }, {});
   }, [events]);
 
-  const stats = useMemo(() => {
-    const currentWeekEvents = events;
-    const prevWeekEvents = [];
-
-    const calculateTotals = (eventList) => {
-      return eventList.reduce(
-        (acc, event) => {
-          acc.totalIncome += event.total_amount || 0;
-          const payments =
-            event.work_types?.reduce(
-              (sum, wt) => sum + (wt.payment_amount || 0),
-              0
-            ) || 0;
-          acc.totalPayouts += payments;
-          return acc;
-        },
-        { totalIncome: 0, totalPayouts: 0 }
-      );
-    };
-
-    const currentWeekTotals = calculateTotals(currentWeekEvents);
-    const prevWeekTotals = calculateTotals(prevWeekEvents);
-
-    const incomeChange =
-      prevWeekTotals.totalIncome === 0
-        ? 0
-        : ((currentWeekTotals.totalIncome - prevWeekTotals.totalIncome) /
-            prevWeekTotals.totalIncome) *
-          100;
-
-    return {
-      ...currentWeekTotals,
-      netProfit: currentWeekTotals.totalIncome - currentWeekTotals.totalPayouts,
-      incomeChange: incomeChange.toFixed(0),
-      addressCount: currentWeekEvents.length,
-    };
-  }, [events]);
-
   const renderHeader = () => (
     <div className={styles.header}>
       <button onClick={prevWeek} className={styles.navButton}>
@@ -227,41 +189,6 @@ const CalendarPage = () => {
     );
   };
 
-  const renderStatsPanel = () => (
-    <div className={styles.statsPanel}>
-      <h3>Week Analytics</h3>
-      <div className={styles.statItem}>
-        <span>Projects this week</span>
-        <strong>{stats.addressCount}</strong>
-      </div>
-      <div className={styles.statItem}>
-        <span>Total Income</span>
-        <strong>${stats.totalIncome.toFixed(2)}</strong>
-      </div>
-      <div className={styles.statItem}>
-        <span>Worker Payouts</span>
-        <strong>${stats.totalPayouts.toFixed(2)}</strong>
-      </div>
-      <div className={styles.statItem}>
-        <span>Net Profit</span>
-        <strong className={styles.netProfit}>
-          ${stats.netProfit.toFixed(2)}
-        </strong>
-      </div>
-      <div className={styles.statItem}>
-        <span>vs. Last Week</span>
-        <strong
-          className={
-            stats.incomeChange >= 0 ? styles.positive : styles.negative
-          }
-        >
-          {stats.incomeChange > 0 && "+"}
-          {stats.incomeChange}%
-        </strong>
-      </div>
-    </div>
-  );
-
   const onDateClick = (day) => {
     setSelectedDate(day);
   };
@@ -286,7 +213,6 @@ const CalendarPage = () => {
           </div>
           {renderInfoPanel()}
         </div>
-        <aside className={styles.sidebar}>{renderStatsPanel()}</aside>
       </div>
     </div>
   );

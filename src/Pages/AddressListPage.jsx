@@ -1,24 +1,25 @@
 // src/Pages/AddressListPage.jsx
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAddresses } from "../hooks/useAddresses";
 import { useAdminLists } from "../hooks/useAdminLists";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
+import AddressFilter from "../components/AddressFilter/AddressFilter"; // ІМПОРТ
 import {
   FaArrowLeft,
   FaPlus,
   FaEdit,
   FaCheck,
   FaTrash,
-  FaMapMarkerAlt, // Іконка для адреси
-  FaTools, // Іконка для сервісу
+  FaMapMarkerAlt,
+  FaTools,
 } from "react-icons/fa";
 import styles from "./AddressListPage.module.css";
 import toast from "react-hot-toast";
-import { format } from "date-fns";
+import { format, isToday, isTomorrow, isYesterday, parseISO } from "date-fns";
 
 const StatusIndicator = ({ status }) => {
   const statusClass =
@@ -44,8 +45,12 @@ const AddressListPage = () => {
   const [editedAddresses, setEditedAddresses] = useState({});
   const navigate = useNavigate();
 
+  // СТАН ДЛЯ ФІЛЬТРІВ
+  const [dateFilter, setDateFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
   const [newAddressData, setNewAddressData] = useState({
-    project_type: "Address", // ОНОВЛЕНО: Додано новий стан
+    project_type: "Address",
     store_id: "",
     builder_id: "",
     address: "",
@@ -53,13 +58,58 @@ const AddressListPage = () => {
     total_amount: "",
   });
 
-  useEffect(() => {
-    const namesMap = addresses.reduce((acc, item) => {
-      acc[item.id] = item.address;
-      return acc;
-    }, {});
-    setEditedAddresses(namesMap);
-  }, [addresses]);
+  const handleFilterChange = (filterType, value) => {
+    if (filterType === "date") {
+      setDateFilter(value);
+    } else if (filterType === "status") {
+      setStatusFilter(value);
+    }
+  };
+
+  const filteredAddresses = useMemo(() => {
+    return addresses.filter((item) => {
+      // Фільтр по пошуку
+      const searchMatch = (item.address || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      // Фільтр по статусу
+      const statusMatch =
+        statusFilter === "all" || item.status === statusFilter;
+
+      // Фільтр по даті
+      const dateMatch =
+        dateFilter === "all" ||
+        (dateFilter === "today" && isToday(parseISO(item.date))) ||
+        (dateFilter === "tomorrow" && isTomorrow(parseISO(item.date))) ||
+        (dateFilter === "yesterday" && isYesterday(parseISO(item.date)));
+
+      return searchMatch && statusMatch && dateMatch;
+    });
+  }, [addresses, searchTerm, dateFilter, statusFilter]);
+
+  // Групування адрес
+  const groupedAddresses = useMemo(() => {
+    const today = [];
+    const tomorrow = [];
+    const past = [];
+
+    filteredAddresses.forEach((item) => {
+      const date = parseISO(item.date);
+      if (isToday(date)) {
+        today.push(item);
+      } else if (isTomorrow(date)) {
+        tomorrow.push(item);
+      } else {
+        past.push(item);
+      }
+    });
+
+    // Сортуємо минулі адреси від новіших до старіших
+    past.sort((a, b) => parseISO(b.date) - parseISO(a.date));
+
+    return { today, tomorrow, past };
+  }, [filteredAddresses]);
 
   const handleNewAddressChange = (e) => {
     const { name, value } = e.target;
@@ -81,7 +131,7 @@ const AddressListPage = () => {
       store_id: store_id ? parseInt(store_id) : null,
       builder_id: builder_id ? parseInt(builder_id) : null,
       status: "In Process",
-      project_type: project_type, // ОНОВЛЕНО: Додаємо тип до об'єкта
+      project_type: project_type,
     };
 
     const { error } = await supabase
@@ -103,7 +153,6 @@ const AddressListPage = () => {
     }
   };
 
-  // ... (решта функцій без змін) ...
   const handleUpdateAddressName = async (id, newName) => {
     if (!newName || newName.trim() === "") {
       toast.error("Address name cannot be empty.");
@@ -141,8 +190,76 @@ const AddressListPage = () => {
     setEditedAddresses((prev) => ({ ...prev, [id]: value }));
   };
 
-  const filteredAddresses = addresses.filter((item) =>
-    (item.address || "").toLowerCase().includes(searchTerm.toLowerCase())
+  const renderAddressList = (list) => (
+    <ul className={styles.addressList}>
+      {list.map((item) => {
+        const statusBorderClass =
+          {
+            "In Process": styles.inProcessBorder,
+            Ready: styles.statusReady,
+            "Not Finished": styles.notFinishedBorder,
+          }[item.status] || "";
+
+        return (
+          <li
+            key={item.id}
+            className={`${styles.addressItem} ${
+              isEditing ? styles.editing : ""
+            } ${statusBorderClass}`}
+            onClick={() => !isEditing && navigate(`/address/${item.id}`)}
+          >
+            {isEditing ? (
+              <>
+                <input
+                  type="text"
+                  value={editedAddresses[item.id] || ""}
+                  onChange={(e) => handleNameChange(item.id, e.target.value)}
+                  onBlur={() =>
+                    handleUpdateAddressName(item.id, editedAddresses[item.id])
+                  }
+                  onClick={(e) => e.stopPropagation()}
+                  className={styles.editInput}
+                />
+                <button
+                  className={styles.deleteButton}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteAddress(item.id);
+                  }}
+                >
+                  <FaTrash />
+                </button>
+              </>
+            ) : (
+              <>
+                <div className={styles.itemContent}>
+                  <div className={styles.typeIcon}>
+                    {item.project_type === "Service" ? (
+                      <FaTools title="Service" />
+                    ) : (
+                      <FaMapMarkerAlt title="Address" />
+                    )}
+                  </div>
+                  <div className={styles.itemDetails}>
+                    <span className={styles.addressName}>{item.address}</span>
+                    <div className={styles.itemMeta}>
+                      {item.builders?.name && (
+                        <span>Builder: {item.builders.name}</span>
+                      )}
+                      {item.stores?.name && (
+                        <span>Store: {item.stores.name}</span>
+                      )}
+                      {item.date && <span>Date: {item.date}</span>}
+                    </div>
+                  </div>
+                </div>
+                <StatusIndicator status={item.status} />
+              </>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 
   return (
@@ -167,7 +284,6 @@ const AddressListPage = () => {
       <div className={styles.addFormSection}>
         <h3>Create New Project</h3>
         <div className={styles.addForm}>
-          {/* ОНОВЛЕНО: JSX структура форми змінена */}
           <div className={styles.formRow}>
             <div className={styles.inputGroup}>
               <label htmlFor="project_type">Project Type</label>
@@ -259,6 +375,13 @@ const AddressListPage = () => {
         </div>
       </div>
 
+      {/* ПАНЕЛЬ ФІЛЬТРІВ */}
+      <AddressFilter
+        onFilterChange={handleFilterChange}
+        dateFilter={dateFilter}
+        statusFilter={statusFilter}
+      />
+
       <div className={styles.toolbar}>
         <input
           type="text"
@@ -273,93 +396,29 @@ const AddressListPage = () => {
         <div className={styles.addressList}>
           <SkeletonLoader count={5} />
         </div>
-      ) : addresses.length > 0 ? (
-        <ul className={styles.addressList}>
-          {filteredAddresses.map((item, index) => {
-            const todayString = format(new Date(), "yyyy-MM-dd");
-            const isToday = item.date === todayString;
-            const nextItem = filteredAddresses[index + 1];
-            const isLastToday = isToday && nextItem?.date !== todayString;
-
-            const statusBorderClass =
-              {
-                "In Process": styles.inProcessBorder,
-                Ready: styles.statusReady,
-                "Not Finished": styles.notFinishedBorder,
-              }[item.status] || "";
-
-            return (
-              <li
-                key={item.id}
-                className={`${styles.addressItem} ${
-                  isEditing ? styles.editing : ""
-                } ${statusBorderClass} ${
-                  isLastToday ? styles.todaySeparator : ""
-                }`}
-                onClick={() => !isEditing && navigate(`/address/${item.id}`)}
-              >
-                {isEditing ? (
-                  <>
-                    <input
-                      type="text"
-                      value={editedAddresses[item.id] || ""}
-                      onChange={(e) =>
-                        handleNameChange(item.id, e.target.value)
-                      }
-                      onBlur={() =>
-                        handleUpdateAddressName(
-                          item.id,
-                          editedAddresses[item.id]
-                        )
-                      }
-                      onClick={(e) => e.stopPropagation()}
-                      className={styles.editInput}
-                    />
-                    <button
-                      className={styles.deleteButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteAddress(item.id);
-                      }}
-                    >
-                      <FaTrash />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className={styles.itemContent}>
-                      {/* ОНОВЛЕНО: Іконка типу проєкту */}
-                      <div className={styles.typeIcon}>
-                        {item.project_type === "Service" ? (
-                          <FaTools title="Service" />
-                        ) : (
-                          <FaMapMarkerAlt title="Address" />
-                        )}
-                      </div>
-                      <div className={styles.itemDetails}>
-                        <span className={styles.addressName}>
-                          {item.address}
-                        </span>
-                        <div className={styles.itemMeta}>
-                          {item.builders?.name && (
-                            <span>Builder: {item.builders.name}</span>
-                          )}
-                          {item.stores?.name && (
-                            <span>Store: {item.stores.name}</span>
-                          )}
-                          {item.date && <span>Date: {item.date}</span>}
-                        </div>
-                      </div>
-                    </div>
-                    <StatusIndicator status={item.status} />
-                  </>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+      ) : filteredAddresses.length > 0 ? (
+        <>
+          {groupedAddresses.tomorrow.length > 0 && (
+            <div className={styles.listSection}>
+              <h2 className={styles.sectionTitle}>Tomorrow</h2>
+              {renderAddressList(groupedAddresses.tomorrow)}
+            </div>
+          )}
+          {groupedAddresses.today.length > 0 && (
+            <div className={styles.listSection}>
+              <h2 className={styles.sectionTitle}>Today</h2>
+              {renderAddressList(groupedAddresses.today)}
+            </div>
+          )}
+          {groupedAddresses.past.length > 0 && (
+            <div className={styles.listSection}>
+              <h2 className={styles.sectionTitle}>Past</h2>
+              {renderAddressList(groupedAddresses.past)}
+            </div>
+          )}
+        </>
       ) : (
-        <EmptyState message="No projects found. Add one to get started!" />
+        <EmptyState message="No projects found matching your criteria." />
       )}
     </div>
   );

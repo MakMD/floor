@@ -1,0 +1,41 @@
+/* src/components/AddressFilter/AddressFilter.module.css */
+.filterContainer {
+  display: flex;
+  gap: 20px;
+  background-color: var(--color-surface);
+  padding: 16px;
+  border-radius: var(--border-radius-lg);
+  margin-bottom: 24px;
+  border: 1px solid var(--color-border);
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.filterGroup label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  padding-left: 4px;
+}
+
+.filterGroup select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  height: auto;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .filterGroup select {
+  background-color: var(--color-surface);
+}

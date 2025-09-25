@@ -14,14 +14,17 @@ import {
   FaSignOutAlt,
   FaUsers,
   FaWrench,
-  FaCalendarAlt, // ІМПОРТ: Нова іконка
+  FaCalendarAlt,
+  FaHome,
 } from "react-icons/fa";
 import { supabase } from "../../supabaseClient";
 import LoginModal from "../LoginModal/LoginModal";
+import ThemeToggleButton from "../ThemeToggleButton/ThemeToggleButton"; // ІМПОРТ
 import logo from "../../../public/Flooring.Boss.svg";
 import styles from "./App.module.css";
 
-// Динамічні імпорти
+// Dynamic imports
+const DashboardPage = lazy(() => import("../../Pages/DashboardPage"));
 const PeopleSection = lazy(() => import("../PeopleSection/PeopleSection"));
 const PersonPage = lazy(() => import("../../Pages/PersonPage"));
 const CompanyListPage = lazy(() => import("../../Pages/CompanyListPage"));
@@ -39,10 +42,21 @@ const InactiveCompaniesPage = lazy(() =>
 const AddressListPage = lazy(() => import("../../Pages/AddressListPage"));
 const AddressDetailsPage = lazy(() => import("../../Pages/AddressDetailsPage"));
 const AdminPage = lazy(() => import("../../Pages/AdminPage"));
-const CalendarPage = lazy(() => import("../../Pages/CalendarPage")); // ІМПОРТ: Нова сторінка
+const CalendarPage = lazy(() => import("../../Pages/CalendarPage"));
 
 const AppContent = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [theme, setTheme] = useState("light"); // СТАН ДЛЯ ТЕМИ
+
+  // Функція для перемикання теми
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+  };
+
+  // Ефект для застосування атрибута до html
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -80,6 +94,16 @@ const AppContent = () => {
                     : styles.navLink
                 }
               >
+                <FaHome /> Dashboard
+              </NavLink>
+              <NavLink
+                to="/people"
+                className={({ isActive }) =>
+                  isActive
+                    ? `${styles.navLink} ${styles.activeLink}`
+                    : styles.navLink
+                }
+              >
                 <FaUsers /> People
               </NavLink>
               <NavLink
@@ -92,7 +116,6 @@ const AppContent = () => {
               >
                 <FaRegAddressBook /> Address Notes
               </NavLink>
-              {/* ОНОВЛЕНО: Додано посилання на календар */}
               <NavLink
                 to="/calendar"
                 className={({ isActive }) =>
@@ -123,6 +146,8 @@ const AppContent = () => {
               >
                 <FaWrench /> Admin
               </NavLink>
+              {/* КНОПКА ПЕРЕМИКАННЯ ТЕМИ */}
+              <ThemeToggleButton theme={theme} toggleTheme={toggleTheme} />
               <button onClick={handleLogout} className={styles.logoutButton}>
                 <FaSignOutAlt /> Log Out
               </button>
@@ -141,7 +166,8 @@ const AppContent = () => {
             }
           >
             <Routes>
-              <Route path="/" element={<PeopleSection />} />
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/people" element={<PeopleSection />} />
               <Route path="/companies" element={<CompanyListPage />} />
               <Route path="/addresses" element={<AddressListPage />} />
               <Route
@@ -170,7 +196,6 @@ const AppContent = () => {
                 element={<PersonTableDetailsPage />}
               />
               <Route path="/admin" element={<AdminPage />} />
-              {/* ОНОВЛЕНО: Додано новий маршрут */}
               <Route path="/calendar" element={<CalendarPage />} />
             </Routes>
           </Suspense>
