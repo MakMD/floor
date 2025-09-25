@@ -7,10 +7,18 @@ import { useAddresses } from "../hooks/useAddresses";
 import { useAdminLists } from "../hooks/useAdminLists";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
-import { FaArrowLeft, FaPlus, FaEdit, FaCheck, FaTrash } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaPlus,
+  FaEdit,
+  FaCheck,
+  FaTrash,
+  FaMapMarkerAlt, // Іконка для адреси
+  FaTools, // Іконка для сервісу
+} from "react-icons/fa";
 import styles from "./AddressListPage.module.css";
 import toast from "react-hot-toast";
-import { format } from "date-fns"; // ІМПОРТ: Для роботи з датою
+import { format } from "date-fns";
 
 const StatusIndicator = ({ status }) => {
   const statusClass =
@@ -37,6 +45,7 @@ const AddressListPage = () => {
   const navigate = useNavigate();
 
   const [newAddressData, setNewAddressData] = useState({
+    project_type: "Address", // ОНОВЛЕНО: Додано новий стан
     store_id: "",
     builder_id: "",
     address: "",
@@ -58,10 +67,10 @@ const AddressListPage = () => {
   };
 
   const handleAddAddress = async () => {
-    const { address, date, total_amount, store_id, builder_id } =
+    const { address, date, total_amount, store_id, builder_id, project_type } =
       newAddressData;
-    if (!address.trim() || !date) {
-      toast.error("Address and Date are required fields.");
+    if (!address.trim() || !date || !project_type) {
+      toast.error("Project Type, Address and Date are required fields.");
       return;
     }
 
@@ -72,6 +81,7 @@ const AddressListPage = () => {
       store_id: store_id ? parseInt(store_id) : null,
       builder_id: builder_id ? parseInt(builder_id) : null,
       status: "In Process",
+      project_type: project_type, // ОНОВЛЕНО: Додаємо тип до об'єкта
     };
 
     const { error } = await supabase
@@ -81,17 +91,19 @@ const AddressListPage = () => {
       toast.error(`Error adding address: ${error.message}`);
     } else {
       setNewAddressData({
+        project_type: "Address",
         store_id: "",
         builder_id: "",
         address: "",
         date: "",
         total_amount: "",
       });
-      toast.success("Address added successfully!");
+      toast.success("Project added successfully!");
       refetch();
     }
   };
 
+  // ... (решта функцій без змін) ...
   const handleUpdateAddressName = async (id, newName) => {
     if (!newName || newName.trim() === "") {
       toast.error("Address name cannot be empty.");
@@ -155,7 +167,20 @@ const AddressListPage = () => {
       <div className={styles.addFormSection}>
         <h3>Create New Project</h3>
         <div className={styles.addForm}>
+          {/* ОНОВЛЕНО: JSX структура форми змінена */}
           <div className={styles.formRow}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="project_type">Project Type</label>
+              <select
+                id="project_type"
+                name="project_type"
+                value={newAddressData.project_type}
+                onChange={handleNewAddressChange}
+              >
+                <option value="Address">Address</option>
+                <option value="Service">Service</option>
+              </select>
+            </div>
             <div className={styles.inputGroup}>
               <label htmlFor="store_id">Store</label>
               <select
@@ -193,12 +218,12 @@ const AddressListPage = () => {
           </div>
           <div className={styles.formRow}>
             <div className={styles.inputGroup}>
-              <label htmlFor="address">Address</label>
+              <label htmlFor="address">Address / Service Name</label>
               <input
                 id="address"
                 type="text"
                 name="address"
-                placeholder="Job site address"
+                placeholder="Job site address or service name"
                 value={newAddressData.address}
                 onChange={handleNewAddressChange}
               />
@@ -237,7 +262,7 @@ const AddressListPage = () => {
       <div className={styles.toolbar}>
         <input
           type="text"
-          placeholder="Search address..."
+          placeholder="Search..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className={styles.searchInput}
@@ -259,7 +284,7 @@ const AddressListPage = () => {
             const statusBorderClass =
               {
                 "In Process": styles.inProcessBorder,
-                Ready: styles.readyBorder,
+                Ready: styles.statusReady,
                 "Not Finished": styles.notFinishedBorder,
               }[item.status] || "";
 
@@ -270,7 +295,7 @@ const AddressListPage = () => {
                   isEditing ? styles.editing : ""
                 } ${statusBorderClass} ${
                   isLastToday ? styles.todaySeparator : ""
-                }`} // ОНОВЛЕНО: Додано клас-розділювач
+                }`}
                 onClick={() => !isEditing && navigate(`/address/${item.id}`)}
               >
                 {isEditing ? (
@@ -303,7 +328,14 @@ const AddressListPage = () => {
                 ) : (
                   <>
                     <div className={styles.itemContent}>
-                      <span className={styles.itemNumber}>{index + 1}.</span>
+                      {/* ОНОВЛЕНО: Іконка типу проєкту */}
+                      <div className={styles.typeIcon}>
+                        {item.project_type === "Service" ? (
+                          <FaTools title="Service" />
+                        ) : (
+                          <FaMapMarkerAlt title="Address" />
+                        )}
+                      </div>
                       <div className={styles.itemDetails}>
                         <span className={styles.addressName}>
                           {item.address}
@@ -327,7 +359,7 @@ const AddressListPage = () => {
           })}
         </ul>
       ) : (
-        <EmptyState message="No addresses found. Add one to get started!" />
+        <EmptyState message="No projects found. Add one to get started!" />
       )}
     </div>
   );

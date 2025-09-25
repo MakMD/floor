@@ -11,6 +11,7 @@ export const useAddresses = () => {
 
   const fetchAddresses = useCallback(async () => {
     setLoading(true);
+    // ОНОВЛЕНО: Додано 'project_type' до запиту
     const { data, error } = await supabase
       .from("addresses")
       .select("*, builders(*), stores(*)");
@@ -20,7 +21,6 @@ export const useAddresses = () => {
       console.error("Supabase error:", error);
       setAddresses([]);
     } else {
-      // ОНОВЛЕНО: Додано нову логіку сортування
       const todayString = format(new Date(), "yyyy-MM-dd");
 
       const todayAddresses = data.filter(
@@ -30,7 +30,6 @@ export const useAddresses = () => {
         (address) => address.date !== todayString
       );
 
-      // Сортуємо решту адрес за датою
       otherAddresses.sort((a, b) => {
         return parseISO(b.date) - parseISO(a.date);
       });

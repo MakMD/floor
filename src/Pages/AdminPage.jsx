@@ -3,7 +3,7 @@
 import React from "react";
 import AdminListManager from "../components/AdminListManager/AdminListManager";
 import styles from "./AdminPage.module.css";
-import { FaStore, FaHardHat } from "react-icons/fa";
+import { FaStore, FaHardHat, FaPaintRoller } from "react-icons/fa";
 
 const AdminPage = () => {
   return (
@@ -26,6 +26,13 @@ const AdminPage = () => {
             <h2>Stores</h2>
           </div>
           <AdminListManager tableName="stores" itemName="store" />
+        </div>
+        <div className={styles.managerCard}>
+          <div className={styles.cardHeader}>
+            <FaPaintRoller className={styles.cardIcon} />
+            <h2>Materials</h2>
+          </div>
+          <AdminListManager tableName="materials" itemName="material" />
         </div>
       </div>
     </div>

@@ -24,7 +24,7 @@ const CalendarPage = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const weekStartsOn = 1; // Понеділок
+  const weekStartsOn = 1; // Monday
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -69,8 +69,10 @@ const CalendarPage = () => {
         (acc, event) => {
           acc.totalIncome += event.total_amount || 0;
           const payments =
-            event.work_types?.reduce((sum, wt) => sum + wt.payment_amount, 0) ||
-            0;
+            event.work_types?.reduce(
+              (sum, wt) => sum + (wt.payment_amount || 0),
+              0
+            ) || 0;
           acc.totalPayouts += payments;
           return acc;
         },
@@ -147,11 +149,22 @@ const CalendarPage = () => {
             <div className={styles.eventIndicator}>{dayEvents.length}</div>
           )}
           <div className={styles.eventsList}>
-            {dayEvents.slice(0, 2).map((event) => (
-              <div key={event.id} className={styles.eventItem}>
-                {event.address}
-              </div>
-            ))}
+            {dayEvents.slice(0, 2).map((event) => {
+              const statusClass =
+                {
+                  "In Process": styles.eventInProgress,
+                  Ready: styles.eventReady,
+                  "Not Finished": styles.eventNotFinished,
+                }[event.status] || "";
+              return (
+                <div
+                  key={event.id}
+                  className={`${styles.eventItem} ${statusClass}`}
+                >
+                  {event.address}
+                </div>
+              );
+            })}
             {dayEvents.length > 2 && (
               <div className={styles.moreEvents}>
                 + {dayEvents.length - 2} more
@@ -179,7 +192,6 @@ const CalendarPage = () => {
         {eventsForSelectedDay.length > 0 ? (
           <ul className={styles.infoList}>
             {eventsForSelectedDay.map((event) => {
-              // ОНОВЛЕНО: Додаємо логіку для визначення CSS-класу статусу
               const statusClass =
                 {
                   "In Process": styles.statusInProgress,
@@ -187,10 +199,17 @@ const CalendarPage = () => {
                   "Not Finished": styles.statusNotFinished,
                 }[event.status] || "";
 
+              const statusBorderClass =
+                {
+                  "In Process": styles.inProcessBorder,
+                  Ready: styles.readyBorder,
+                  "Not Finished": styles.notFinishedBorder,
+                }[event.status] || "";
+
               return (
                 <li
                   key={event.id}
-                  className={styles.infoItem}
+                  className={`${styles.infoItem} ${statusBorderClass}`}
                   onClick={() => navigate(`/address/${event.id}`)}
                 >
                   <span className={styles.infoAddress}>{event.address}</span>

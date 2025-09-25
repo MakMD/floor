@@ -83,10 +83,12 @@
   align-items: flex-end;
 }
 
+/* ОНОВЛЕНО: Сітка для першого рядка */
 .formRow:first-child {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
+/* ОНОВЛЕНО: Сітка для другого рядка */
 .formRow:last-child {
   grid-template-columns: 4fr 1.5fr 1fr 1.5fr;
 }
@@ -171,7 +173,6 @@
   align-items: center;
 }
 
-/* ОНОВЛЕНО: Стиль для розділювача */
 .todaySeparator {
   margin-bottom: 32px;
   border-bottom: 2px solid var(--color-primary);
@@ -206,9 +207,9 @@
   min-width: 0;
 }
 
-.itemNumber {
-  font-size: 1.1rem;
-  font-weight: 500;
+/* ОНОВЛЕНО: Стилі для іконки типу */
+.typeIcon {
+  font-size: 1.5rem;
   color: var(--color-text-secondary);
 }
 
