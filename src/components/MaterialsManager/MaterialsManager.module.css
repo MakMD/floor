@@ -1,0 +1,87 @@
+/* src/components/MaterialsManager/MaterialsManager.module.css */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.addForm {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.selectField,
+.quantityInput {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.quantityInput {
+  max-width: 80px;
+}
+
+.addButton {
+  padding: 10px;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  transition: background-color 0.2s;
+}
+.addButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.materialList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.materialItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background-color: var(--color-background);
+  border-radius: 8px;
+}
+
+.quantityControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.deleteButton:hover {
+  color: #dc3545;
+}
+
+.noItemsMessage {
+  color: var(--color-text-secondary);
+  padding: 20px;
+  text-align: center;
+  background-color: var(--color-background);
+  border-radius: 8px;
+}

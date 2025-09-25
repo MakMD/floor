@@ -18,7 +18,9 @@ import toast from "react-hot-toast";
 import FileUpload from "../components/FileUpload/FileUpload";
 import { useAdminLists } from "../hooks/useAdminLists";
 import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager";
+import MaterialsManager from "../components/MaterialsManager/MaterialsManager"; // ІМПОРТ: Новий компонент
 
+// ... (StatusIndicator and FileListItem components remain unchanged) ...
 const StatusIndicator = ({ status }) => {
   const statusClass =
     {
@@ -103,13 +105,11 @@ const AddressDetailsPage = () => {
 
   const [addressData, setAddressData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [newGeneralNote, setNewGeneralNote] = useState("");
   const [newMaterialNote, setNewMaterialNote] = useState("");
   const { builders, stores, loading: listsLoading } = useAdminLists();
 
   const [editedData, setEditedData] = useState({
-    address: "", // ОНОВЛЕНО: Додано поле адреси
-    notes: [],
+    address: "",
     material_notes: [],
     total_amount: "",
     date: "",
@@ -134,8 +134,7 @@ const AddressDetailsPage = () => {
     } else {
       setAddressData(data);
       setEditedData({
-        address: data.address || "", // ОНОВЛЕНО: Ініціалізуємо адресу
-        notes: data.notes || [],
+        address: data.address || "",
         material_notes: data.material_notes || [],
         total_amount: data.total_amount || "",
         date: data.date || "",
@@ -177,7 +176,7 @@ const AddressDetailsPage = () => {
 
   const handleSaveChanges = async () => {
     const updates = {
-      address: editedData.address.trim(), // ОНОВЛЕНО: Додано адресу до об'єкта оновлень
+      address: editedData.address.trim(),
       total_amount: editedData.total_amount
         ? parseFloat(editedData.total_amount)
         : null,
@@ -213,25 +212,6 @@ const AddressDetailsPage = () => {
     if (updated) {
       setEditedData((prev) => ({ ...prev, material_notes: updatedNotes }));
       toast.success("Material note deleted!");
-    }
-  };
-  const handleAddGeneralNote = async () => {
-    if (newGeneralNote.trim() === "") return;
-    const updatedNotes = [...editedData.notes, newGeneralNote.trim()];
-    const updated = await updateAddress({ notes: updatedNotes });
-    if (updated) {
-      setEditedData((prev) => ({ ...prev, notes: updatedNotes }));
-      setNewGeneralNote("");
-      toast.success("Note added!");
-    }
-  };
-  const handleDeleteGeneralNote = async (index) => {
-    if (!window.confirm("Are you sure you want to delete this note?")) return;
-    const updatedNotes = editedData.notes.filter((_, i) => i !== index);
-    const updated = await updateAddress({ notes: updatedNotes });
-    if (updated) {
-      setEditedData((prev) => ({ ...prev, notes: updatedNotes }));
-      toast.success("Note deleted!");
     }
   };
   const handleFileUploaded = async (filePath) => {
@@ -279,7 +259,6 @@ const AddressDetailsPage = () => {
         >
           <FaArrowLeft /> Back
         </button>
-        {/* ОНОВЛЕНО: Заголовок тепер редагується */}
         {isEditing ? (
           <input
             type="text"
@@ -405,6 +384,12 @@ const AddressDetailsPage = () => {
         </div>
 
         <div className={styles.gridColumn}>
+          {/* ОНОВЛЕНО: Додано новий компонент для матеріалів */}
+          <div className={styles.detailCard}>
+            <h3>Materials</h3>
+            <MaterialsManager addressId={addressId} />
+          </div>
+
           <div className={styles.detailCard}>
             <h3>Material Notes</h3>
             <div className={styles.addNoteForm}>
@@ -412,7 +397,7 @@ const AddressDetailsPage = () => {
                 type="text"
                 value={newMaterialNote}
                 onChange={(e) => setNewMaterialNote(e.target.value)}
-                placeholder="Add material info..."
+                placeholder="Add a text note..."
                 className={styles.noteInput}
               />
               <button
@@ -438,41 +423,6 @@ const AddressDetailsPage = () => {
               </ul>
             ) : (
               <p className={styles.noItemsMessage}>No material notes yet.</p>
-            )}
-          </div>
-          <div className={styles.detailCard}>
-            <h3>General Notes</h3>
-            <div className={styles.addNoteForm}>
-              <input
-                type="text"
-                value={newGeneralNote}
-                onChange={(e) => setNewGeneralNote(e.target.value)}
-                placeholder="Add a new note..."
-                className={styles.noteInput}
-              />
-              <button
-                onClick={handleAddGeneralNote}
-                className={styles.addButton}
-              >
-                <FaPlus />
-              </button>
-            </div>
-            {editedData.notes.length > 0 ? (
-              <ul className={styles.notesList}>
-                {editedData.notes.map((note, index) => (
-                  <li key={index} className={styles.noteItem}>
-                    <span>{note}</span>
-                    <button
-                      onClick={() => handleDeleteGeneralNote(index)}
-                      className={styles.deleteNoteButton}
-                    >
-                      <FaTrash />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.noItemsMessage}>No general notes yet.</p>
             )}
           </div>
           <div className={styles.detailCard}>
