@@ -1,18 +1,19 @@
 // src/Pages/CompanyListPage.jsx
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaEdit, FaCheck, FaUsersSlash } from "react-icons/fa";
 import { supabase } from "../supabaseClient";
-import { useCompanies } from "../hooks/useCompanies"; // ІМПОРТ
+import { useCompanies } from "../hooks/useCompanies";
 import CompanyList from "../components/CompanyList/CompanyList";
+import CreateCompanyForm from "../components/CreateCompanyForm/CreateCompanyForm"; // ІМПОРТ
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
 import styles from "./CompanyListPage.module.css";
 import toast from "react-hot-toast";
 
 const CompanyListPage = () => {
-  const { companies, loading, refetch } = useCompanies(); // ВИКОРИСТАННЯ
+  const { companies, loading, refetch } = useCompanies();
   const [searchTerm, setSearchTerm] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
@@ -59,20 +60,14 @@ const CompanyListPage = () => {
             onClick={() => setIsEditing(!isEditing)}
             className={styles.editButton}
           >
-            {isEditing ? (
-              <>
-                <FaCheck /> Done
-              </>
-            ) : (
-              <>
-                <FaEdit /> Edit
-              </>
-            )}
+            {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
           </button>
         </div>
       </div>
 
-      <div className={styles.searchContainer}>
+      <CreateCompanyForm onCompanyCreated={refetch} />
+
+      <div className={styles.toolbar}>
         <input
           type="text"
           placeholder="Search company by name..."

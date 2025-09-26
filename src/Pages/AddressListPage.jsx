@@ -7,7 +7,7 @@ import { useAddresses } from "../hooks/useAddresses";
 import { useAdminLists } from "../hooks/useAdminLists";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
-import AddressFilter from "../components/AddressFilter/AddressFilter"; // ІМПОРТ
+import AddressFilter from "../components/AddressFilter/AddressFilter";
 import {
   FaArrowLeft,
   FaPlus,
@@ -45,7 +45,6 @@ const AddressListPage = () => {
   const [editedAddresses, setEditedAddresses] = useState({});
   const navigate = useNavigate();
 
-  // СТАН ДЛЯ ФІЛЬТРІВ
   const [dateFilter, setDateFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -68,27 +67,20 @@ const AddressListPage = () => {
 
   const filteredAddresses = useMemo(() => {
     return addresses.filter((item) => {
-      // Фільтр по пошуку
       const searchMatch = (item.address || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
-
-      // Фільтр по статусу
       const statusMatch =
         statusFilter === "all" || item.status === statusFilter;
-
-      // Фільтр по даті
       const dateMatch =
         dateFilter === "all" ||
         (dateFilter === "today" && isToday(parseISO(item.date))) ||
         (dateFilter === "tomorrow" && isTomorrow(parseISO(item.date))) ||
         (dateFilter === "yesterday" && isYesterday(parseISO(item.date)));
-
       return searchMatch && statusMatch && dateMatch;
     });
   }, [addresses, searchTerm, dateFilter, statusFilter]);
 
-  // Групування адрес
   const groupedAddresses = useMemo(() => {
     const today = [];
     const tomorrow = [];
@@ -105,7 +97,6 @@ const AddressListPage = () => {
       }
     });
 
-    // Сортуємо минулі адреси від новіших до старіших
     past.sort((a, b) => parseISO(b.date) - parseISO(a.date));
 
     return { today, tomorrow, past };
@@ -375,7 +366,6 @@ const AddressListPage = () => {
         </div>
       </div>
 
-      {/* ПАНЕЛЬ ФІЛЬТРІВ */}
       <AddressFilter
         onFilterChange={handleFilterChange}
         dateFilter={dateFilter}

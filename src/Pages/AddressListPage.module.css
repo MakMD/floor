@@ -60,10 +60,9 @@
 
 .addFormSection {
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
-  padding: 20px;
-  margin-bottom: 32px;
+  padding: 24px;
+  margin-bottom: 24px;
 }
 .addFormSection h3 {
   margin: 0 0 16px 0;
@@ -83,12 +82,10 @@
   align-items: flex-end;
 }
 
-/* ОНОВЛЕНО: Сітка для першого рядка */
 .formRow:first-child {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
-/* ОНОВЛЕНО: Сітка для другого рядка */
 .formRow:last-child {
   grid-template-columns: 4fr 1.5fr 1fr 1.5fr;
 }
@@ -114,8 +111,14 @@
   border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 0.9rem;
-  background-color: white;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
   height: auto;
+}
+
+[data-theme="dark"] .inputGroup input,
+[data-theme="dark"] .inputGroup select {
+  background-color: var(--color-surface);
 }
 
 .addButton {
@@ -138,10 +141,6 @@
 }
 
 .toolbar {
-  padding: 16px;
-  background-color: var(--color-surface);
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--color-border);
   margin-bottom: 24px;
 }
 
@@ -149,9 +148,11 @@
   width: 100%;
   padding: 12px 16px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--border-radius-lg);
   font-size: 16px;
   box-sizing: border-box;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
 }
 
 .listSection {
@@ -164,20 +165,20 @@
   color: var(--color-text-primary);
   margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 2px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .addressList {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .addressItem {
   background-color: var(--color-surface);
-  padding: 20px;
-  border-radius: 8px;
+  padding: 16px 20px;
+  border-radius: var(--border-radius-md);
   border: 1px solid var(--color-border);
-  border-left: 5px solid transparent;
+  border-left-width: 4px;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: all 0.2s ease-out;
@@ -187,8 +188,8 @@
 }
 
 .addressItem:hover:not(.editing) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+  background-color: var(--color-background);
 }
 
 .readyBorder {
@@ -203,7 +204,7 @@
 
 .addressItem.editing {
   cursor: default;
-  background-color: #fff;
+  border-color: var(--color-primary);
 }
 
 .itemContent {
@@ -243,9 +244,9 @@
 }
 
 .statusIndicator {
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   white-space: nowrap;
@@ -255,15 +256,27 @@
   background-color: #fff3cd;
   color: #664d03;
 }
+[data-theme="dark"] .statusInProgress {
+  background-color: #493b0a;
+  color: #ffdf70;
+}
 
 .statusReady {
   background-color: #d1e7dd;
   color: #0f5132;
 }
+[data-theme="dark"] .statusReady {
+  background-color: #0a3622;
+  color: #75b798;
+}
 
 .statusNotFinished {
   background-color: #f8d7da;
   color: #721c24;
+}
+[data-theme="dark"] .statusNotFinished {
+  background-color: #58151c;
+  color: #f19ba2;
 }
 
 .editInput {
@@ -273,6 +286,8 @@
   font-weight: 500;
   border: 1px solid var(--color-border);
   border-radius: 4px;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
 }
 
 .deleteButton {

@@ -29,6 +29,12 @@
   top: 20px;
 }
 
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
 @media (max-width: 1024px) {
   .layout {
     grid-template-columns: 1fr;

@@ -2,11 +2,16 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./StatsCard.module.css";
-import { FaArrowUp, FaArrowDown } from "react-icons/fa";
+import { FaArrowUp, FaArrowDown, FaArrowRight } from "react-icons/fa";
 
-const StatsCard = ({ title, value, icon, description, change, link }) => {
+const StatsCard = ({ title, value, icon, comparisonText, details, link }) => {
   const navigate = useNavigate();
-  const isPositive = change && change.startsWith("+");
+  const isPositive =
+    comparisonText &&
+    (comparisonText.startsWith("+") || parseFloat(comparisonText) > 0);
+  const isNegative =
+    comparisonText &&
+    (comparisonText.startsWith("-") || parseFloat(comparisonText) < 0);
 
   const handleNavigate = () => {
     if (link) {
@@ -15,7 +20,10 @@ const StatsCard = ({ title, value, icon, description, change, link }) => {
   };
 
   return (
-    <div className={styles.cardContainer} onClick={handleNavigate}>
+    <div
+      className={`${styles.cardContainer} ${link ? styles.clickable : ""}`}
+      onClick={handleNavigate}
+    >
       <div className={styles.header}>
         <div className={styles.iconWrapper}>{icon}</div>
         <div className={styles.titleWrapper}>
@@ -23,18 +31,35 @@ const StatsCard = ({ title, value, icon, description, change, link }) => {
           <p className={styles.cardValue}>{value}</p>
         </div>
       </div>
-      <p className={styles.cardDescription}>{description}</p>
+
+      {details && (
+        <div className={styles.detailsSection}>
+          {details.map((item, index) => (
+            <div key={index} className={styles.detailItem}>
+              <span className={styles.detailLabel}>{item.label}</span>
+              <span className={styles.detailValue}>{item.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className={styles.footer}>
-        {change && (
+        {comparisonText && (
           <span
             className={`${styles.changeIndicator} ${
-              isPositive ? styles.positive : styles.negative
-            }`}
+              isPositive ? styles.positive : ""
+            } ${isNegative ? styles.negative : ""}`}
           >
-            {isPositive ? <FaArrowUp /> : <FaArrowDown />} {change}
+            {isPositive && <FaArrowUp />}
+            {isNegative && <FaArrowDown />}
+            {comparisonText}
           </span>
         )}
-        {link && <span className={styles.detailsLink}>View Details →</span>}
+        {link && (
+          <span className={styles.detailsLink}>
+            View More <FaArrowRight />
+          </span>
+        )}
       </div>
     </div>
   );

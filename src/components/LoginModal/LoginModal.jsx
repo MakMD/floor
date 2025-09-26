@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { supabase } from "../../supabaseClient";
+import Modal from "../Modal/Modal"; // ІМПОРТ
 import styles from "./LoginModal.module.css";
-import { FaSignInAlt } from "react-icons/fa"; // Імпортуємо іконку
+import { FaSignInAlt } from "react-icons/fa";
 
 const LoginModal = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState("");
@@ -39,41 +40,36 @@ const LoginModal = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
-        <div className={styles.modalHeader}>
-          <h2 className={styles.title}>Login</h2>
-          <p className={styles.subtitle}>
-            Please enter your password to continue.
-          </p>
-        </div>
-        <div className={styles.form}>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            className={styles.inputField}
-            onKeyPress={(e) => e.key === "Enter" && handleLogin()}
-            disabled={loading}
-          />
-          <button
-            onClick={handleLogin}
-            className={styles.loginButton}
-            disabled={loading}
-          >
-            {loading ? (
-              "Logging in..."
-            ) : (
-              <>
-                <FaSignInAlt /> Log In
-              </>
-            )}
-          </button>
-        </div>
+    <Modal title="Login" onClose={() => {}}>
+      <div className={styles.form}>
+        <p className={styles.subtitle}>
+          Please enter your password to continue.
+        </p>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          className={styles.inputField}
+          onKeyPress={(e) => e.key === "Enter" && handleLogin()}
+          disabled={loading}
+        />
+        <button
+          onClick={handleLogin}
+          className={styles.loginButton}
+          disabled={loading}
+        >
+          {loading ? (
+            "Logging in..."
+          ) : (
+            <>
+              <FaSignInAlt /> Log In
+            </>
+          )}
+        </button>
         {error && <p className={styles.error}>{error}</p>}
       </div>
-    </div>
+    </Modal>
   );
 };
 
