@@ -32,6 +32,22 @@ const DashboardPage = () => {
     value: item.count,
   }));
 
+  // Формування розбивки для картки доходів
+  const incomeDetails = [
+    {
+      label: "Gross Income",
+      value: `$${Number(stats.totalIncome).toLocaleString()}`,
+    },
+    {
+      label: "Worker Payouts",
+      value: `-$${Number(stats.totalPayouts).toLocaleString()}`,
+    },
+    {
+      label: "Net Profit",
+      value: `$${(stats.totalIncome - stats.totalPayouts).toLocaleString()}`,
+    },
+  ];
+
   return (
     <div className={styles.pageContainer}>
       <h1 className={styles.pageTitle}>Dashboard</h1>
@@ -42,13 +58,16 @@ const DashboardPage = () => {
         <aside className={styles.sidebar}>
           <div className={styles.statsGrid}>
             <StatsCard
-              title="Income (Current Month)"
+              title="Financials (Current Month)"
               value={
                 loading
                   ? "..."
-                  : `$${Number(stats.totalIncome).toLocaleString()}`
+                  : `$${(
+                      stats.totalIncome - stats.totalPayouts
+                    ).toLocaleString()}`
               }
               icon={<FaDollarSign />}
+              details={loading ? [] : incomeDetails}
               comparisonText={loading ? "..." : incomeComparisonText}
               link="/calendar"
             />
