@@ -1,4 +1,4 @@
-/* src/components/PeopleSection/PeopleSection.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/PeopleSection/PeopleSection.module.css */
 
 .peopleSectionContainer {
   width: 100%;
@@ -25,35 +25,6 @@
   gap: 12px;
 }
 
-.controlButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: var(--border-radius-md);
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.addButton {
-  background-color: #28a745;
-}
-.addButton:hover {
-  background-color: #218838;
-}
-
-.inactiveLink {
-  background-color: var(--color-secondary);
-}
-
-.editButton {
-  background-color: var(--color-primary);
-}
-
 .createPersonForm {
   display: flex;
   gap: 10px;
@@ -72,43 +43,6 @@
   font-size: 1rem;
 }
 
-.createButton,
-.cancelButton {
-  padding: 10px 20px;
-  border: none;
-  color: white;
-  border-radius: var(--border-radius-md);
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.createButton {
-  background-color: var(--color-primary);
-}
-.createButton:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.cancelButton {
-  background-color: var(--color-secondary);
-}
-/* src/components/PeopleSection/PeopleSection.module.css */
-
-/* ... (ваш існуючий код) ... */
-
-.adminButton {
-  background-color: #ffc107; /* Жовтий колір для адміністративних дій */
-  color: #212529;
-}
-.adminButton:hover {
-  background-color: #e0a800;
-}
-.adminButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
 .spinner {
   animation: spin 1s linear infinite;
 }
@@ -121,7 +55,7 @@
     transform: rotate(360deg);
   }
 }
-/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
+
 @media (max-width: 768px) {
   .titleContainer {
     flex-direction: column;
@@ -130,10 +64,12 @@
     text-align: center;
   }
 
+  /* ОНОВЛЕНО: Стилі для контейнера з кнопками */
   .controls {
     position: static;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: wrap; /* Дозволяємо перенесення кнопок */
+    justify-content: center; /* Центруємо кнопки */
+    width: 100%;
   }
 
   .createPersonForm {

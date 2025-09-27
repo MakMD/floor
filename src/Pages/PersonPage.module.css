@@ -1,4 +1,4 @@
-/* src/Pages/PersonPage.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/PersonPage.module.css */
 
 .personPage {
   max-width: 1000px;
@@ -15,32 +15,6 @@
 
 .pageTitle {
   font-size: 2.25rem;
-}
-
-.backButton,
-.editButton,
-.addTableButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: var(--border-radius-md);
-  transition: background-color 0.2s ease;
-  color: #ffffff;
-}
-
-.backButton {
-  background-color: var(--color-secondary);
-}
-.editButton {
-  background-color: var(--color-primary);
-}
-.addTableButton {
-  background-color: #28a745;
 }
 
 .addTableForm {
@@ -69,7 +43,9 @@
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease-out;
+  /* ОНОВЛЕНО: Плавний перехід для всіх властивостей */
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out,
+    border-color 0.2s ease-out;
 }
 
 .tableInfo {
@@ -81,10 +57,11 @@
   cursor: pointer;
 }
 
+/* ОНОВЛЕНО: Покращений ефект при наведенні */
 .tableItem:hover {
-  border-color: var(--color-primary);
-  transform: translateY(-2px);
+  transform: translateY(-4px); /* Ефект "підйому" */
   box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
 .tableName {
@@ -104,23 +81,6 @@
   font-weight: 500;
 }
 
-.deleteButton {
-  background-color: #dc3545;
-  color: #ffffff;
-  border: none;
-  padding: 0 20px;
-  cursor: pointer;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0;
-  transition: background-color 0.2s ease;
-}
-
-.deleteButton:hover {
-  background-color: #c82333;
-}
-
 .noTables {
   text-align: center;
   padding: 40px;
@@ -128,8 +88,9 @@
   background-color: var(--color-surface);
   border-radius: var(--border-radius-lg);
 }
+
 /* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
-@media (max-width: 768px) {
+@media (max-width: var(--breakpoint-md)) {
   .header {
     flex-direction: column;
     gap: 16px;
@@ -150,11 +111,15 @@
     gap: 10px;
   }
 
-  .deleteButton {
-    align-self: flex-end;
-    border-radius: var(--border-radius-md);
+  .tableItem {
+    position: relative;
+    padding-right: 60px;
+  }
+
+  .tableItem > button {
     position: absolute;
-    top: 10px;
+    top: 50%;
     right: 10px;
+    transform: translateY(-50%);
   }
 }

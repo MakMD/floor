@@ -1,4 +1,4 @@
-/* src/Pages/DashboardPage.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/DashboardPage.module.css */
 .pageContainer {
   max-width: 1600px;
   margin: 0 auto;
@@ -26,7 +26,7 @@
 
 .sidebar {
   position: sticky;
-  top: 20px;
+  top: 120px;
 }
 
 .statsGrid {
@@ -35,9 +35,18 @@
   gap: 24px;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 992px) {
+  /* ВИКОРИСТАННЯ: Конкретний брейкпоінт */
+  .pageContainer {
+    padding: 10px;
+  }
+  .pageTitle {
+    font-size: 1.75rem;
+  }
   .layout {
     grid-template-columns: 1fr;
+    display: flex; /* ОНОВЛЕНО: Використовуємо Flexbox для зміни порядку */
+    flex-direction: column-reverse; /* ОНОВЛЕНО: Міняємо порядок блоків */
   }
   .sidebar {
     position: static;

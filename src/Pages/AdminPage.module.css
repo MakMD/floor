@@ -1,4 +1,4 @@
-/* src/Pages/AdminPage.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/AdminPage.module.css */
 
 .pageContainer {
   max-width: 1200px;
@@ -54,8 +54,12 @@
   font-size: 1.5rem;
   color: var(--color-primary);
 }
-/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
+
+/* ОНОВЛЕНО: Медіа-запит для мобільних */
 @media (max-width: 768px) {
+  .pageContainer {
+    padding: 10px;
+  }
   .pageTitle {
     font-size: 1.75rem;
   }
@@ -64,7 +68,13 @@
     margin-bottom: 30px;
   }
   .managersGrid {
-    grid-template-columns: 1fr; /* Одна колонка */
+    grid-template-columns: 1fr; /* Одна колонка для карток */
     gap: 24px;
+  }
+  .managerCard {
+    padding: 16px;
+  }
+  .cardHeader h2 {
+    font-size: 1.25rem;
   }
 }

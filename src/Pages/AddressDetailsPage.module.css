@@ -1,4 +1,4 @@
-/* src/Pages/AddressDetailsPage.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/AddressDetailsPage.module.css */
 
 .pageContainer {
   max-width: 1400px;
@@ -14,30 +14,6 @@
   margin-bottom: 32px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--color-border);
-}
-
-.backButton,
-.editButton {
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.backButton {
-  background-color: var(--color-secondary);
-  color: #ffffff;
-}
-
-.editButton {
-  background-color: var(--color-primary);
-  color: white;
 }
 
 .pageTitle {
@@ -110,7 +86,6 @@
   font-weight: 500;
 }
 
-/* ДОДАНО: Контейнер для індикатора статусу, щоб він не розтягувався */
 .statusCell {
   display: flex;
   align-items: flex-start;
@@ -197,26 +172,6 @@
   cursor: wait;
 }
 
-.deleteFileButton,
-.deleteNoteButton {
-  background-color: transparent;
-  border: none;
-  color: var(--color-text-secondary);
-  padding: 4px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.deleteFileButton:hover,
-.deleteNoteButton:hover {
-  color: #dc3545;
-  transform: scale(1.1);
-}
-
 .addNoteForm {
   display: flex;
   gap: 10px;
@@ -252,8 +207,8 @@
   background-color: var(--color-background);
   border-radius: 8px;
 }
-/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
-@media (max-width: 768px) {
+
+@media (max-width: var(--breakpoint-md)) {
   .pageContainer {
     padding: 10px;
     margin-top: 20px;
@@ -266,10 +221,9 @@
 
   .pageTitle {
     font-size: 1.5rem;
-    order: -1; /* Заголовок над кнопками */
+    order: -1;
   }
 
-  /* Перетворюємо сітку на одну колонку */
   .detailsGrid {
     grid-template-columns: 1fr;
   }
@@ -283,7 +237,6 @@
     padding-bottom: 12px;
   }
 
-  /* Поля "label" і "value" тепер одне під одним */
   .detailItem {
     grid-template-columns: 1fr;
     gap: 4px;

@@ -1,4 +1,4 @@
-// src/Pages/PersonPage.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/PersonPage.jsx
 
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import { supabase } from "../supabaseClient";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
 import styles from "./PersonPage.module.css";
+import commonStyles from "../styles/common.module.css"; // ІМПОРТ
 import toast from "react-hot-toast";
 
 const PersonPage = () => {
@@ -35,7 +36,6 @@ const PersonPage = () => {
     }
     setPerson(personData);
 
-    // Запит до БД залишається тим самим, сортування будемо робити в коді
     const { data: tablesData, error: tablesError } = await supabase
       .from("invoice_tables")
       .select(`id, name, invoices ( count )`)
@@ -50,19 +50,14 @@ const PersonPage = () => {
         invoiceCount: t.invoices[0]?.count || 0,
       }));
 
-      // ОНОВЛЕНО: Додаємо логіку сортування
       formattedTables.sort((a, b) => {
         try {
-          // Розбираємо дату з назви формату "DD.MM.YYYY"
           const [dayA, monthA, yearA] = a.name.split(".").map(Number);
           const [dayB, monthB, yearB] = b.name.split(".").map(Number);
           const dateA = new Date(yearA, monthA - 1, dayA);
           const dateB = new Date(yearB, monthB - 1, dayB);
-
-          // Сортуємо від новішої дати до старішої
           return dateB - dateA;
         } catch (e) {
-          // Якщо назва не є датою, сортуємо за алфавітом
           return b.name.localeCompare(a.name);
         }
       });
@@ -116,14 +111,19 @@ const PersonPage = () => {
   return (
     <div className={styles.personPage}>
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={() => navigate("/")}>
+        <button
+          className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
+          onClick={() => navigate("/")}
+        >
           <FaArrowLeft /> Back
         </button>
         <h1 className={styles.pageTitle}>
           {person ? `${person.name}'s Tables` : "Loading..."}
         </h1>
         <button
-          className={styles.editButton}
+          className={
+            isEditing ? commonStyles.buttonSuccess : commonStyles.buttonPrimary
+          } // ВИКОРИСТАННЯ
           onClick={() => setIsEditing(!isEditing)}
         >
           {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
@@ -138,7 +138,9 @@ const PersonPage = () => {
           placeholder="Enter new table name (e.g., DD.MM.YYYY)"
           className={styles.inputField}
         />
-        <button onClick={handleAddTable} className={styles.addTableButton}>
+        <button onClick={handleAddTable} className={commonStyles.buttonSuccess}>
+          {" "}
+          {/* ВИКОРИСТАННЯ */}
           <FaPlus /> Add Table
         </button>
       </div>
@@ -165,7 +167,7 @@ const PersonPage = () => {
               {isEditing && (
                 <button
                   onClick={() => handleDeleteTable(table.id)}
-                  className={styles.deleteButton}
+                  className={commonStyles.buttonIcon} // ВИКОРИСТАННЯ
                 >
                   <FaTrash />
                 </button>

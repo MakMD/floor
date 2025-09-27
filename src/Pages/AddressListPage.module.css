@@ -1,4 +1,4 @@
-/* src/Pages/AddressListPage.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/AddressListPage.module.css */
 
 .pageContainer {
   max-width: 1400px;
@@ -11,40 +11,6 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-}
-
-.backButton,
-.editButton,
-.doneButton {
-  padding: 10px 20px;
-  color: #ffffff;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.backButton {
-  background-color: var(--color-secondary);
-}
-.backButton:hover {
-  background-color: #5a6268;
-}
-.editButton {
-  background-color: var(--color-primary);
-}
-.editButton:hover {
-  background-color: var(--color-primary-hover);
-}
-.doneButton {
-  background-color: #28a745;
-}
-.doneButton:hover {
-  background-color: #218838;
 }
 
 .pageTitle {
@@ -87,7 +53,7 @@
 }
 
 .formRow:last-child {
-  grid-template-columns: 4fr 1.5fr 1fr 1.5fr;
+  grid-template-columns: 4fr 1.5fr 1fr auto;
 }
 
 .inputGroup {
@@ -107,13 +73,21 @@
 .inputGroup select {
   width: 100%;
   box-sizing: border-box;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 0.9rem;
   background-color: var(--color-background);
   color: var(--color-text-primary);
   height: auto;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inputGroup input:focus,
+.inputGroup select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
 }
 
 [data-theme="dark"] .inputGroup input,
@@ -121,23 +95,9 @@
   background-color: var(--color-surface);
 }
 
-.addButton {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 8px 12px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: background-color 0.2s ease;
-  height: 37px;
+[data-theme="dark"] .inputGroup input:focus,
+[data-theme="dark"] .inputGroup select:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
 .toolbar {
@@ -181,30 +141,33 @@
   border-left-width: 4px;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: all 0.2s ease-out;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out,
+    border-color 0.2s ease-out;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .addressItem:hover:not(.editing) {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-md);
   border-color: var(--color-primary);
-  background-color: var(--color-background);
 }
 
 .readyBorder {
-  border-left-color: #198754;
+  border-left-color: var(--color-success);
 }
 .inProcessBorder {
-  border-left-color: #ffc107;
+  border-left-color: var(--color-warning);
 }
 .notFinishedBorder {
-  border-left-color: #dc3545;
+  border-left-color: var(--color-danger);
 }
 
 .addressItem.editing {
   cursor: default;
   border-color: var(--color-primary);
+  gap: 10px;
 }
 
 .itemContent {
@@ -256,27 +219,26 @@
   background-color: #fff3cd;
   color: #664d03;
 }
-[data-theme="dark"] .statusInProgress {
-  background-color: #493b0a;
-  color: #ffdf70;
-}
-
 .statusReady {
   background-color: #d1e7dd;
   color: #0f5132;
 }
-[data-theme="dark"] .statusReady {
-  background-color: #0a3622;
-  color: #75b798;
-}
-
 .statusNotFinished {
   background-color: #f8d7da;
   color: #721c24;
 }
+
+[data-theme="dark"] .statusInProgress {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+[data-theme="dark"] .statusReady {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
 [data-theme="dark"] .statusNotFinished {
-  background-color: #58151c;
-  color: #f19ba2;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 .editInput {
@@ -290,43 +252,37 @@
   color: var(--color-text-primary);
 }
 
-.deleteButton {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 0.2s ease;
+.errorMessage {
+  color: var(--color-danger);
+  font-size: 0.8rem;
+  padding-left: 4px;
+  margin-top: 4px;
 }
 
-.deleteButton:hover {
-  background-color: #c82333;
-}
-
+/* ОНОВЛЕНО: Медіа-запит для мобільних */
 @media (max-width: 768px) {
   .pageContainer {
     padding: 10px;
   }
 
   .header {
-    flex-direction: column;
+    flex-direction: column; /* Розташовуємо елементи хедера вертикально */
+    align-items: stretch; /* Розтягуємо елементи на всю ширину */
     gap: 16px;
     margin-bottom: 20px;
   }
 
   .pageTitle {
     font-size: 1.75rem;
-    order: -1;
+    order: -1; /* Заголовок тепер буде першим */
+    text-align: center; /* Центруємо заголовок */
   }
 
   .addFormSection {
     padding: 16px;
   }
 
+  /* Робимо обидва рядки форми одноколонковими */
   .formRow:first-child,
   .formRow:last-child {
     grid-template-columns: 1fr;

@@ -1,4 +1,4 @@
-/* src/components/StatsCard/StatsCard.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/StatsCard/StatsCard.module.css */
 .cardContainer {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -25,7 +25,7 @@
 }
 
 .iconWrapper {
-  font-size: 1.5rem; /* Зменшено іконку */
+  font-size: 1.5rem;
   color: var(--color-primary);
   background-color: var(--color-background);
   border-radius: var(--border-radius-md);
@@ -40,11 +40,12 @@
 .titleWrapper {
   display: flex;
   flex-direction: column;
+  min-width: 0; /* Дозволяє тексту переноситись */
 }
 
 .cardTitle {
   margin: 0;
-  font-size: 0.9rem; /* Зменшено заголовок */
+  font-size: 0.9rem;
   font-weight: 500;
   color: var(--color-text-secondary);
 }
@@ -54,6 +55,7 @@
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--color-text-primary);
+  word-break: break-word; /* Дозволяє переносити великі числа */
 }
 
 .detailsSection {
@@ -72,18 +74,20 @@
 
 .detailLabel {
   color: var(--color-text-secondary);
+  margin-right: 8px; /* Додаємо відступ */
 }
 
 .detailValue {
   font-weight: 500;
   color: var(--color-text-primary);
+  text-align: right; /* Вирівнюємо значення по правому краю */
 }
 
 .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: auto; /* Притискає футер до низу */
+  margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid var(--color-border);
 }
@@ -98,17 +102,17 @@
 }
 
 .positive {
-  color: #198754;
+  color: var(--color-success);
 }
 [data-theme="dark"] .positive {
-  color: #75b798;
+  color: var(--color-success);
 }
 
 .negative {
-  color: #dc3545;
+  color: var(--color-danger);
 }
 [data-theme="dark"] .negative {
-  color: #f19ba2;
+  color: var(--color-danger);
 }
 
 .detailsLink {
@@ -118,4 +122,28 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* ОНОВЛЕНО: Медіа-запит для мобільних */
+@media (max-width: var(--breakpoint-md)) {
+  .cardContainer {
+    padding: 16px;
+  }
+  .cardValue {
+    font-size: 1.5rem;
+  }
+  /* ВИПРАВЛЕНО: Розташування елементів у деталях */
+  .detailItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .detailValue {
+    text-align: left; /* Повертаємо вирівнювання по лівому краю */
+  }
+  .footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }

@@ -1,4 +1,4 @@
-// src/components/App/App.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/App/App.jsx
 
 import { useState, useEffect, lazy, Suspense } from "react";
 import {
@@ -16,10 +16,12 @@ import {
   FaWrench,
   FaCalendarAlt,
   FaHome,
+  FaBars,
+  FaTimes,
 } from "react-icons/fa";
 import { supabase } from "../../supabaseClient";
 import LoginModal from "../LoginModal/LoginModal";
-import ThemeToggleButton from "../ThemeToggleButton/ThemeToggleButton"; // ІМПОРТ
+import ThemeToggleButton from "../ThemeToggleButton/ThemeToggleButton";
 import logo from "../../../public/Flooring.Boss.svg";
 import styles from "./App.module.css";
 
@@ -46,14 +48,14 @@ const CalendarPage = lazy(() => import("../../Pages/CalendarPage"));
 
 const AppContent = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [theme, setTheme] = useState("light"); // СТАН ДЛЯ ТЕМИ
+  const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState("light");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Функція для перемикання теми
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
   };
 
-  // Ефект для застосування атрибута до html
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
@@ -62,6 +64,7 @@ const AppContent = () => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       setIsLoggedIn(!!data.session);
+      setLoading(false);
     };
     checkSession();
   }, []);
@@ -73,18 +76,68 @@ const AppContent = () => {
     setIsLoggedIn(false);
   };
 
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <h2>Loading Application...</h2>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.appContainer}>
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
 
       <header className={styles.header}>
-        <NavLink to="/" className={styles.logoLink}>
+        <NavLink to="/" className={`${styles.logoLink} ${styles.desktopOnly}`}>
           <img src={logo} alt="App Logo" className={styles.logo} />
         </NavLink>
-        <nav className={styles.nav}>
-          {isLoggedIn && (
-            <>
+        {isLoggedIn && (
+          <button
+            className={styles.hamburgerButton}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            <FaBars />
+          </button>
+        )}
+
+        {isLoggedIn && (
+          <>
+            {isMobileMenuOpen && (
+              <div className={styles.overlay} onClick={closeMobileMenu}></div>
+            )}
+
+            <nav
+              className={`${styles.nav} ${
+                isMobileMenuOpen ? styles.navMobileOpen : ""
+              }`}
+            >
+              <div className={styles.mobileMenuHeader}>
+                <NavLink
+                  to="/"
+                  className={styles.logoLink}
+                  onClick={closeMobileMenu}
+                >
+                  <img src={logo} alt="App Logo" className={styles.logo} />
+                </NavLink>
+                <button
+                  className={styles.closeButton}
+                  onClick={closeMobileMenu}
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
               <NavLink
                 to="/"
                 end
@@ -93,6 +146,7 @@ const AppContent = () => {
                     ? `${styles.navLink} ${styles.activeLink}`
                     : styles.navLink
                 }
+                onClick={closeMobileMenu}
               >
                 <FaHome /> Dashboard
               </NavLink>
@@ -103,6 +157,7 @@ const AppContent = () => {
                     ? `${styles.navLink} ${styles.activeLink}`
                     : styles.navLink
                 }
+                onClick={closeMobileMenu}
               >
                 <FaUsers /> People
               </NavLink>
@@ -113,6 +168,7 @@ const AppContent = () => {
                     ? `${styles.navLink} ${styles.activeLink}`
                     : styles.navLink
                 }
+                onClick={closeMobileMenu}
               >
                 <FaRegAddressBook /> Address Notes
               </NavLink>
@@ -123,6 +179,7 @@ const AppContent = () => {
                     ? `${styles.navLink} ${styles.activeLink}`
                     : styles.navLink
                 }
+                onClick={closeMobileMenu}
               >
                 <FaCalendarAlt /> Calendar
               </NavLink>
@@ -133,6 +190,7 @@ const AppContent = () => {
                     ? `${styles.navLink} ${styles.activeLink}`
                     : styles.navLink
                 }
+                onClick={closeMobileMenu}
               >
                 <FaRegBuilding /> Companies
               </NavLink>
@@ -143,17 +201,25 @@ const AppContent = () => {
                     ? `${styles.navLink} ${styles.activeLink}`
                     : styles.navLink
                 }
+                onClick={closeMobileMenu}
               >
                 <FaWrench /> Admin
               </NavLink>
-              {/* КНОПКА ПЕРЕМИКАННЯ ТЕМИ */}
-              <ThemeToggleButton theme={theme} toggleTheme={toggleTheme} />
-              <button onClick={handleLogout} className={styles.logoutButton}>
-                <FaSignOutAlt /> Log Out
-              </button>
-            </>
-          )}
-        </nav>
+              <div className={styles.navControls}>
+                <ThemeToggleButton theme={theme} toggleTheme={toggleTheme} />
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    closeMobileMenu();
+                  }}
+                  className={styles.logoutButton}
+                >
+                  <FaSignOutAlt /> Log Out
+                </button>
+              </div>
+            </nav>
+          </>
+        )}
       </header>
 
       {isLoggedIn && (

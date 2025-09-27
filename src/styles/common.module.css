@@ -1,0 +1,67 @@
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/styles/common.module.css */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: var(--border-radius-md);
+  color: var(--color-text-light);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.buttonPrimary {
+  composes: button;
+  background-image: var(--gradient-primary);
+}
+
+.buttonSecondary {
+  composes: button;
+  background-color: var(--color-secondary);
+}
+
+.buttonSuccess {
+  composes: button;
+  background-image: var(--gradient-success);
+}
+
+.buttonDanger {
+  composes: button;
+  background-color: var(--color-danger);
+}
+
+.buttonIcon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--color-text-secondary);
+  transition: all 0.2s ease;
+}
+
+.buttonIcon:hover {
+  color: var(--color-danger);
+  background-color: var(--color-border);
+}
+
+/* ОНОВЛЕНО: Медіа-запит для кнопок */
+@media (max-width: 768px) {
+  .button {
+    padding: 10px 16px; /* Зменшуємо горизонтальний відступ */
+    font-size: 0.9rem;
+  }
+}

@@ -1,4 +1,4 @@
-// src/Pages/AddressListPage.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/AddressListPage.jsx
 
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -18,8 +18,11 @@ import {
   FaTools,
 } from "react-icons/fa";
 import styles from "./AddressListPage.module.css";
+import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
 import { format, isToday, isTomorrow, isYesterday, parseISO } from "date-fns";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
 
 const StatusIndicator = ({ status }) => {
   const statusClass =
@@ -36,26 +39,27 @@ const StatusIndicator = ({ status }) => {
   );
 };
 
+const AddProjectSchema = Yup.object().shape({
+  project_type: Yup.string().required("Project type is required"),
+  address: Yup.string()
+    .trim()
+    .min(3, "Address must be at least 3 characters")
+    .required("Address or Service Name is required"),
+  date: Yup.date().required("Date is required"),
+  total_amount: Yup.number().nullable(),
+  store_id: Yup.number().nullable(),
+  builder_id: Yup.number().nullable(),
+});
+
 const AddressListPage = () => {
   const { addresses, loading: addressesLoading, refetch } = useAddresses();
   const { builders, stores, loading: listsLoading } = useAdminLists();
-
   const [searchTerm, setSearchTerm] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editedAddresses, setEditedAddresses] = useState({});
   const navigate = useNavigate();
-
   const [dateFilter, setDateFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-
-  const [newAddressData, setNewAddressData] = useState({
-    project_type: "Address",
-    store_id: "",
-    builder_id: "",
-    address: "",
-    date: "",
-    total_amount: "",
-  });
 
   const handleFilterChange = (filterType, value) => {
     if (filterType === "date") {
@@ -102,46 +106,31 @@ const AddressListPage = () => {
     return { today, tomorrow, past };
   }, [filteredAddresses]);
 
-  const handleNewAddressChange = (e) => {
-    const { name, value } = e.target;
-    setNewAddressData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddAddress = async () => {
-    const { address, date, total_amount, store_id, builder_id, project_type } =
-      newAddressData;
-    if (!address.trim() || !date || !project_type) {
-      toast.error("Project Type, Address and Date are required fields.");
-      return;
-    }
-
+  const handleAddAddress = async (values, { setSubmitting, resetForm }) => {
     const newAddressObject = {
-      address: address.trim(),
-      date: date,
-      total_amount: total_amount ? parseFloat(total_amount) : null,
-      store_id: store_id ? parseInt(store_id) : null,
-      builder_id: builder_id ? parseInt(builder_id) : null,
+      address: values.address.trim(),
+      date: values.date,
+      total_amount: values.total_amount
+        ? parseFloat(values.total_amount)
+        : null,
+      store_id: values.store_id ? parseInt(values.store_id) : null,
+      builder_id: values.builder_id ? parseInt(values.builder_id) : null,
       status: "In Process",
-      project_type: project_type,
+      project_type: values.project_type,
     };
 
     const { error } = await supabase
       .from("addresses")
       .insert([newAddressObject]);
+
     if (error) {
       toast.error(`Error adding address: ${error.message}`);
     } else {
-      setNewAddressData({
-        project_type: "Address",
-        store_id: "",
-        builder_id: "",
-        address: "",
-        date: "",
-        total_amount: "",
-      });
       toast.success("Project added successfully!");
+      resetForm();
       refetch();
     }
+    setSubmitting(false);
   };
 
   const handleUpdateAddressName = async (id, newName) => {
@@ -203,7 +192,7 @@ const AddressListPage = () => {
               <>
                 <input
                   type="text"
-                  value={editedAddresses[item.id] || ""}
+                  value={editedAddresses[item.id] ?? item.address}
                   onChange={(e) => handleNameChange(item.id, e.target.value)}
                   onBlur={() =>
                     handleUpdateAddressName(item.id, editedAddresses[item.id])
@@ -212,7 +201,7 @@ const AddressListPage = () => {
                   className={styles.editInput}
                 />
                 <button
-                  className={styles.deleteButton}
+                  className={commonStyles.buttonIcon} // ВИПРАВЛЕНО
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteAddress(item.id);
@@ -256,15 +245,20 @@ const AddressListPage = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={() => navigate("/")}>
+        <button
+          className={commonStyles.buttonSecondary}
+          onClick={() => navigate("/")}
+        >
           <FaArrowLeft /> Back to Main
         </button>
         <h1 className={styles.pageTitle}>Address Notes</h1>
         <div className={styles.controls}>
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={`${styles.editButton} ${
-              isEditing ? styles.doneButton : ""
+            className={`${
+              isEditing
+                ? commonStyles.buttonSuccess
+                : commonStyles.buttonPrimary
             }`}
           >
             {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
@@ -274,96 +268,113 @@ const AddressListPage = () => {
 
       <div className={styles.addFormSection}>
         <h3>Create New Project</h3>
-        <div className={styles.addForm}>
-          <div className={styles.formRow}>
-            <div className={styles.inputGroup}>
-              <label htmlFor="project_type">Project Type</label>
-              <select
-                id="project_type"
-                name="project_type"
-                value={newAddressData.project_type}
-                onChange={handleNewAddressChange}
-              >
-                <option value="Address">Address</option>
-                <option value="Service">Service</option>
-              </select>
-            </div>
-            <div className={styles.inputGroup}>
-              <label htmlFor="store_id">Store</label>
-              <select
-                id="store_id"
-                name="store_id"
-                value={newAddressData.store_id}
-                onChange={handleNewAddressChange}
-                disabled={listsLoading}
-              >
-                <option value="">Select a store</option>
-                {stores.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {store.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className={styles.inputGroup}>
-              <label htmlFor="builder_id">Builder</label>
-              <select
-                id="builder_id"
-                name="builder_id"
-                value={newAddressData.builder_id}
-                onChange={handleNewAddressChange}
-                disabled={listsLoading}
-              >
-                <option value="">Select a builder</option>
-                {builders.map((builder) => (
-                  <option key={builder.id} value={builder.id}>
-                    {builder.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className={styles.formRow}>
-            <div className={styles.inputGroup}>
-              <label htmlFor="address">Address / Service Name</label>
-              <input
-                id="address"
-                type="text"
-                name="address"
-                placeholder="Job site address or service name"
-                value={newAddressData.address}
-                onChange={handleNewAddressChange}
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <label htmlFor="date">Date</label>
-              <input
-                id="date"
-                type="date"
-                name="date"
-                value={newAddressData.date}
-                onChange={handleNewAddressChange}
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <label htmlFor="total_amount">Total Amount</label>
-              <input
-                id="total_amount"
-                type="number"
-                name="total_amount"
-                placeholder="0.00"
-                value={newAddressData.total_amount}
-                onChange={handleNewAddressChange}
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <label>&nbsp;</label>
-              <button onClick={handleAddAddress} className={styles.addButton}>
-                <FaPlus /> Add Project
-              </button>
-            </div>
-          </div>
-        </div>
+        <Formik
+          initialValues={{
+            project_type: "Address",
+            store_id: "",
+            builder_id: "",
+            address: "",
+            date: "",
+            total_amount: "",
+          }}
+          validationSchema={AddProjectSchema}
+          onSubmit={handleAddAddress}
+        >
+          {({ isSubmitting }) => (
+            <Form className={styles.addForm}>
+              <div className={styles.formRow}>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="project_type">Project Type</label>
+                  <Field as="select" id="project_type" name="project_type">
+                    <option value="Address">Address</option>
+                    <option value="Service">Service</option>
+                  </Field>
+                  <ErrorMessage
+                    name="project_type"
+                    component="div"
+                    className={styles.errorMessage}
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="store_id">Store</label>
+                  <Field
+                    as="select"
+                    id="store_id"
+                    name="store_id"
+                    disabled={listsLoading}
+                  >
+                    <option value="">Select a store</option>
+                    {stores.map((store) => (
+                      <option key={store.id} value={store.id}>
+                        {store.name}
+                      </option>
+                    ))}
+                  </Field>
+                </div>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="builder_id">Builder</label>
+                  <Field
+                    as="select"
+                    id="builder_id"
+                    name="builder_id"
+                    disabled={listsLoading}
+                  >
+                    <option value="">Select a builder</option>
+                    {builders.map((builder) => (
+                      <option key={builder.id} value={builder.id}>
+                        {builder.name}
+                      </option>
+                    ))}
+                  </Field>
+                </div>
+              </div>
+              <div className={styles.formRow}>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="address">Address / Service Name</label>
+                  <Field
+                    id="address"
+                    type="text"
+                    name="address"
+                    placeholder="Job site address or service name"
+                  />
+                  <ErrorMessage
+                    name="address"
+                    component="div"
+                    className={styles.errorMessage}
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="date">Date</label>
+                  <Field id="date" type="date" name="date" />
+                  <ErrorMessage
+                    name="date"
+                    component="div"
+                    className={styles.errorMessage}
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="total_amount">Total Amount</label>
+                  <Field
+                    id="total_amount"
+                    type="number"
+                    name="total_amount"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label>&nbsp;</label>
+                  <button
+                    type="submit"
+                    className={commonStyles.buttonSuccess}
+                    disabled={isSubmitting}
+                  >
+                    <FaPlus /> Add Project
+                  </button>
+                </div>
+              </div>
+            </Form>
+          )}
+        </Formik>
       </div>
 
       <AddressFilter

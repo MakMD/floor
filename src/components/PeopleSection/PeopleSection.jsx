@@ -1,18 +1,19 @@
-// src/components/PeopleSection/PeopleSection.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/PeopleSection/PeopleSection.jsx
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
-import { usePeople } from "../../hooks/usePeople"; // ІМПОРТ: Використовуємо хук
+import { usePeople } from "../../hooks/usePeople";
 import PeopleList from "../PeopleList/PeopleList";
 import SkeletonLoader from "../SkeletonLoader/SkeletonLoader";
 import EmptyState from "../EmptyState/EmptyState";
 import { FaPlus, FaUsersSlash, FaEdit, FaCheck } from "react-icons/fa";
 import styles from "./PeopleSection.module.css";
+import commonStyles from "../../styles/common.module.css"; // ІМПОРТ
 import toast from "react-hot-toast";
 
 const PeopleSection = () => {
-  const { people, loading: isLoading, refetch: onPeopleUpdate } = usePeople(); // ВИКОРИСТАННЯ ХУКА
+  const { people, loading: isLoading, refetch: onPeopleUpdate } = usePeople();
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
@@ -29,7 +30,7 @@ const PeopleSection = () => {
     } else {
       setNewName("");
       setIsAdding(false);
-      onPeopleUpdate(); // Оновлюємо список через refetch
+      onPeopleUpdate();
     }
     setAddLoading(false);
   };
@@ -63,20 +64,20 @@ const PeopleSection = () => {
           {!isAdding && (
             <button
               onClick={() => setIsAdding(true)}
-              className={`${styles.controlButton} ${styles.addButton}`}
+              className={commonStyles.buttonSuccess} // ВИКОРИСТАННЯ
             >
               <FaPlus /> Add Worker
             </button>
           )}
           <button
             onClick={() => navigate("/inactive-workers")}
-            className={`${styles.controlButton} ${styles.inactiveLink}`}
+            className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
           >
             <FaUsersSlash /> Inactive
           </button>
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={`${styles.controlButton} ${styles.editButton}`}
+            className={commonStyles.buttonPrimary} // ВИКОРИСТАННЯ
           >
             {isEditing ? (
               <>
@@ -103,14 +104,14 @@ const PeopleSection = () => {
           />
           <button
             onClick={handleCreatePerson}
-            className={styles.createButton}
+            className={commonStyles.buttonPrimary} // ВИКОРИСТАННЯ
             disabled={addLoading}
           >
             {addLoading ? "Creating..." : "Create"}
           </button>
           <button
             onClick={() => setIsAdding(false)}
-            className={styles.cancelButton}
+            className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
           >
             Cancel
           </button>
@@ -130,7 +131,7 @@ const PeopleSection = () => {
         <EmptyState message="No active workers found. Add one to get started!">
           <button
             onClick={() => setIsAdding(true)}
-            className={`${styles.controlButton} ${styles.addButton}`}
+            className={commonStyles.buttonSuccess} // ВИКОРИСТАННЯ
           >
             <FaPlus /> Add First Worker
           </button>

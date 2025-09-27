@@ -1,4 +1,4 @@
-// src/Pages/TableDetailsPage.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/TableDetailsPage.jsx
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { supabase } from "../supabaseClient";
 import StaticCompanyInfo from "../components/StaticCompanyInfo/StaticCompanyInfo";
 import styles from "./TableDetailsPage.module.css";
+import commonStyles from "../styles/common.module.css"; // ІМПОРТ
 import { FaArrowLeft, FaEdit, FaSave, FaPlus, FaTrash } from "react-icons/fa";
 
 const TableDetailsPage = () => {
@@ -174,15 +175,21 @@ const TableDetailsPage = () => {
   return (
     <div className={styles.invoicePage}>
       <div className={styles.controlsHeader}>
-        <button className={styles.backButton} onClick={() => navigate(-1)}>
+        <button
+          className={commonStyles.buttonSecondary}
+          onClick={() => navigate(-1)}
+        >
           <FaArrowLeft /> Back
         </button>
         <div className={styles.actionButtons}>
-          <button className={styles.printButton} onClick={() => window.print()}>
+          <button
+            className={commonStyles.button}
+            onClick={() => window.print()}
+          >
             Print
           </button>
           <button
-            className={styles.editButton}
+            className={commonStyles.buttonPrimary}
             onClick={() =>
               isEditing ? handleSaveChanges() : setIsEditing(true)
             }
@@ -246,7 +253,10 @@ const TableDetailsPage = () => {
               />
             </div>
             <div className={styles.inputGroup}>
-              <button onClick={handleAddInvoice}>
+              <button
+                onClick={handleAddInvoice}
+                className={commonStyles.buttonSuccess}
+              >
                 <FaPlus /> Add Invoice
               </button>
             </div>
@@ -309,7 +319,7 @@ const TableDetailsPage = () => {
                   {isEditing && (
                     <td>
                       <button
-                        className={styles.deleteButton}
+                        className={commonStyles.buttonIcon}
                         onClick={() => handleDeleteInvoice(invoice.id)}
                       >
                         <FaTrash />

@@ -1,4 +1,4 @@
-/* src/Pages/PersonTableDetailsPage.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/PersonTableDetailsPage.module.css */
 
 /* --- ОСНОВНА СТРУКТУРА (DESKTOP) --- */
 .pageLayout {
@@ -40,25 +40,6 @@
   flex-grow: 1;
 }
 
-.backButton,
-.editButton {
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: var(--border-radius-md);
-  transition: background-color 0.2s ease;
-  color: #ffffff;
-  white-space: nowrap;
-}
-.backButton {
-  background-color: var(--color-secondary);
-}
-.editButton {
-  background-color: var(--color-primary);
-}
-
 /* --- ФОРМА ДОДАВАННЯ ІНВОЙСУ --- */
 .addInvoiceForm {
   padding: 20px;
@@ -78,7 +59,8 @@
   font-size: 1.25rem;
 }
 
-.addInvoiceForm .addInvoiceButton {
+.addInvoiceForm > button {
+  /* Target direct button child */
   grid-column: 1 / -1;
   margin-top: 10px;
 }
@@ -90,16 +72,6 @@
   border-radius: var(--border-radius-md);
   font-size: 1rem;
   box-sizing: border-box;
-}
-
-.addInvoiceButton {
-  padding: 12px 20px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  border-radius: var(--border-radius-md);
 }
 
 /* --- ТАБЛИЦЯ ІНВОЙСІВ --- */
@@ -142,17 +114,6 @@
   min-width: 150px;
 }
 
-.deleteButton {
-  background: none;
-  border: none;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-}
-
-.deleteButton:hover {
-  color: #dc3545;
-}
-
 .totalRow td {
   font-weight: bold;
   background-color: #f8f9fa;
@@ -163,33 +124,15 @@
   text-align: right;
 }
 
-/* ОНОВЛЕНО: Стилі для кнопок розрахунків */
 .calculationButtons {
   margin-top: 20px;
   display: flex;
   gap: 10px;
   justify-content: flex-end;
 }
-.btnGst,
-.btnWcb {
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  border-radius: var(--border-radius-md);
-  transition: background-color 0.2s ease;
-  color: #ffffff;
-}
-.btnGst {
-  background-color: #17a2b8;
-}
-.btnWcb {
-  background-color: #6c757d;
-}
 
 /* --- МОБІЛЬНА АДАПТАЦІЯ --- */
-@media (max-width: 1024px) {
+@media (max-width: var(--breakpoint-md)) {
   .pageLayout {
     grid-template-columns: 1fr;
   }
@@ -197,9 +140,6 @@
     position: static;
     margin-top: 30px;
   }
-}
-
-@media (max-width: 768px) {
   .header {
     flex-direction: column;
     gap: 16px;
@@ -247,7 +187,7 @@
   }
 
   .invoiceTable tfoot {
-    display: contents; /* Дозволяє <tfoot> рендеритись на мобільних */
+    display: contents;
   }
 
   .invoiceTable tfoot .totalRow td {

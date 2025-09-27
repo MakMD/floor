@@ -1,4 +1,4 @@
-/* src/components/AdminListManager/AdminListManager.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/AdminListManager/AdminListManager.module.css */
 
 .container {
   display: flex;
@@ -19,23 +19,6 @@
   font-size: 1rem;
 }
 
-.addButton {
-  padding: 10px;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  aspect-ratio: 1 / 1;
-  transition: background-color 0.2s;
-}
-.addButton:hover {
-  background-color: var(--color-primary-hover);
-}
-
 .list {
   list-style: none;
   padding: 0;
@@ -54,15 +37,4 @@
   padding: 12px 16px;
   background-color: var(--color-background);
   border-radius: 8px;
-}
-
-.deleteButton {
-  background: none;
-  border: none;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: color 0.2s;
-}
-.deleteButton:hover {
-  color: #dc3545;
 }

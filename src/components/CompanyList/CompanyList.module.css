@@ -1,5 +1,5 @@
-/* src/components/CompanyList/CompanyList.module.css */
 .companyListContainer {
+  width: 100%; /* Додано для стабільності */
 }
 
 .companyGrid {
@@ -84,9 +84,24 @@
 .toggleStatusButton:hover {
   opacity: 0.9;
 }
-
-@media (max-width: 768px) {
-  .companyGrid {
-    grid-template-columns: 1fr;
+@media (max-width: 992px) {
+  .header {
+    flex-direction: column;
+    align-items: center; /* Центруємо все по горизонталі */
+    gap: 16px;
+  }
+  .pageTitle {
+    order: 1; /* Заголовок тепер буде другим */
+    font-size: 1.75rem;
+    text-align: center;
+  }
+  .controls {
+    order: 2; /* Кнопки "Inactive" та "Edit" будуть третіми */
+    justify-content: center;
+  }
+  .header > button:first-of-type {
+    /* Кнопка "Back to Main" */
+    order: 0; /* Буде першою */
+    width: 100%;
   }
 }

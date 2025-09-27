@@ -1,4 +1,4 @@
-// src/Pages/AddressDetailsPage.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/AddressDetailsPage.jsx
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -14,13 +14,13 @@ import {
 } from "react-icons/fa";
 import styles from "./AddressDetailsPage.module.css";
 import listStyles from "./AddressListPage.module.css";
+import commonStyles from "../styles/common.module.css"; // ІМПОРТ
 import toast from "react-hot-toast";
 import FileUpload from "../components/FileUpload/FileUpload";
 import { useAdminLists } from "../hooks/useAdminLists";
 import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager";
-import MaterialsManager from "../components/MaterialsManager/MaterialsManager"; // ІМПОРТ: Новий компонент
+import MaterialsManager from "../components/MaterialsManager/MaterialsManager";
 
-// ... (StatusIndicator and FileListItem components remain unchanged) ...
 const StatusIndicator = ({ status }) => {
   const statusClass =
     {
@@ -90,7 +90,7 @@ const FileListItem = ({ bucketName, fileIdentifier, onDelete }) => {
       </a>
       <button
         onClick={() => onDelete(fileIdentifier)}
-        className={styles.deleteFileButton}
+        className={commonStyles.buttonIcon} // ВИКОРИСТАННЯ
         disabled={isLoading}
       >
         <FaTrash />
@@ -254,7 +254,7 @@ const AddressDetailsPage = () => {
     <div className={styles.pageContainer}>
       <div className={styles.header}>
         <button
-          className={styles.backButton}
+          className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
           onClick={() => navigate("/addresses")}
         >
           <FaArrowLeft /> Back
@@ -271,7 +271,7 @@ const AddressDetailsPage = () => {
           <h1 className={styles.pageTitle}>{addressData.address}</h1>
         )}
         <button
-          className={styles.editButton}
+          className={commonStyles.buttonPrimary} // ВИКОРИСТАННЯ
           onClick={() => (isEditing ? handleSaveChanges() : setIsEditing(true))}
         >
           {isEditing ? <FaCheck /> : <FaEdit />}{" "}
@@ -384,7 +384,6 @@ const AddressDetailsPage = () => {
         </div>
 
         <div className={styles.gridColumn}>
-          {/* ОНОВЛЕНО: Додано новий компонент для матеріалів */}
           <div className={styles.detailCard}>
             <h3>Materials</h3>
             <MaterialsManager addressId={addressId} />
@@ -414,7 +413,7 @@ const AddressDetailsPage = () => {
                     <span>{note}</span>
                     <button
                       onClick={() => handleDeleteMaterialNote(index)}
-                      className={styles.deleteNoteButton}
+                      className={commonStyles.buttonIcon} // ВИКОРИСТАННЯ
                     >
                       <FaTrash />
                     </button>

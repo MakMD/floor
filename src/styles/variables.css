@@ -1,0 +1,70 @@
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/styles/variables.css */
+:root {
+  /* Fonts */
+  --font-main: "Inter", system-ui, sans-serif;
+
+  /* Colors */
+  --color-primary: #0d6efd;
+  --color-primary-hover: #0b5ed7;
+  --color-secondary: #6c757d;
+  --color-success: #198754;
+  --color-danger: #dc3545;
+  --color-warning: #ffc107;
+
+  /* Gradients - НОВИЙ РОЗДІЛ */
+  --gradient-primary: linear-gradient(45deg, #0d6efd, #3b82f6);
+  --gradient-success: linear-gradient(45deg, #198754, #22c55e);
+
+  /* Background & Surface */
+  --color-background: #f8f9fa;
+  --color-surface: #ffffff;
+
+  /* Text */
+  --color-text-primary: #212529;
+  --color-text-secondary: #6c757d;
+  --color-text-light: #ffffff;
+
+  /* Border */
+  --color-border: #dee2e6;
+
+  /* Shadow - ОНОВЛЕНО */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.1);
+
+  /* Border Radius */
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+
+  /* Breakpoints */
+  --breakpoint-md: 768px;
+}
+
+/* Dark Theme */
+:root[data-theme="dark"] {
+  /* Colors */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-secondary: #8b94a1;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+
+  /* Gradients - НОВИЙ РОЗДІЛ */
+  --gradient-primary: linear-gradient(45deg, #3b82f6, #60a5fa);
+  --gradient-success: linear-gradient(45deg, #22c55e, #4ade80);
+
+  /* Background & Surface */
+  --color-background: #111827;
+  --color-surface: #1f2937;
+
+  /* Text */
+  --color-text-primary: #e5e7eb;
+  --color-text-secondary: #9ca3af;
+
+  /* Border */
+  --color-border: #374151;
+
+  /* Shadow - ОНОВЛЕНО */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.3);
+}

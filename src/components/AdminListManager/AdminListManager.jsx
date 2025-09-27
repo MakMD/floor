@@ -1,9 +1,10 @@
-// src/components/AdminListManager/AdminListManager.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/AdminListManager/AdminListManager.jsx
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 import styles from "./AdminListManager.module.css";
+import commonStyles from "../../styles/common.module.css"; // ІМПОРТ
 import { FaPlus, FaTrash } from "react-icons/fa";
 
 const AdminListManager = ({ tableName, itemName }) => {
@@ -77,7 +78,9 @@ const AdminListManager = ({ tableName, itemName }) => {
           placeholder={`New ${itemName} name...`}
           className={styles.inputField}
         />
-        <button onClick={handleAddItem} className={styles.addButton}>
+        <button onClick={handleAddItem} className={commonStyles.buttonPrimary}>
+          {" "}
+          {/* ВИКОРИСТАННЯ */}
           <FaPlus />
         </button>
       </div>
@@ -91,7 +94,7 @@ const AdminListManager = ({ tableName, itemName }) => {
               <span>{item.name}</span>
               <button
                 onClick={() => handleDeleteItem(item.id)}
-                className={styles.deleteButton}
+                className={commonStyles.buttonIcon} // ВИКОРИСТАННЯ
               >
                 <FaTrash />
               </button>

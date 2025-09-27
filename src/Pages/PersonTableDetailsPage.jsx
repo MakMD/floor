@@ -1,4 +1,4 @@
-// src/Pages/PersonTableDetailsPage.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/PersonTableDetailsPage.jsx
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import AutocompleteInput from "../components/AutocompleteInput/AutocompleteInput
 import AddressHistory from "../components/AddressHistory/AddressHistory";
 import PersonDetailsModal from "../components/PersonDetailsModal/PersonDetailsModal";
 import styles from "./PersonTableDetailsPage.module.css";
+import commonStyles from "../styles/common.module.css"; // ІМПОРТ
 import { FaTrash } from "react-icons/fa";
 
 const PersonTableDetailsPage = () => {
@@ -27,7 +28,6 @@ const PersonTableDetailsPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // ОНОВЛЕНО: Повертаємо стан для розрахунків
   const [totalWithGST, setTotalWithGST] = useState(null);
   const [wcb, setWcb] = useState(null);
   const [showGST, setShowGST] = useState(false);
@@ -176,7 +176,6 @@ const PersonTableDetailsPage = () => {
     );
   }, [invoices]);
 
-  // ОНОВЛЕНО: Повертаємо логіку розрахунків
   const calculateWCB = () => {
     const newWCB = (totalIncome - (totalIncome / 100) * 3).toFixed(2);
     setWcb(newWCB);
@@ -208,7 +207,10 @@ const PersonTableDetailsPage = () => {
     <div className={styles.pageLayout}>
       <div className={styles.mainContent}>
         <div className={styles.header}>
-          <button className={styles.backButton} onClick={() => navigate(-1)}>
+          <button
+            className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
+            onClick={() => navigate(-1)}
+          >
             Back
           </button>
           <h1 className={styles.pageTitle}>
@@ -216,7 +218,7 @@ const PersonTableDetailsPage = () => {
           </h1>
           <button
             onClick={isEditing ? handleSaveChanges : () => setIsEditing(true)}
-            className={styles.editButton}
+            className={commonStyles.buttonPrimary} // ВИКОРИСТАННЯ
           >
             {isEditing ? "Save" : "Edit"}
           </button>
@@ -248,7 +250,7 @@ const PersonTableDetailsPage = () => {
           />
           <button
             onClick={handleAddInvoice}
-            className={styles.addInvoiceButton}
+            className={commonStyles.buttonSuccess} // ВИКОРИСТАННЯ
           >
             Add Invoice
           </button>
@@ -315,7 +317,7 @@ const PersonTableDetailsPage = () => {
                   {isEditing && (
                     <td data-label="Actions">
                       <button
-                        className={styles.deleteButton}
+                        className={commonStyles.buttonIcon} // ВИКОРИСТАННЯ
                         onClick={() => handleDeleteInvoice(invoice.id)}
                       >
                         <FaTrash />
@@ -335,7 +337,6 @@ const PersonTableDetailsPage = () => {
                 </td>
                 {isEditing && <td></td>}
               </tr>
-              {/* ОНОВЛЕНО: Повертаємо відображення розрахунків */}
               {showGST && (
                 <tr className={styles.totalRow}>
                   <td colSpan="4">
@@ -361,12 +362,21 @@ const PersonTableDetailsPage = () => {
             </tfoot>
           </table>
         </div>
-        {/* ОНОВЛЕНО: Повертаємо кнопки */}
         <div className={styles.calculationButtons}>
-          <button onClick={calculateTotalWithGST} className={styles.btnGst}>
+          <button
+            onClick={calculateTotalWithGST}
+            className={commonStyles.button}
+          >
+            {" "}
+            {/* ВИКОРИСТАННЯ */}
             +GST (5%)
           </button>
-          <button onClick={calculateWCB} className={styles.btnWcb}>
+          <button
+            onClick={calculateWCB}
+            className={commonStyles.buttonSecondary}
+          >
+            {" "}
+            {/* ВИКОРИСТАННЯ */}
             -WCB (3%)
           </button>
         </div>

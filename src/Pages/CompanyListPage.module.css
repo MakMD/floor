@@ -1,4 +1,4 @@
-/* src/Pages/CompanyListPage.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/CompanyListPage.module.css */
 
 .pageContainer {
   max-width: 1400px;
@@ -24,40 +24,6 @@
   gap: 12px;
 }
 
-.backButton,
-.editButton,
-.inactiveLink {
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-  color: #ffffff;
-}
-
-.backButton {
-  background-color: var(--color-secondary);
-}
-.backButton:hover {
-  background-color: #5a6268;
-}
-
-.editButton {
-  background-color: var(--color-primary);
-}
-.editButton:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.inactiveLink {
-  background-color: #6c757d;
-}
-.inactiveLink:hover {
-  background-color: #5a6268;
-}
-
 .toolbar {
   margin-bottom: 24px;
 }
@@ -73,7 +39,8 @@
   color: var(--color-text-primary);
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--breakpoint-md)) {
+  /* ВИКОРИСТАННЯ */
   .header {
     flex-direction: column;
     gap: 16px;

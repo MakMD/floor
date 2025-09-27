@@ -1,4 +1,4 @@
-// src/Pages/CompanyListPage.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/CompanyListPage.jsx
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -6,10 +6,11 @@ import { FaArrowLeft, FaEdit, FaCheck, FaUsersSlash } from "react-icons/fa";
 import { supabase } from "../supabaseClient";
 import { useCompanies } from "../hooks/useCompanies";
 import CompanyList from "../components/CompanyList/CompanyList";
-import CreateCompanyForm from "../components/CreateCompanyForm/CreateCompanyForm"; // ІМПОРТ
+import CreateCompanyForm from "../components/CreateCompanyForm/CreateCompanyForm";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
 import styles from "./CompanyListPage.module.css";
+import commonStyles from "../styles/common.module.css"; // ІМПОРТ
 import toast from "react-hot-toast";
 
 const CompanyListPage = () => {
@@ -45,20 +46,23 @@ const CompanyListPage = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={() => navigate("/")}>
+        <button
+          className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
+          onClick={() => navigate("/")}
+        >
           <FaArrowLeft /> Back to Main
         </button>
         <h1 className={styles.pageTitle}>Companies</h1>
         <div className={styles.controls}>
           <button
             onClick={() => navigate("/inactive-companies")}
-            className={styles.inactiveLink}
+            className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
           >
             <FaUsersSlash /> Inactive
           </button>
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={styles.editButton}
+            className={commonStyles.buttonPrimary} // ВИКОРИСТАННЯ
           >
             {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
           </button>

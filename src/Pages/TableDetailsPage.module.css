@@ -1,7 +1,7 @@
-/* src/Pages/TableDetailsPage.module.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/TableDetailsPage.module.css */
 
 .invoicePage {
-  max-width: 1100px; /* Трохи збільшуємо ширину для комфорту */
+  max-width: 1100px;
   margin: 2rem auto;
   padding: 20px;
 }
@@ -16,45 +16,6 @@
 .actionButtons {
   display: flex;
   gap: 12px;
-}
-
-.backButton,
-.printButton,
-.editButton {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 0.2s, box-shadow 0.2s;
-}
-
-.backButton {
-  background-color: var(--color-secondary);
-  color: white;
-}
-.backButton:hover {
-  background-color: #5a6268;
-}
-
-.printButton {
-  background-color: #17a2b8;
-  color: white;
-}
-.printButton:hover {
-  background-color: #138496;
-}
-
-.editButton {
-  background-color: var(--color-primary);
-  color: white;
-}
-.editButton:hover {
-  background-color: var(--color-primary-hover);
 }
 
 .document {
@@ -98,7 +59,6 @@
 
 .addInvoiceForm {
   display: grid;
-  /* Адаптивна сітка: 4 колонки на великих екранах, 2 на середніх, 1 на мобільних */
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   align-items: flex-end;
@@ -109,7 +69,7 @@
   flex-direction: column;
   gap: 6px;
 }
-/* Розтягуємо поле адреси на 2 колонки */
+
 .inputGroup:nth-child(2) {
   grid-column: span 2;
 }
@@ -130,18 +90,6 @@
 
 .inputGroup button {
   width: 100%;
-  padding: 10px 20px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: background-color 0.2s ease;
 }
 
 .tableWrapper {
@@ -181,47 +129,24 @@
   box-sizing: border-box;
 }
 
-.deleteButton {
-  background: none;
-  border: none;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-}
-.deleteButton:hover {
-  color: #dc3545;
-}
-
 .totalRow td {
   font-weight: bold;
   background-color: #f8f9fa;
   border-top: 2px solid var(--color-border);
 }
 
-/* Адаптивність для мобільних пристроїв */
-@media (max-width: 768px) {
+@media (max-width: var(--breakpoint-md)) {
   .addInvoiceForm {
-    grid-template-columns: 1fr; /* Всі елементи в одну колонку */
+    grid-template-columns: 1fr;
   }
   .inputGroup:nth-child(2) {
-    grid-column: auto; /* Скидаємо розтягування */
+    grid-column: auto;
   }
-}
-/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
-@media (max-width: 768px) {
   .controlsHeader {
     flex-direction: column;
     gap: 16px;
   }
-
   .document {
     padding: 20px;
-  }
-
-  .addInvoiceForm {
-    grid-template-columns: 1fr;
-  }
-
-  .addInvoiceForm .inputGroup:nth-child(2) {
-    grid-column: auto;
   }
 }
