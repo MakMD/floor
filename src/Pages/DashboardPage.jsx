@@ -4,13 +4,13 @@ import React from "react";
 import styles from "./DashboardPage.module.css";
 import ReminderPanel from "../components/ReminderPanel/ReminderPanel";
 import StatsCard from "../components/StatsCard/StatsCard";
+import PersonStats from "../components/PersonStats/PersonStats"; // ІМПОРТ НОВОГО КОМПОНЕНТА
 import { FaDollarSign, FaHardHat, FaWarehouse } from "react-icons/fa";
 import { useAnalytics } from "../hooks/useAnalytics";
 
 const DashboardPage = () => {
   const { stats, loading } = useAnalytics();
 
-  // ... (решта логіки компонента залишається без змін) ...
   const incomeChange =
     stats.prevMonthIncome === 0
       ? 0
@@ -72,13 +72,14 @@ const DashboardPage = () => {
 
   return (
     <div className={styles.pageContainer}>
-      {/* ОНОВЛЕНИЙ БЛОК ЗАГОЛОВКА */}
       <div className={styles.titleContainer}>
         <h1 className={styles.pageTitle}>Dashboard</h1>
       </div>
       <div className={styles.layout}>
         <div className={styles.mainContent}>
           <ReminderPanel />
+          {/* ДОДАНО НОВИЙ БЛОК СТАТИСТИКИ */}
+          <PersonStats stats={stats.personStats} loading={loading} />
         </div>
         <aside className={styles.sidebar}>
           <div className={styles.statsGrid}>
