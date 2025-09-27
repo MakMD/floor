@@ -1,4 +1,5 @@
-// src/Pages/DashboardPage.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/DashboardPage.jsx
+
 import React from "react";
 import styles from "./DashboardPage.module.css";
 import ReminderPanel from "../components/ReminderPanel/ReminderPanel";
@@ -15,8 +16,6 @@ const DashboardPage = () => {
       ? 0
       : ((stats.totalIncome - stats.prevMonthIncome) / stats.prevMonthIncome) *
         100;
-
-  // Формування рядка для порівняння доходу
   const incomeComparisonText = `${
     incomeChange >= 0 ? "+" : ""
   }${incomeChange.toFixed(1)}% vs last month`;
@@ -26,11 +25,37 @@ const DashboardPage = () => {
     stats.materialsUsed - stats.prevWeekMaterials
   } vs last week`;
 
-  // Формування розбивки проектів
+  // ОНОВЛЕНО: Додано розрахунки та дані для індикатора прогресу
   const projectsBreakdown = stats.projectsBreakdown.map((item) => ({
     label: item.status,
     value: item.count,
   }));
+
+  const totalProjects = stats.activeProjects;
+  const progressBarData =
+    totalProjects > 0
+      ? stats.projectsBreakdown.map((item) => {
+          let color = "";
+          switch (item.status) {
+            case "Ready":
+              color = "var(--color-success)";
+              break;
+            case "In Process":
+              color = "var(--color-warning)";
+              break;
+            case "Not Finished":
+              color = "var(--color-danger)";
+              break;
+            default:
+              color = "var(--color-secondary)";
+          }
+          return {
+            value: (item.count / totalProjects) * 100,
+            color: color,
+            label: `${item.status}: ${item.count}`,
+          };
+        })
+      : [];
 
   // Формування розбивки для картки доходів
   const incomeDetails = [
@@ -76,6 +101,7 @@ const DashboardPage = () => {
               value={loading ? "..." : stats.activeProjects}
               icon={<FaHardHat />}
               details={loading ? [] : projectsBreakdown}
+              progressBar={loading ? [] : progressBarData} // ОНОВЛЕНО: Передаємо дані для індикатора
               link="/addresses"
             />
             <StatsCard

@@ -1,10 +1,20 @@
-// src/components/StatsCard/StatsCard.jsx
+// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/StatsCard/StatsCard.jsx
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./StatsCard.module.css";
 import { FaArrowUp, FaArrowDown, FaArrowRight } from "react-icons/fa";
 
-const StatsCard = ({ title, value, icon, comparisonText, details, link }) => {
+// ОНОВЛЕНО: Додано новий проп progressBar
+const StatsCard = ({
+  title,
+  value,
+  icon,
+  comparisonText,
+  details,
+  link,
+  progressBar,
+}) => {
   const navigate = useNavigate();
   const isPositive =
     comparisonText &&
@@ -31,6 +41,23 @@ const StatsCard = ({ title, value, icon, comparisonText, details, link }) => {
           <p className={styles.cardValue}>{value}</p>
         </div>
       </div>
+
+      {/* ОНОВЛЕНО: Умовний рендеринг індикатора прогресу */}
+      {progressBar && progressBar.length > 0 && (
+        <div className={styles.progressBarContainer}>
+          {progressBar.map((segment, index) => (
+            <div
+              key={index}
+              className={styles.progressBarSegment}
+              style={{
+                width: `${segment.value}%`,
+                backgroundColor: segment.color,
+              }}
+              title={segment.label}
+            />
+          ))}
+        </div>
+      )}
 
       {details && (
         <div className={styles.detailsSection}>

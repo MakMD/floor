@@ -1,10 +1,10 @@
-/* index.css */
+/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/index.css */
 
 /* 1. Імпорт змінних та шрифтів */
 @import url("./src/styles/variables.css");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap");
 
-/* 2. Базові стилі (залишаються без змін) */
+/* 2. Базові стилі */
 body {
   margin: 0;
   padding: 0;
@@ -14,6 +14,26 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+
+  /* ОНОВЛЕНО: Новий фоновий патерн */
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.03),
+    rgba(0, 0, 0, 0.03) 1px,
+    transparent 1px,
+    transparent 20px
+  );
+}
+
+/* ОНОВЛЕНО: Патерн для темної теми */
+:root[data-theme="dark"] body {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 20px
+  );
 }
 
 ul {

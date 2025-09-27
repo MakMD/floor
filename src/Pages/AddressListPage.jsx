@@ -18,7 +18,6 @@ import {
   FaTools,
 } from "react-icons/fa";
 import styles from "./AddressListPage.module.css";
-import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
 import { format, isToday, isTomorrow, isYesterday, parseISO } from "date-fns";
 import { Formik, Form, Field, ErrorMessage } from "formik";
@@ -39,6 +38,7 @@ const StatusIndicator = ({ status }) => {
   );
 };
 
+// ОНОВЛЕНО: Схема валідації Yup
 const AddProjectSchema = Yup.object().shape({
   project_type: Yup.string().required("Project type is required"),
   address: Yup.string()
@@ -46,6 +46,11 @@ const AddProjectSchema = Yup.object().shape({
     .min(3, "Address must be at least 3 characters")
     .required("Address or Service Name is required"),
   date: Yup.date().required("Date is required"),
+  time: Yup.string().when("project_type", {
+    is: "Service",
+    then: (schema) => schema.required("Time is required for services"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   total_amount: Yup.number().nullable(),
   store_id: Yup.number().nullable(),
   builder_id: Yup.number().nullable(),
@@ -117,6 +122,8 @@ const AddressListPage = () => {
       builder_id: values.builder_id ? parseInt(values.builder_id) : null,
       status: "In Process",
       project_type: values.project_type,
+      // ОНОВЛЕНО: Додаємо час, якщо це сервіс
+      service_time: values.project_type === "Service" ? values.time : null,
     };
 
     const { error } = await supabase
@@ -192,7 +199,7 @@ const AddressListPage = () => {
               <>
                 <input
                   type="text"
-                  value={editedAddresses[item.id] ?? item.address}
+                  value={editedAddresses[item.id] || ""}
                   onChange={(e) => handleNameChange(item.id, e.target.value)}
                   onBlur={() =>
                     handleUpdateAddressName(item.id, editedAddresses[item.id])
@@ -201,7 +208,7 @@ const AddressListPage = () => {
                   className={styles.editInput}
                 />
                 <button
-                  className={commonStyles.buttonIcon} // ВИПРАВЛЕНО
+                  className={styles.deleteButton}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteAddress(item.id);
@@ -245,20 +252,15 @@ const AddressListPage = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
-        <button
-          className={commonStyles.buttonSecondary}
-          onClick={() => navigate("/")}
-        >
+        <button className={styles.backButton} onClick={() => navigate("/")}>
           <FaArrowLeft /> Back to Main
         </button>
         <h1 className={styles.pageTitle}>Address Notes</h1>
         <div className={styles.controls}>
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={`${
-              isEditing
-                ? commonStyles.buttonSuccess
-                : commonStyles.buttonPrimary
+            className={`${styles.editButton} ${
+              isEditing ? styles.doneButton : ""
             }`}
           >
             {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
@@ -275,12 +277,15 @@ const AddressListPage = () => {
             builder_id: "",
             address: "",
             date: "",
+            time: "", // ОНОВЛЕНО: Додано поле
             total_amount: "",
           }}
           validationSchema={AddProjectSchema}
           onSubmit={handleAddAddress}
         >
-          {({ isSubmitting }) => (
+          {(
+            { isSubmitting, values } // ОНОВЛЕНО: Отримуємо values з Formik
+          ) => (
             <Form className={styles.addForm}>
               <div className={styles.formRow}>
                 <div className={styles.inputGroup}>
@@ -352,6 +357,18 @@ const AddressListPage = () => {
                     className={styles.errorMessage}
                   />
                 </div>
+                {/* ОНОВЛЕНО: Умовний рендеринг поля для часу */}
+                {values.project_type === "Service" && (
+                  <div className={styles.inputGroup}>
+                    <label htmlFor="time">Time</label>
+                    <Field id="time" type="time" name="time" />
+                    <ErrorMessage
+                      name="time"
+                      component="div"
+                      className={styles.errorMessage}
+                    />
+                  </div>
+                )}
                 <div className={styles.inputGroup}>
                   <label htmlFor="total_amount">Total Amount</label>
                   <Field
@@ -365,7 +382,7 @@ const AddressListPage = () => {
                   <label>&nbsp;</label>
                   <button
                     type="submit"
-                    className={commonStyles.buttonSuccess}
+                    className={styles.addButton}
                     disabled={isSubmitting}
                   >
                     <FaPlus /> Add Project

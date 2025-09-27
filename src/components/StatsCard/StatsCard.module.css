@@ -40,7 +40,7 @@
 .titleWrapper {
   display: flex;
   flex-direction: column;
-  min-width: 0; /* Дозволяє тексту переноситись */
+  min-width: 0;
 }
 
 .cardTitle {
@@ -55,7 +55,22 @@
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--color-text-primary);
-  word-break: break-word; /* Дозволяє переносити великі числа */
+  word-break: break-word;
+}
+
+/* ОНОВЛЕНО: Стилі для індикатора прогресу */
+.progressBarContainer {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: var(--color-background);
+}
+
+.progressBarSegment {
+  height: 100%;
+  transition: width 0.5s ease-in-out;
 }
 
 .detailsSection {
@@ -74,13 +89,13 @@
 
 .detailLabel {
   color: var(--color-text-secondary);
-  margin-right: 8px; /* Додаємо відступ */
+  margin-right: 8px;
 }
 
 .detailValue {
   font-weight: 500;
   color: var(--color-text-primary);
-  text-align: right; /* Вирівнюємо значення по правому краю */
+  text-align: right;
 }
 
 .footer {
@@ -124,22 +139,20 @@
   gap: 6px;
 }
 
-/* ОНОВЛЕНО: Медіа-запит для мобільних */
-@media (max-width: var(--breakpoint-md)) {
+@media (max-width: 768px) {
   .cardContainer {
     padding: 16px;
   }
   .cardValue {
     font-size: 1.5rem;
   }
-  /* ВИПРАВЛЕНО: Розташування елементів у деталях */
   .detailItem {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
   }
   .detailValue {
-    text-align: left; /* Повертаємо вирівнювання по лівому краю */
+    text-align: left;
   }
   .footer {
     flex-direction: column;
