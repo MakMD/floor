@@ -1,58 +1,54 @@
-/* src/components/LoginModal/LoginModal.module.css */
+/* makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/components/LoginModal/LoginModal.module.css */
 
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
+.loginContainer {
+  padding: 1rem;
 }
 
-.modalContent {
-  background-color: var(--color-surface);
-  padding: 40px;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-md);
-  width: 90%;
-  max-width: 450px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.modalHeader {
+.header {
   text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  width: 180px;
+  margin-bottom: 1.5rem;
 }
 
 .title {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text-primary);
 }
 
 .subtitle {
   font-size: 1rem;
   color: var(--color-text-secondary);
+  margin: 0;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1rem;
 }
 
 .inputField {
   width: 100%;
+  box-sizing: border-box;
   padding: 12px 16px;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-md);
   font-size: 1rem;
-  box-sizing: border-box;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  transition: all 0.2s ease-in-out;
+}
+
+.inputField:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
 }
 
 .loginButton {
@@ -61,22 +57,30 @@
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background-color: var(--color-primary);
-  color: white;
   border: none;
   border-radius: var(--border-radius-md);
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: white;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  background-image: var(--gradient-primary);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease-in-out;
 }
 
 .loginButton:hover {
-  background-color: var(--color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.loginButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .error {
-  color: #dc3545; /* Червоний колір для помилки */
+  color: var(--color-danger);
   text-align: center;
   font-size: 0.9rem;
+  margin-top: 0.5rem;
 }

@@ -1,4 +1,4 @@
-/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/styles/common.module.css */
+/* makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/styles/common.module.css */
 .button {
   display: inline-flex;
   align-items: center;
@@ -58,10 +58,67 @@
   background-color: var(--color-border);
 }
 
-/* ОНОВЛЕНО: Медіа-запит для кнопок */
 @media (max-width: 768px) {
   .button {
-    padding: 10px 16px; /* Зменшуємо горизонтальний відступ */
+    padding: 10px 16px;
     font-size: 0.9rem;
+  }
+}
+
+/* --- Анімація для підкреслення --- */
+@keyframes wipe-in {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* --- СТИЛІ ДЛЯ ЗАГОЛОВКІВ СТОРІНОК --- */
+.pageHeader {
+  position: relative;
+  width: 100%;
+  padding-bottom: 24px;
+  margin-bottom: 32px;
+  text-align: center; /* Центруємо вміст */
+}
+
+/* ОНОВЛЕНО: Анімована лінія, що імітує border-image */
+.pageHeader::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 1px; /* Тонка лінія */
+  background: linear-gradient(
+    to right,
+    var(--color-primary),
+    transparent
+  ); /* Градієнт, що зникає */
+  animation-name: wipe-in;
+  animation-duration: 1.2s;
+  animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  animation-fill-mode: forwards;
+}
+
+/* ОНОВЛЕНО: Заголовок з градієнтним текстом */
+.pageTitle {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin: 0;
+  /* Градієнтний текст */
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  display: inline-block; /* Необхідно для роботи background-clip */
+}
+
+@media (max-width: 768px) {
+  .pageTitle {
+    font-size: 1.75rem;
   }
 }

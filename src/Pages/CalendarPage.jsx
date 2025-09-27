@@ -1,4 +1,4 @@
-// src/Pages/CalendarPage/CalendarPage.jsx
+// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/Pages/CalendarPage.jsx
 
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -161,17 +161,18 @@ const CalendarPage = () => {
                   "Not Finished": styles.statusNotFinished,
                 }[event.status] || "";
 
-              const statusBorderClass =
+              // ОНОВЛЕНО: Додаємо клас для фону
+              const statusBackgroundClass =
                 {
-                  "In Process": styles.inProcessBorder,
-                  Ready: styles.readyBorder,
-                  "Not Finished": styles.notFinishedBorder,
+                  Ready: styles.readyBackground,
+                  "In Process": styles.inProcessBackground,
+                  "Not Finished": styles.notFinishedBackground,
                 }[event.status] || "";
 
               return (
                 <li
                   key={event.id}
-                  className={`${styles.infoItem} ${statusBorderClass}`}
+                  className={`${styles.infoItem} ${statusBackgroundClass}`} // Додано клас
                   onClick={() => navigate(`/address/${event.id}`)}
                 >
                   <span className={styles.infoAddress}>{event.address}</span>

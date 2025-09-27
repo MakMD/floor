@@ -1,4 +1,4 @@
-// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/AddressListPage.jsx
+// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/Pages/AddressListPage.jsx
 
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -16,29 +16,44 @@ import {
   FaTrash,
   FaMapMarkerAlt,
   FaTools,
+  FaClock,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import styles from "./AddressListPage.module.css";
+import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
-import { format, isToday, isTomorrow, isYesterday, parseISO } from "date-fns";
+import { isToday, isTomorrow, isYesterday, parseISO } from "date-fns";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 
 const StatusIndicator = ({ status }) => {
-  const statusClass =
-    {
-      "In Process": styles.statusInProgress,
-      Ready: styles.statusReady,
-      "Not Finished": styles.statusNotFinished,
-    }[status] || "";
+  const statusConfig = {
+    Ready: {
+      icon: <FaCheck />,
+      className: styles.statusReady,
+    },
+    "In Process": {
+      icon: <FaClock />,
+      className: styles.statusInProgress,
+    },
+    "Not Finished": {
+      icon: <FaExclamationTriangle />,
+      className: styles.statusNotFinished,
+    },
+  }[status];
+
+  if (!statusConfig) {
+    return null;
+  }
 
   return (
-    <div className={`${styles.statusIndicator} ${statusClass}`}>
-      <span>{status || "No Status"}</span>
+    <div className={`${styles.statusIndicator} ${statusConfig.className}`}>
+      {statusConfig.icon}
+      <span>{status}</span>
     </div>
   );
 };
 
-// ОНОВЛЕНО: Схема валідації Yup
 const AddProjectSchema = Yup.object().shape({
   project_type: Yup.string().required("Project type is required"),
   address: Yup.string()
@@ -122,7 +137,6 @@ const AddressListPage = () => {
       builder_id: values.builder_id ? parseInt(values.builder_id) : null,
       status: "In Process",
       project_type: values.project_type,
-      // ОНОВЛЕНО: Додаємо час, якщо це сервіс
       service_time: values.project_type === "Service" ? values.time : null,
     };
 
@@ -180,11 +194,12 @@ const AddressListPage = () => {
   const renderAddressList = (list) => (
     <ul className={styles.addressList}>
       {list.map((item) => {
-        const statusBorderClass =
+        // ОНОВЛЕНО: Додаємо клас для фону
+        const statusBackgroundClass =
           {
-            "In Process": styles.inProcessBorder,
-            Ready: styles.statusReady,
-            "Not Finished": styles.notFinishedBorder,
+            Ready: styles.readyBackground,
+            "In Process": styles.inProcessBackground,
+            "Not Finished": styles.notFinishedBackground,
           }[item.status] || "";
 
         return (
@@ -192,14 +207,14 @@ const AddressListPage = () => {
             key={item.id}
             className={`${styles.addressItem} ${
               isEditing ? styles.editing : ""
-            } ${statusBorderClass}`}
+            } ${statusBackgroundClass}`} // Додано новий клас
             onClick={() => !isEditing && navigate(`/address/${item.id}`)}
           >
             {isEditing ? (
               <>
                 <input
                   type="text"
-                  value={editedAddresses[item.id] || ""}
+                  value={editedAddresses[item.id] || item.address}
                   onChange={(e) => handleNameChange(item.id, e.target.value)}
                   onBlur={() =>
                     handleUpdateAddressName(item.id, editedAddresses[item.id])
@@ -208,7 +223,7 @@ const AddressListPage = () => {
                   className={styles.editInput}
                 />
                 <button
-                  className={styles.deleteButton}
+                  className={commonStyles.buttonIcon}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteAddress(item.id);
@@ -252,16 +267,21 @@ const AddressListPage = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={() => navigate("/")}>
+        <button
+          className={commonStyles.buttonSecondary}
+          onClick={() => navigate("/")}
+        >
           <FaArrowLeft /> Back to Main
         </button>
         <h1 className={styles.pageTitle}>Address Notes</h1>
         <div className={styles.controls}>
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={`${styles.editButton} ${
-              isEditing ? styles.doneButton : ""
-            }`}
+            className={
+              isEditing
+                ? commonStyles.buttonSuccess
+                : commonStyles.buttonPrimary
+            }
           >
             {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
           </button>
@@ -277,15 +297,13 @@ const AddressListPage = () => {
             builder_id: "",
             address: "",
             date: "",
-            time: "", // ОНОВЛЕНО: Додано поле
+            time: "",
             total_amount: "",
           }}
           validationSchema={AddProjectSchema}
           onSubmit={handleAddAddress}
         >
-          {(
-            { isSubmitting, values } // ОНОВЛЕНО: Отримуємо values з Formik
-          ) => (
+          {({ isSubmitting, values }) => (
             <Form className={styles.addForm}>
               <div className={styles.formRow}>
                 <div className={styles.inputGroup}>
@@ -357,7 +375,6 @@ const AddressListPage = () => {
                     className={styles.errorMessage}
                   />
                 </div>
-                {/* ОНОВЛЕНО: Умовний рендеринг поля для часу */}
                 {values.project_type === "Service" && (
                   <div className={styles.inputGroup}>
                     <label htmlFor="time">Time</label>
@@ -382,7 +399,7 @@ const AddressListPage = () => {
                   <label>&nbsp;</label>
                   <button
                     type="submit"
-                    className={styles.addButton}
+                    className={commonStyles.buttonSuccess}
                     disabled={isSubmitting}
                   >
                     <FaPlus /> Add Project

@@ -1,4 +1,4 @@
-/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/App/App.module.css */
+/* makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/components/App/App.module.css */
 
 .appContainer {
   max-width: 1400px;
@@ -6,6 +6,7 @@
   padding: 0 40px;
 }
 
+/* ОНОВЛЕНИЙ ХЕДЕР З М'ЯКИМ ЕФЕКТОМ */
 .header {
   position: sticky;
   top: 0;
@@ -13,10 +14,17 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 0;
+  padding: 12px 0;
   margin-bottom: 2rem;
-  background-color: #ffffff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+
+  /* Змінено ефект "Glassmorphism" на більш м'який */
+  background-color: rgba(255, 255, 255, 0.8); /* Зроблено менш прозорим */
+  backdrop-filter: blur(12px); /* Трохи посилено блюр */
+  -webkit-backdrop-filter: blur(12px);
+
+  /* ЗАМІНЕНО: border-bottom на м'яку тінь для плавного переходу */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+
   margin-left: -40px;
   margin-right: -40px;
   padding-left: 40px;
@@ -24,8 +32,8 @@
 }
 
 [data-theme="dark"] .header {
-  background-color: #1f2937;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  background-color: rgba(31, 41, 55, 0.75);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .logoLink {
@@ -40,14 +48,14 @@
 }
 
 .logo {
-  width: 150px; /* Трохи зменшив лого */
+  width: 150px;
   height: auto;
 }
 
 .nav {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .navLink {
@@ -55,9 +63,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   text-decoration: none;
   padding: 8px 16px;
   border-radius: 8px;
@@ -65,14 +73,15 @@
 }
 
 .navLink:hover {
-  color: #212529;
-  background-color: #f8f9fa;
+  color: var(--color-text-primary);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
+/* ОНОВЛЕНО: Стиль активного посилання став м'якшим */
 .activeLink {
-  color: #0d6efd;
+  color: var(--color-primary);
   background-color: rgba(13, 110, 253, 0.1);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 [data-theme="dark"] .navLink {
@@ -80,10 +89,10 @@
 }
 [data-theme="dark"] .navLink:hover {
   color: #e5e7eb;
-  background-color: #374151;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 [data-theme="dark"] .activeLink {
-  color: #3b82f6;
+  color: #60a5fa;
   background-color: rgba(59, 130, 246, 0.15);
 }
 
@@ -91,7 +100,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border-left: 1px solid #dee2e6;
+  border-left: 1px solid var(--color-border);
   padding-left: 12px;
   margin-left: 12px;
 }
@@ -108,7 +117,7 @@
   border: none;
   font-size: 1rem;
   font-weight: 500;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   cursor: pointer;
   transition: color 0.2s ease, background-color 0.2s ease;
   padding: 8px 16px;
@@ -116,8 +125,8 @@
 }
 
 .logoutButton:hover {
-  color: #dc3545;
-  background-color: #f8f9fa;
+  color: var(--color-danger);
+  background-color: rgba(220, 53, 69, 0.1);
 }
 
 [data-theme="dark"] .logoutButton {
@@ -125,7 +134,7 @@
 }
 [data-theme="dark"] .logoutButton:hover {
   color: #ef4444;
-  background-color: #374151;
+  background-color: rgba(239, 68, 68, 0.15);
 }
 
 .mainContent {
@@ -186,7 +195,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 15px;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid var(--color-border);
   }
   [data-theme="dark"] .mobileMenuHeader {
     border-bottom-color: #374151;
@@ -198,7 +207,7 @@
     font-size: 1.5rem;
     background: none;
     border: none;
-    color: #212529;
+    color: var(--color-text-primary);
     cursor: pointer;
   }
   [data-theme="dark"] .hamburgerButton,
@@ -221,7 +230,7 @@
     width: 100%;
     box-sizing: border-box;
     gap: 15px;
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid var(--color-border);
   }
   [data-theme="dark"] .navControls {
     border-top-color: #374151;
