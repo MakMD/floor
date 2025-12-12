@@ -1,3 +1,5 @@
+// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/components/App/App.jsx
+
 import { useState, useEffect, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
@@ -47,7 +49,10 @@ const CalendarPage = lazy(() => import("../../Pages/CalendarPage"));
 const AppContent = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState("light");
+
+  // ОНОВЛЕНО: Дефолтна тема змінена на 'dark'
+  const [theme, setTheme] = useState("dark");
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleTheme = () => {

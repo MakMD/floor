@@ -10,14 +10,22 @@
 .header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .icon {
-  color: #ffc107; /* Warning color */
+  color: #ffc107;
   font-size: 1.25rem;
 }
 
@@ -27,10 +35,100 @@
   font-weight: 600;
 }
 
+/* --- НОВЕ: Стиль для бульбашки (Badge) --- */
+.totalBadge {
+  background-color: var(--color-danger);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  padding: 2px 6px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.weekControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--color-background);
+  padding: 6px 12px;
+  border-radius: 24px;
+  border: 1px solid var(--color-border);
+}
+
+.navButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  padding: 6px;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.navButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--color-primary);
+}
+
+/* --- НОВЕ: Інформація про тиждень --- */
+.weekInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+  min-width: 120px; /* Фіксуємо ширину центральної частини */
+}
+
+.weekLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+/* ОНОВЛЕНО: Стиль "хайлайтер" (виділення) */
+.weekCount {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff; /* Білий текст */
+  background-color: var(--color-primary); /* Синій (основний) фон */
+  padding: 3px 10px; /* Відступи всередині */
+  border-radius: 12px; /* Закруглені краї */
+  margin-top: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15); /* Легка тінь */
+  transition: all 0.2s ease;
+}
+
+/* Адаптація для темної теми, якщо потрібно (можна залишити як є, бо колір тексту білий) */
+[data-theme="dark"] .weekCount {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
 .noReminders {
   color: var(--color-text-secondary);
   text-align: center;
-  padding: 20px 0;
+  padding: 20px 0 5px 0;
+}
+
+.emptyWeek {
+  text-align: center;
+  padding-bottom: 20px;
+}
+
+.checkTotalHint {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  opacity: 0.8;
 }
 
 .reminderList {
@@ -50,7 +148,7 @@
   border-radius: var(--border-radius-md);
   cursor: pointer;
   transition: background-color 0.2s, box-shadow 0.2s;
-  border: 1px solid var(--color-border); /* Додано рамку для консистенції */
+  border: 1px solid var(--color-border);
 }
 
 .reminderItem:hover {
@@ -89,7 +187,6 @@
   color: #f8d7da;
 }
 
-/* НОВІ СТИЛІ ДЛЯ ФОНУ */
 .readyBackground {
   background-color: #f0fff4;
 }
