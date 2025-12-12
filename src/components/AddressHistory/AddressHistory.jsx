@@ -7,6 +7,15 @@ const AddressHistory = ({
   currentPersonId,
   onPersonClick,
 }) => {
+  // === ТИМЧАСОВО ВИМКНЕНО ===
+  // Ми повертаємо null відразу, тому компонент "зникає" з екрану,
+  // і важка логіка пошуку (filter/some) нижче не виконується.
+  return null;
+
+  /* // === ОРИГІНАЛЬНИЙ КОД (ЗБЕРЕЖЕНО) ===
+  // Щоб увімкнути компонент назад, видаліть "return null;" зверху 
+  // і розкоментуйте цей блок коду.
+
   if (!currentAddress.trim()) {
     return (
       <div className={styles.historyContainer}>
@@ -21,7 +30,7 @@ const AddressHistory = ({
   const relevantPeople = allPeople.filter((person) => {
     if (person.id === currentPersonId) return false;
 
-    // ОНОВЛЕНО: Змінено 'tables' на 'invoice_tables' для відповідності новій структурі
+    // ОНОВЛЕНО: Змінено 'tables' на 'invoice_tables'
     return person.invoice_tables?.some((table) =>
       table.invoices?.some(
         (invoice) =>
@@ -53,5 +62,7 @@ const AddressHistory = ({
       )}
     </div>
   );
+  */
 };
+
 export default AddressHistory;
