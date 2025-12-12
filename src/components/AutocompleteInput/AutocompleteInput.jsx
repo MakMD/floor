@@ -1,5 +1,3 @@
-// src/components/AutocompleteInput/AutocompleteInput.jsx
-
 import { useState, useEffect } from "react";
 import styles from "./AutocompleteInput.module.css";
 

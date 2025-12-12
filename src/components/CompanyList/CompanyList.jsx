@@ -1,5 +1,3 @@
-// src/components/CompanyList/CompanyList.jsx
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./CompanyList.module.css";

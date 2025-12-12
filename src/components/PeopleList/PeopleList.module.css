@@ -1,4 +1,4 @@
-/* src/components/PeopleList/PeopleList.module.css */
+/* makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/components/PeopleList/PeopleList.module.css */
 .peopleListContainer {
   width: 100%;
 }
@@ -6,13 +6,13 @@
 .peopleList {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px; /* Трохи зменшено відстань */
+  gap: 20px;
 }
 
 .personItem {
   background-color: var(--color-surface);
-  padding: 16px; /* Зменшено для більш компактного вигляду */
-  border-radius: var(--border-radius-md); /* Більш стандартний радіус */
+  padding: 16px;
+  border-radius: var(--border-radius-md);
   text-align: center;
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
@@ -21,28 +21,28 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Центруємо по вертикалі */
+  justify-content: center;
   align-items: center;
-  gap: 12px; /* Зменшено відстань між елементами */
-  /* min-height видалено, висота тепер залежить від контенту */
+  gap: 12px;
 }
 
 .personItem:not(.editing):hover {
-  transform: translateY(-3px); /* Зменшено ефект "підйому" */
+  transform: translateY(-3px);
   box-shadow: var(--shadow-md);
   border-color: var(--color-primary);
 }
 
 .personItem h3 {
-  font-size: 1.1rem; /* Зроблено трохи меншим для акуратності */
-  font-weight: 500; /* Зроблено менш жирним */
+  font-size: 1.1rem;
+  font-weight: 500;
   margin: 0;
   word-break: break-word;
 }
 
-.editNameInput {
+/* ОНОВЛЕНО: Загальний стиль для полів вводу */
+.editInput {
   font-family: var(--font-main);
-  font-size: 1.1rem;
+  font-size: 1rem; /* Зменшено для кращої відповідності */
   font-weight: 500;
   color: var(--color-text-primary);
   border: 2px solid var(--color-primary);
@@ -51,16 +51,17 @@
   text-align: center;
   width: 90%;
   outline: none;
+  background-color: var(--color-background); /* Додано для консистенції */
 }
 
 .toggleStatusButton {
-  padding: 6px 12px; /* Зроблено кнопку меншою */
+  padding: 6px 12px;
   background-color: var(--color-secondary);
   color: white;
   border: none;
   cursor: pointer;
   border-radius: var(--border-radius-md);
-  font-size: 0.75rem; /* Зменшено шрифт */
+  font-size: 0.75rem;
   font-weight: 500;
   transition: background-color 0.2s ease;
 }
@@ -68,9 +69,9 @@
 .toggleStatusButton:hover {
   background-color: var(--color-text-primary);
 }
-/* --- СТИЛІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ --- */
+
 @media (max-width: 768px) {
   .peopleList {
-    grid-template-columns: 1fr; /* Одна колонка на мобільних */
+    grid-template-columns: 1fr;
   }
 }

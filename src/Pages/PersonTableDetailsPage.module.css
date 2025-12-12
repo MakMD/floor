@@ -1,6 +1,5 @@
-/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/PersonTableDetailsPage.module.css */
+/* makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/Pages/PersonTableDetailsPage.module.css */
 
-/* --- ОСНОВНА СТРУКТУРА (DESKTOP) --- */
 .pageLayout {
   display: grid;
   grid-template-columns: 2.5fr 1fr;
@@ -23,7 +22,6 @@
   top: 20px;
 }
 
-/* --- ЗАГОЛОВОК --- */
 .header {
   display: flex;
   justify-content: space-between;
@@ -40,7 +38,6 @@
   flex-grow: 1;
 }
 
-/* --- ФОРМА ДОДАВАННЯ ІНВОЙСУ --- */
 .addInvoiceForm {
   padding: 20px;
   background-color: var(--color-background);
@@ -60,7 +57,6 @@
 }
 
 .addInvoiceForm > button {
-  /* Target direct button child */
   grid-column: 1 / -1;
   margin-top: 10px;
 }
@@ -74,7 +70,6 @@
   box-sizing: border-box;
 }
 
-/* --- ТАБЛИЦЯ ІНВОЙСІВ --- */
 .tableWrapper {
   overflow-x: auto;
 }
@@ -94,7 +89,7 @@
 }
 
 .invoiceTable th {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-accent);
   font-weight: 500;
   font-size: 0.875rem;
   text-transform: uppercase;
@@ -116,7 +111,7 @@
 
 .totalRow td {
   font-weight: bold;
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-accent);
   border-top: 2px solid var(--color-border);
 }
 
@@ -131,7 +126,6 @@
   justify-content: flex-end;
 }
 
-/* --- МОБІЛЬНА АДАПТАЦІЯ --- */
 @media (max-width: var(--breakpoint-md)) {
   .pageLayout {
     grid-template-columns: 1fr;
@@ -170,7 +164,7 @@
     align-items: center;
     text-align: right;
     padding: 10px 5px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-border);
     white-space: normal;
   }
 

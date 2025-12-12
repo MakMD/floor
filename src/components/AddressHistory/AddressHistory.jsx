@@ -1,5 +1,3 @@
-// src/components/AddressHistory/AddressHistory.jsx
-
 import React from "react";
 import styles from "./AddressHistory.module.css";
 

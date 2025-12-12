@@ -1,10 +1,7 @@
-// src/components/AddCompanyForm/AddCompanyForm.jsx
-
 import { useState } from "react";
-import { supabase } from "../../supabaseClient"; // ІМПОРТ: Замінюємо axios на supabase
-import toast from "react-hot-toast"; // ІМПОРТ: Додаємо toast для сповіщень
+import { supabase } from "../../supabaseClient";
+import toast from "react-hot-toast";
 
-// КОМПОНЕНТ: Перейменовано для ясності, що він створює, а не просто додає
 const CreateCompanyForm = ({ onCompanyCreated }) => {
   const [companyName, setCompanyName] = useState("");
   const [companyDetails, setCompanyDetails] = useState("");
@@ -24,26 +21,23 @@ const CreateCompanyForm = ({ onCompanyCreated }) => {
       name: companyName.trim(),
       details: companyDetails.trim(),
       status: "active", // Явно вказуємо статус за замовчуванням
-      invoiceTables: [], // Ініціалізуємо порожнім масивом
+      invoiceTables: [],
     };
 
     try {
-      // ЗАПИТ: Використовуємо supabase для вставки даних
       const { data, error } = await supabase
         .from("companies")
         .insert([newCompany])
         .select()
-        .single(); // .select().single() одразу повертає створений об'єкт
+        .single();
 
       if (error) {
         throw error;
       }
 
-      // Оновлюємо стан у батьківському компоненті
       onCompanyCreated(data);
       toast.success("Company created successfully!");
 
-      // Очищуємо поля форми
       setCompanyName("");
       setCompanyDetails("");
     } catch (error) {

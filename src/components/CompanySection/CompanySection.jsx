@@ -1,5 +1,3 @@
-// src/components/CompanySection/CompanySection.jsx
-
 import { useNavigate } from "react-router-dom";
 import styles from "../AddressSection/AddressSection.module.css"; // Ми можемо перевикористати ці стилі!
 

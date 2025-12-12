@@ -1,4 +1,4 @@
-// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/AddressDetailsPage.jsx
+// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/Pages/AddressDetailsPage.jsx
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -14,7 +14,7 @@ import {
 } from "react-icons/fa";
 import styles from "./AddressDetailsPage.module.css";
 import listStyles from "./AddressListPage.module.css";
-import commonStyles from "../styles/common.module.css"; // ІМПОРТ
+import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
 import FileUpload from "../components/FileUpload/FileUpload";
 import { useAdminLists } from "../hooks/useAdminLists";
@@ -90,7 +90,7 @@ const FileListItem = ({ bucketName, fileIdentifier, onDelete }) => {
       </a>
       <button
         onClick={() => onDelete(fileIdentifier)}
-        className={commonStyles.buttonIcon} // ВИКОРИСТАННЯ
+        className={commonStyles.buttonIcon}
         disabled={isLoading}
       >
         <FaTrash />
@@ -254,7 +254,7 @@ const AddressDetailsPage = () => {
     <div className={styles.pageContainer}>
       <div className={styles.header}>
         <button
-          className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
+          className={commonStyles.buttonSecondary}
           onClick={() => navigate("/addresses")}
         >
           <FaArrowLeft /> Back
@@ -271,7 +271,7 @@ const AddressDetailsPage = () => {
           <h1 className={styles.pageTitle}>{addressData.address}</h1>
         )}
         <button
-          className={commonStyles.buttonPrimary} // ВИКОРИСТАННЯ
+          className={commonStyles.buttonPrimary}
           onClick={() => (isEditing ? handleSaveChanges() : setIsEditing(true))}
         >
           {isEditing ? <FaCheck /> : <FaEdit />}{" "}
@@ -379,7 +379,8 @@ const AddressDetailsPage = () => {
           </div>
           <div className={styles.detailCard}>
             <h3>Work Types & Payments</h3>
-            <WorkTypesManager addressId={addressId} />
+            {/* ВИПРАВЛЕНО: Додано пропс addressData */}
+            <WorkTypesManager addressId={addressId} addressData={addressData} />
           </div>
         </div>
 
@@ -413,7 +414,7 @@ const AddressDetailsPage = () => {
                     <span>{note}</span>
                     <button
                       onClick={() => handleDeleteMaterialNote(index)}
-                      className={commonStyles.buttonIcon} // ВИКОРИСТАННЯ
+                      className={commonStyles.buttonIcon}
                     >
                       <FaTrash />
                     </button>

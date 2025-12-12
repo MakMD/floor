@@ -1,4 +1,3 @@
-// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/hooks/useAnalytics.jsx
 import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 

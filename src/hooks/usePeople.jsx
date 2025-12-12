@@ -1,4 +1,4 @@
-// src/hooks/usePeople.js
+// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/hooks/usePeople.jsx
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabaseClient";
@@ -10,6 +10,7 @@ export const usePeople = () => {
 
   const fetchPeople = useCallback(async () => {
     setLoading(true);
+    // ОНОВЛЕНО: витягуємо всі поля, включаючи 'phone'
     const { data, error } = await supabase
       .from("people")
       .select("*")

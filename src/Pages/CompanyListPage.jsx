@@ -1,5 +1,3 @@
-// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/CompanyListPage.jsx
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaEdit, FaCheck, FaUsersSlash } from "react-icons/fa";

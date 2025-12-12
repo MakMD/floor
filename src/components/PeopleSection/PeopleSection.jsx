@@ -1,4 +1,4 @@
-// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/PeopleSection/PeopleSection.jsx
+// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/components/PeopleSection/PeopleSection.jsx
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,7 @@ import SkeletonLoader from "../SkeletonLoader/SkeletonLoader";
 import EmptyState from "../EmptyState/EmptyState";
 import { FaPlus, FaUsersSlash, FaEdit, FaCheck } from "react-icons/fa";
 import styles from "./PeopleSection.module.css";
-import commonStyles from "../../styles/common.module.css"; // ІМПОРТ
+import commonStyles from "../../styles/common.module.css";
 import toast from "react-hot-toast";
 
 const PeopleSection = () => {
@@ -54,6 +54,20 @@ const PeopleSection = () => {
     else onPeopleUpdate();
   };
 
+  // НОВА ФУНКЦІЯ для оновлення телефону
+  const handleUpdatePersonPhone = async (personId, newPhone) => {
+    const { error } = await supabase
+      .from("people")
+      .update({ phone: newPhone.trim() })
+      .eq("id", personId);
+    if (error) {
+      toast.error("Error updating phone number.");
+    } else {
+      toast.success("Phone number updated!");
+      onPeopleUpdate();
+    }
+  };
+
   const activePeople = people.filter((p) => p.status === "active");
 
   return (
@@ -64,20 +78,20 @@ const PeopleSection = () => {
           {!isAdding && (
             <button
               onClick={() => setIsAdding(true)}
-              className={commonStyles.buttonSuccess} // ВИКОРИСТАННЯ
+              className={commonStyles.buttonSuccess}
             >
               <FaPlus /> Add Worker
             </button>
           )}
           <button
             onClick={() => navigate("/inactive-workers")}
-            className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
+            className={commonStyles.buttonSecondary}
           >
             <FaUsersSlash /> Inactive
           </button>
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={commonStyles.buttonPrimary} // ВИКОРИСТАННЯ
+            className={commonStyles.buttonPrimary}
           >
             {isEditing ? (
               <>
@@ -104,14 +118,14 @@ const PeopleSection = () => {
           />
           <button
             onClick={handleCreatePerson}
-            className={commonStyles.buttonPrimary} // ВИКОРИСТАННЯ
+            className={commonStyles.buttonPrimary}
             disabled={addLoading}
           >
             {addLoading ? "Creating..." : "Create"}
           </button>
           <button
             onClick={() => setIsAdding(false)}
-            className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
+            className={commonStyles.buttonSecondary}
           >
             Cancel
           </button>
@@ -126,12 +140,13 @@ const PeopleSection = () => {
           isEditing={isEditing}
           onToggleStatus={handleToggleStatus}
           onUpdatePersonName={handleUpdatePersonName}
+          onUpdatePersonPhone={handleUpdatePersonPhone} // Передаємо нову функцію
         />
       ) : (
         <EmptyState message="No active workers found. Add one to get started!">
           <button
             onClick={() => setIsAdding(true)}
-            className={commonStyles.buttonSuccess} // ВИКОРИСТАННЯ
+            className={commonStyles.buttonSuccess}
           >
             <FaPlus /> Add First Worker
           </button>

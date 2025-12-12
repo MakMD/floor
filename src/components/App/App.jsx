@@ -1,5 +1,3 @@
-// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/App/App.jsx
-
 import { useState, useEffect, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,

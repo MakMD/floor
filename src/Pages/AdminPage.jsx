@@ -1,5 +1,3 @@
-// src/Pages/AdminPage.jsx
-
 import React from "react";
 import AdminListManager from "../components/AdminListManager/AdminListManager";
 import styles from "./AdminPage.module.css";

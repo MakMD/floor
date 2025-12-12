@@ -1,5 +1,3 @@
-// src/components/AddressSection/AddressSection.jsx
-
 import { useNavigate } from "react-router-dom";
 import styles from "./AddressSection.module.css";
 

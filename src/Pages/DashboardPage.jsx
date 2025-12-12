@@ -1,10 +1,8 @@
-// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/Pages/DashboardPage.jsx
-
 import React from "react";
 import styles from "./DashboardPage.module.css";
 import ReminderPanel from "../components/ReminderPanel/ReminderPanel";
 import StatsCard from "../components/StatsCard/StatsCard";
-import PersonStats from "../components/PersonStats/PersonStats"; // ІМПОРТ НОВОГО КОМПОНЕНТА
+import PersonStats from "../components/PersonStats/PersonStats";
 import { FaDollarSign, FaHardHat, FaWarehouse } from "react-icons/fa";
 import { useAnalytics } from "../hooks/useAnalytics";
 

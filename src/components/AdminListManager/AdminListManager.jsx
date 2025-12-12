@@ -1,5 +1,3 @@
-// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/components/AdminListManager/AdminListManager.jsx
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";

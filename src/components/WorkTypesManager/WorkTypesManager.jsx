@@ -1,4 +1,4 @@
-// src/components/WorkTypesManager/WorkTypesManager.jsx
+// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/components/WorkTypesManager/WorkTypesManager.jsx
 
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabaseClient";
@@ -12,7 +12,7 @@ import {
   deleteWorkTypeAndInvoice,
 } from "../../services/workTypeService";
 
-const WorkTypesManager = ({ addressId }) => {
+const WorkTypesManager = ({ addressId, addressData }) => {
   const [workTypes, setWorkTypes] = useState([]);
   const [people, setPeople] = useState([]);
   const { workTypeTemplates, loading: listsLoading } = useAdminLists();
@@ -56,6 +56,53 @@ const WorkTypesManager = ({ addressId }) => {
     fetchData();
   }, [addressId]);
 
+  // ОНОВЛЕНА ФУНКЦІЯ З ДЕТАЛЬНИМ ЛОГУВАННЯМ
+  const sendNotification = async (personId) => {
+    console.log("Attempting to send notification...");
+
+    if (!personId || !addressData?.address || !addressData?.date) {
+      console.error("DEBUG: Skipping notification due to missing data.", {
+        personId,
+        address: addressData?.address,
+        date: addressData?.date,
+      });
+      toast.error("Cannot send notification: required data is missing.");
+      return;
+    }
+
+    const notificationPayload = {
+      personId: personId,
+      address: addressData.address,
+      date: addressData.date,
+    };
+
+    console.log("DEBUG: Payload to be sent:", notificationPayload);
+    toast.loading("Sending notification...");
+
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "send-whatsapp-notification",
+        {
+          body: notificationPayload,
+        }
+      );
+
+      toast.dismiss();
+
+      if (error) {
+        // Викидуємо помилку, щоб її обробив catch-блок
+        throw error;
+      }
+
+      console.log("DEBUG: Function invoked successfully. Response data:", data);
+      toast.success(data.message || "Test notification logged!");
+    } catch (error) {
+      toast.dismiss();
+      console.error("DEBUG: Error invoking Edge Function:", error);
+      toast.error(`Notification failed: ${error.message}`);
+    }
+  };
+
   const handleInputChange = (e, id) => {
     const { name, value } = e.target;
     setWorkTypes(
@@ -75,6 +122,9 @@ const WorkTypesManager = ({ addressId }) => {
     });
     if (addedWorkType) {
       setWorkTypes([...workTypes, addedWorkType]);
+      if (addedWorkType.person_id) {
+        await sendNotification(addedWorkType.person_id);
+      }
       setNewWorkType({
         work_type_template_id: "",
         person_id: "",
@@ -84,8 +134,22 @@ const WorkTypesManager = ({ addressId }) => {
   };
 
   const handleUpdateWorkType = async (id) => {
-    const workType = workTypes.find((wt) => wt.id === id);
-    await updateWorkTypeAndInvoice(workType);
+    const workTypeToUpdate = workTypes.find((wt) => wt.id === id);
+    const { data: originalWorkType } = await supabase
+      .from("work_types")
+      .select("person_id")
+      .eq("id", id)
+      .single();
+    const oldPersonId = originalWorkType?.person_id;
+
+    await updateWorkTypeAndInvoice(workTypeToUpdate);
+
+    if (
+      workTypeToUpdate.person_id &&
+      workTypeToUpdate.person_id !== oldPersonId
+    ) {
+      await sendNotification(workTypeToUpdate.person_id);
+    }
   };
 
   const handleDeleteWorkType = async (id) => {
@@ -97,6 +161,7 @@ const WorkTypesManager = ({ addressId }) => {
 
   return (
     <div className={styles.container}>
+      {/* ... (решта JSX без змін) ... */}
       <div className={styles.workTypeList}>
         {workTypes.map((wt) => (
           <div key={wt.id} className={styles.workTypeItem}>

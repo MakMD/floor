@@ -1,5 +1,3 @@
-// src/hooks/useCompanies.js
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabaseClient";
 import toast from "react-hot-toast";
