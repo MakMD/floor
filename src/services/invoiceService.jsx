@@ -1,4 +1,4 @@
-// src/services/invoiceService.js
+// src/services/invoiceService.jsx
 
 import { supabase } from "../supabaseClient";
 import toast from "react-hot-toast";
@@ -22,6 +22,15 @@ const getInvoiceTableNameForDate = (date) => {
 };
 
 /**
+ * Допоміжна функція для створення локальної дати з рядка YYYY-MM-DD
+ */
+const createLocalDate = (dateString) => {
+  if (!dateString) return new Date();
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+/**
  * Додає інвойс для працівника, створюючи або оновлюючи відповідну таблицю.
  * @param {string} workerId - ID працівника.
  * @param {object} addressData - Об'єкт з даними адреси ({ address, date }).
@@ -37,7 +46,8 @@ export const addInvoiceForWorker = async (workerId, addressData) => {
     if (personError) throw personError;
 
     const personTables = personData.tables || [];
-    const invoiceDate = new Date(addressData.date);
+    // ВИПРАВЛЕНО: Використовуємо локальну дату замість new Date(string)
+    const invoiceDate = createLocalDate(addressData.date);
     const tableName = getInvoiceTableNameForDate(invoiceDate);
 
     const newInvoice = {
@@ -106,7 +116,8 @@ export const removeInvoiceForWorker = async (workerId, addressData) => {
     if (personError) throw personError;
 
     const personTables = personData.tables || [];
-    const invoiceDate = new Date(addressData.date);
+    // ВИПРАВЛЕНО: Використовуємо локальну дату
+    const invoiceDate = createLocalDate(addressData.date);
     const tableName = getInvoiceTableNameForDate(invoiceDate);
 
     let wasInvoiceRemoved = false;

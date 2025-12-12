@@ -3,6 +3,16 @@ import { supabase } from "../supabaseClient";
 import toast from "react-hot-toast";
 
 /**
+ * Допоміжна функція для створення локальної дати з рядка YYYY-MM-DD
+ * Щоб уникнути проблем з часовими поясами (зсув на попередній день)
+ */
+const createLocalDate = (dateString) => {
+  if (!dateString) return new Date();
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+/**
  * Finds or creates an invoice table for a person based on a date.
  * @param {string} personId - The ID of the person.
  * @param {Date} date - The date to determine the table name.
@@ -78,9 +88,10 @@ export const addWorkTypeAndInvoice = async (workTypeData) => {
       .eq("id", newWorkType.address_id)
       .single();
 
+    // ВИПРАВЛЕНО: Використовуємо createLocalDate
     const table = await findOrCreateInvoiceTable(
       newWorkType.person_id,
-      new Date(address.date)
+      createLocalDate(address.date)
     );
 
     const { error: invoiceError } = await supabase.from("invoices").insert({

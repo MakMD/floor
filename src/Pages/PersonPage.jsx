@@ -7,8 +7,36 @@ import { supabase } from "../supabaseClient";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
 import styles from "./PersonPage.module.css";
-import commonStyles from "../styles/common.module.css"; // ІМПОРТ
+import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
+
+// === ДОДАНО: Функція для парсингу дати з назви таблиці ===
+const parseTableNameToDate = (name) => {
+  if (!name) return new Date(0);
+
+  // 1. Пробуємо формат "DD.MM.YYYY" (наприклад, "15.02.2025")
+  const numericMatch = name.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (numericMatch) {
+    const [, day, month, year] = numericMatch;
+    // Місяці в JS: 0-11, тому month - 1
+    return new Date(year, month - 1, day);
+  }
+
+  // 2. Пробуємо текстовий формат "Month DD-DD YYYY" (наприклад, "October 1-15 2025")
+  // Регулярка шукає: [Слово] [Число]-[що завгодно] [4 цифри]
+  const textMatch = name.match(/^([A-Za-z]+)\s(\d{1,2})-(?:.*)\s(\d{4})$/);
+  if (textMatch) {
+    const [, monthStr, dayStr, yearStr] = textMatch;
+    // Створюємо дату: "October 1, 2025"
+    const date = new Date(`${monthStr} ${dayStr}, ${yearStr}`);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Якщо не вдалося розпізнати, повертаємо стару дату, щоб такі таблиці були в кінці
+  return new Date(0);
+};
 
 const PersonPage = () => {
   const { personId } = useParams();
@@ -50,16 +78,18 @@ const PersonPage = () => {
         invoiceCount: t.invoices[0]?.count || 0,
       }));
 
+      // === ОНОВЛЕНО: Логіка сортування ===
       formattedTables.sort((a, b) => {
-        try {
-          const [dayA, monthA, yearA] = a.name.split(".").map(Number);
-          const [dayB, monthB, yearB] = b.name.split(".").map(Number);
-          const dateA = new Date(yearA, monthA - 1, dayA);
-          const dateB = new Date(yearB, monthB - 1, dayB);
-          return dateB - dateA;
-        } catch (e) {
-          return b.name.localeCompare(a.name);
+        const dateA = parseTableNameToDate(a.name);
+        const dateB = parseTableNameToDate(b.name);
+
+        // Якщо обидві дати валідні (не epoch 0), сортуємо за часом
+        if (dateA.getTime() > 0 && dateB.getTime() > 0) {
+          return dateB - dateA; // Від новішого до старішого
         }
+
+        // Якщо одна з дат не розпізнана, використовуємо алфавітне сортування як запасний варіант
+        return b.name.localeCompare(a.name);
       });
 
       setTables(formattedTables);
@@ -112,7 +142,7 @@ const PersonPage = () => {
     <div className={styles.personPage}>
       <div className={styles.header}>
         <button
-          className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
+          className={commonStyles.buttonSecondary}
           onClick={() => navigate("/")}
         >
           <FaArrowLeft /> Back
@@ -123,7 +153,7 @@ const PersonPage = () => {
         <button
           className={
             isEditing ? commonStyles.buttonSuccess : commonStyles.buttonPrimary
-          } // ВИКОРИСТАННЯ
+          }
           onClick={() => setIsEditing(!isEditing)}
         >
           {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
@@ -139,8 +169,6 @@ const PersonPage = () => {
           className={styles.inputField}
         />
         <button onClick={handleAddTable} className={commonStyles.buttonSuccess}>
-          {" "}
-          {/* ВИКОРИСТАННЯ */}
           <FaPlus /> Add Table
         </button>
       </div>
@@ -167,7 +195,7 @@ const PersonPage = () => {
               {isEditing && (
                 <button
                   onClick={() => handleDeleteTable(table.id)}
-                  className={commonStyles.buttonIcon} // ВИКОРИСТАННЯ
+                  className={commonStyles.buttonIcon}
                 >
                   <FaTrash />
                 </button>
