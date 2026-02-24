@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAddresses } from "../hooks/useAddresses";
 import { useAdminLists } from "../hooks/useAdminLists";
@@ -65,6 +65,7 @@ const AddProjectSchema = Yup.object().shape({
     otherwise: (schema) => schema.notRequired(),
   }),
   total_amount: Yup.number().nullable(),
+  sq_ft: Yup.number().nullable(), // ДОДАНО ВАЛІДАЦІЮ
   store_id: Yup.number().nullable(),
   builder_id: Yup.number().nullable(),
 });
@@ -72,12 +73,22 @@ const AddProjectSchema = Yup.object().shape({
 const AddressListPage = () => {
   const { addresses, loading: addressesLoading, refetch } = useAddresses();
   const { builders, stores, loading: listsLoading } = useAdminLists();
-  const [searchTerm, setSearchTerm] = useState("");
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [searchTerm, setSearchTerm] = useState(
+    location.state?.searchTerm || "",
+  );
+  const [dateFilter, setDateFilter] = useState(
+    location.state?.dateFilter || "all",
+  );
+  const [statusFilter, setStatusFilter] = useState(
+    location.state?.statusFilter || "all",
+  );
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedAddresses, setEditedAddresses] = useState({});
-  const navigate = useNavigate();
-  const [dateFilter, setDateFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
 
   const handleFilterChange = (filterType, value) => {
     if (filterType === "date") {
@@ -131,6 +142,7 @@ const AddressListPage = () => {
       total_amount: values.total_amount
         ? parseFloat(values.total_amount)
         : null,
+      sq_ft: values.sq_ft ? parseFloat(values.sq_ft) : null, // ДОДАНО ДО ОБ'ЄКТА
       store_id: values.store_id ? parseInt(values.store_id) : null,
       builder_id: values.builder_id ? parseInt(values.builder_id) : null,
       status: "In Process",
@@ -189,10 +201,16 @@ const AddressListPage = () => {
     setEditedAddresses((prev) => ({ ...prev, [id]: value }));
   };
 
+  const handleAddressClick = (id) => {
+    if (isEditing) return;
+    navigate(`/address/${id}`, {
+      state: { searchTerm, dateFilter, statusFilter },
+    });
+  };
+
   const renderAddressList = (list) => (
     <ul className={styles.addressList}>
       {list.map((item) => {
-        // ОНОВЛЕНО: Додаємо клас для фону
         const statusBackgroundClass =
           {
             Ready: styles.readyBackground,
@@ -205,8 +223,8 @@ const AddressListPage = () => {
             key={item.id}
             className={`${styles.addressItem} ${
               isEditing ? styles.editing : ""
-            } ${statusBackgroundClass}`} // Додано новий клас
-            onClick={() => !isEditing && navigate(`/address/${item.id}`)}
+            } ${statusBackgroundClass}`}
+            onClick={() => handleAddressClick(item.id)}
           >
             {isEditing ? (
               <>
@@ -243,6 +261,10 @@ const AddressListPage = () => {
                   <div className={styles.itemDetails}>
                     <span className={styles.addressName}>{item.address}</span>
                     <div className={styles.itemMeta}>
+                      {/* ДОДАНО: Work Order виглядає як інші бейджі */}
+                      {item.work_order_number && (
+                        <span>WO: #{item.work_order_number}</span>
+                      )}
                       {item.builders?.name && (
                         <span>Builder: {item.builders.name}</span>
                       )}
@@ -296,6 +318,7 @@ const AddressListPage = () => {
             address: "",
             date: "",
             time: "",
+            sq_ft: "", // ДОДАНО ПОЧАТКОВЕ ЗНАЧЕННЯ
             total_amount: "",
           }}
           validationSchema={AddProjectSchema}
@@ -384,6 +407,16 @@ const AddressListPage = () => {
                     />
                   </div>
                 )}
+                {/* ДОДАНО ПОЛЕ SQ FT */}
+                <div className={styles.inputGroup}>
+                  <label htmlFor="sq_ft">Square Feet (sq ft)</label>
+                  <Field
+                    id="sq_ft"
+                    type="number"
+                    name="sq_ft"
+                    placeholder="e.g. 1500"
+                  />
+                </div>
                 <div className={styles.inputGroup}>
                   <label htmlFor="total_amount">Total Amount</label>
                   <Field
@@ -393,8 +426,9 @@ const AddressListPage = () => {
                     placeholder="0.00"
                   />
                 </div>
+              </div>
+              <div className={styles.formRow}>
                 <div className={styles.inputGroup}>
-                  <label>&nbsp;</label>
                   <button
                     type="submit"
                     className={commonStyles.buttonSuccess}

@@ -1,7 +1,5 @@
-// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/Pages/AddressDetailsPage.jsx
-
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import {
   FaArrowLeft,
@@ -47,11 +45,9 @@ const FileListItem = ({ bucketName, fileIdentifier, onDelete }) => {
       try {
         const url = new URL(fileIdentifier);
         path = url.pathname.substring(
-          url.pathname.indexOf(bucketName) + bucketName.length + 1
+          url.pathname.indexOf(bucketName) + bucketName.length + 1,
         );
-      } catch (e) {
-        /* Not a URL, already a path */
-      }
+      } catch (e) {}
 
       const { data, error } = await supabase.storage
         .from(bucketName)
@@ -102,6 +98,9 @@ const FileListItem = ({ bucketName, fileIdentifier, onDelete }) => {
 const AddressDetailsPage = () => {
   const { addressId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const searchState = location.state || null;
 
   const [addressData, setAddressData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -112,6 +111,7 @@ const AddressDetailsPage = () => {
     address: "",
     material_notes: [],
     total_amount: "",
+    sq_ft: "", // ДОДАНО
     date: "",
     status: "",
     builder_id: "",
@@ -137,6 +137,7 @@ const AddressDetailsPage = () => {
         address: data.address || "",
         material_notes: data.material_notes || [],
         total_amount: data.total_amount || "",
+        sq_ft: data.sq_ft || "", // ДОДАНО
         date: data.date || "",
         status: data.status || "In Process",
         builder_id: data.builder_id || "",
@@ -180,6 +181,7 @@ const AddressDetailsPage = () => {
       total_amount: editedData.total_amount
         ? parseFloat(editedData.total_amount)
         : null,
+      sq_ft: editedData.sq_ft ? parseFloat(editedData.sq_ft) : null, // ДОДАНО
       date: editedData.date || null,
       status: editedData.status,
       builder_id: editedData.builder_id || null,
@@ -206,7 +208,7 @@ const AddressDetailsPage = () => {
     if (!window.confirm("Are you sure you want to delete this material note?"))
       return;
     const updatedNotes = editedData.material_notes.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
     const updated = await updateAddress({ material_notes: updatedNotes });
     if (updated) {
@@ -227,11 +229,9 @@ const AddressDetailsPage = () => {
     try {
       const url = new URL(fileIdentifier);
       path = url.pathname.substring(
-        url.pathname.indexOf(BUCKET_NAME) + BUCKET_NAME.length + 1
+        url.pathname.indexOf(BUCKET_NAME) + BUCKET_NAME.length + 1,
       );
-    } catch (e) {
-      /* It's already a path */
-    }
+    } catch (e) {}
     const { error: storageError } = await supabase.storage
       .from(BUCKET_NAME)
       .remove([path]);
@@ -240,7 +240,7 @@ const AddressDetailsPage = () => {
       return;
     }
     const updatedFiles = addressData.files.filter(
-      (identifier) => identifier !== fileIdentifier
+      (identifier) => identifier !== fileIdentifier,
     );
     const updated = await updateAddress({ files: updatedFiles });
     if (updated) {
@@ -255,7 +255,7 @@ const AddressDetailsPage = () => {
       <div className={styles.header}>
         <button
           className={commonStyles.buttonSecondary}
-          onClick={() => navigate("/addresses")}
+          onClick={() => navigate("/addresses", { state: searchState })}
         >
           <FaArrowLeft /> Back
         </button>
@@ -268,7 +268,9 @@ const AddressDetailsPage = () => {
             className={styles.titleInput}
           />
         ) : (
-          <h1 className={styles.pageTitle}>{addressData.address}</h1>
+          <h1 className={styles.pageTitle}>
+            WO #{addressData.work_order_number} — {addressData.address}
+          </h1>
         )}
         <button
           className={commonStyles.buttonPrimary}
@@ -283,6 +285,13 @@ const AddressDetailsPage = () => {
         <div className={styles.gridColumn}>
           <div className={styles.detailCard}>
             <h3>Project Details</h3>
+
+            {/* ДОДАНО: Work Order Number */}
+            <div className={styles.detailItem}>
+              <label>Work Order</label>
+              <p>#{addressData.work_order_number}</p>
+            </div>
+
             <div className={styles.detailItem}>
               <label>Status</label>
               <div className={styles.statusCell}>
@@ -358,6 +367,26 @@ const AddressDetailsPage = () => {
                 <p>{addressData.date || "N/A"}</p>
               )}
             </div>
+
+            {/* ДОДАНО ПОЛЕ SQ FT */}
+            <div className={styles.detailItem}>
+              <label>Square Feet</label>
+              {isEditing ? (
+                <input
+                  type="number"
+                  name="sq_ft"
+                  value={editedData.sq_ft}
+                  onChange={handleInputChange}
+                  className={styles.editInput}
+                  placeholder="e.g. 1500"
+                />
+              ) : (
+                <p>
+                  {addressData.sq_ft ? `${addressData.sq_ft} sq ft` : "N/A"}
+                </p>
+              )}
+            </div>
+
             <div className={styles.detailItem}>
               <label>Total Amount</label>
               {isEditing ? (
@@ -379,7 +408,6 @@ const AddressDetailsPage = () => {
           </div>
           <div className={styles.detailCard}>
             <h3>Work Types & Payments</h3>
-            {/* ВИПРАВЛЕНО: Додано пропс addressData */}
             <WorkTypesManager addressId={addressId} addressData={addressData} />
           </div>
         </div>

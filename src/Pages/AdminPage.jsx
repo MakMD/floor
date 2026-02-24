@@ -6,7 +6,8 @@ import {
   FaHardHat,
   FaPaintRoller,
   FaClipboardList,
-} from "react-icons/fa"; // ІМПОРТ: Нова іконка
+  FaBox, // Додано нову іконку
+} from "react-icons/fa";
 
 const AdminPage = () => {
   return (
@@ -37,7 +38,6 @@ const AdminPage = () => {
           </div>
           <AdminListManager tableName="materials" itemName="material" />
         </div>
-        {/* --- НОВА КАРТКА ДЛЯ ТИПІВ РОБІТ --- */}
         <div className={styles.managerCard}>
           <div className={styles.cardHeader}>
             <FaClipboardList className={styles.cardIcon} />
@@ -47,6 +47,14 @@ const AdminPage = () => {
             tableName="work_type_templates"
             itemName="work type"
           />
+        </div>
+        {/* --- НОВА КАРТКА ДЛЯ ПРОДУКТІВ --- */}
+        <div className={styles.managerCard}>
+          <div className={styles.cardHeader}>
+            <FaBox className={styles.cardIcon} />
+            <h2>Products</h2>
+          </div>
+          <AdminListManager tableName="products" itemName="product" />
         </div>
       </div>
     </div>
