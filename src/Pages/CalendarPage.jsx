@@ -7,22 +7,28 @@ import {
   addDays,
   subWeeks,
   addWeeks,
-  isSameDay,
-  isSameMonth,
+  isToday,
 } from "date-fns";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaMapMarkerAlt,
+  FaTools,
+  FaClock,
+  FaRulerCombined,
+  FaDollarSign,
+} from "react-icons/fa";
 import { supabase } from "../supabaseClient";
 import toast from "react-hot-toast";
 import styles from "./CalendarPage.module.css";
 
 const CalendarPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const weekStartsOn = 1; // Monday
+  const weekStartsOn = 1; // Понеділок
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -32,9 +38,10 @@ const CalendarPage = () => {
 
       const { data, error } = await supabase
         .from("addresses")
-        .select("*, work_types(payment_amount)")
+        .select("*, builders(name), stores(name)")
         .gte("date", format(start, "yyyy-MM-dd"))
-        .lte("date", format(end, "yyyy-MM-dd"));
+        .lte("date", format(end, "yyyy-MM-dd"))
+        .order("service_time", { ascending: true, nullsFirst: false }); // Сортуємо по часу, якщо він є
 
       if (error) {
         toast.error("Could not fetch calendar events.");
@@ -63,154 +70,163 @@ const CalendarPage = () => {
       <button onClick={prevWeek} className={styles.navButton}>
         <FaChevronLeft />
       </button>
-      <span className={styles.headerDate}>
-        {format(startOfWeek(currentDate, { weekStartsOn }), "d MMM")} -{" "}
-        {format(endOfWeek(currentDate, { weekStartsOn }), "d MMM, yyyy")}
-      </span>
+      <div className={styles.headerDateContainer}>
+        <span className={styles.headerDate}>
+          {format(startOfWeek(currentDate, { weekStartsOn }), "d MMMM")} -{" "}
+          {format(endOfWeek(currentDate, { weekStartsOn }), "d MMMM, yyyy")}
+        </span>
+        <button
+          onClick={() => setCurrentDate(new Date())}
+          className={styles.todayButton}
+        >
+          Go to Today
+        </button>
+      </div>
       <button onClick={nextWeek} className={styles.navButton}>
         <FaChevronRight />
       </button>
     </div>
   );
 
-  const renderDays = () => {
+  const renderVerticalDays = () => {
+    const startDate = startOfWeek(currentDate, { weekStartsOn });
     const days = [];
-    const startDate = startOfWeek(currentDate, { weekStartsOn });
-    for (let i = 0; i < 7; i++) {
-      days.push(
-        <div className={styles.dayLabel} key={i}>
-          {format(addDays(startDate, i), "EEE")}
-        </div>
-      );
-    }
-    return <div className={styles.daysGrid}>{days}</div>;
-  };
 
-  const renderCells = () => {
-    const startDate = startOfWeek(currentDate, { weekStartsOn });
-    const cells = [];
     for (let i = 0; i < 7; i++) {
       const day = addDays(startDate, i);
       const dateKey = format(day, "yyyy-MM-dd");
       const dayEvents = eventsByDate[dateKey] || [];
+      const isCurrentDay = isToday(day);
 
-      cells.push(
+      days.push(
         <div
-          className={`${styles.cell} ${
-            !isSameMonth(day, currentDate) ? styles.disabled : ""
-          } ${isSameDay(day, new Date()) ? styles.today : ""} ${
-            isSameDay(day, selectedDate) ? styles.selected : ""
+          key={dateKey}
+          className={`${styles.daySection} ${
+            isCurrentDay ? styles.isTodaySection : ""
           }`}
-          key={day}
-          onClick={() => onDateClick(day)}
         >
-          <span className={styles.number}>{format(day, "d")}</span>
-          {dayEvents.length > 0 && (
-            <div className={styles.eventIndicator}>{dayEvents.length}</div>
-          )}
-          <div className={styles.eventsList}>
-            {dayEvents.slice(0, 2).map((event) => {
-              const statusClass =
-                {
-                  "In Process": styles.eventInProgress,
-                  Ready: styles.eventReady,
-                  "Not Finished": styles.eventNotFinished,
-                }[event.status] || "";
-              return (
-                <div
-                  key={event.id}
-                  className={`${styles.eventItem} ${statusClass}`}
-                >
-                  {event.address}
-                </div>
-              );
-            })}
-            {dayEvents.length > 2 && (
-              <div className={styles.moreEvents}>
-                + {dayEvents.length - 2} more
+          <div className={styles.dayHeader}>
+            <div className={styles.dayDateWrap}>
+              <span className={styles.dayNumber}>{format(day, "d")}</span>
+              <div className={styles.dayTextWrap}>
+                <span className={styles.dayName}>{format(day, "EEEE")}</span>
+                <span className={styles.dayMonth}>{format(day, "MMMM")}</span>
               </div>
+            </div>
+            {isCurrentDay && <span className={styles.todayBadge}>Today</span>}
+          </div>
+
+          <div className={styles.eventsGrid}>
+            {dayEvents.length > 0 ? (
+              dayEvents.map((event) => {
+                const statusBackgroundClass =
+                  {
+                    Ready: styles.readyBackground,
+                    "In Process": styles.inProcessBackground,
+                    "Not Finished": styles.notFinishedBackground,
+                  }[event.status] || "";
+
+                const hasFooterInfo =
+                  event.sq_ft ||
+                  event.total_amount ||
+                  (event.project_type === "Service" && event.service_time);
+
+                return (
+                  <div
+                    key={event.id}
+                    className={`${styles.eventCard} ${statusBackgroundClass}`}
+                    onClick={() => navigate(`/address/${event.id}`)}
+                  >
+                    <div className={styles.cardHeader}>
+                      <span className={styles.cardWo}>
+                        {event.work_order_number
+                          ? `WO #${event.work_order_number}`
+                          : "No WO"}
+                      </span>
+                      <span
+                        className={`${styles.statusBadge} ${
+                          event.status === "Ready"
+                            ? styles.badgeReady
+                            : event.status === "In Process"
+                              ? styles.badgeProcess
+                              : styles.badgeNotFinished
+                        }`}
+                      >
+                        {event.status}
+                      </span>
+                    </div>
+
+                    <div className={styles.cardTitle}>
+                      {event.project_type === "Service" ? (
+                        <FaTools className={styles.serviceIcon} />
+                      ) : (
+                        <FaMapMarkerAlt className={styles.addressIcon} />
+                      )}
+                      <span>{event.address}</span>
+                    </div>
+
+                    <div className={styles.cardMeta}>
+                      {event.builders?.name && (
+                        <span>
+                          <strong>B:</strong> {event.builders.name}
+                        </span>
+                      )}
+                      {event.stores?.name && (
+                        <span>
+                          <strong>S:</strong> {event.stores.name}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Інформативний футер, показуємо тільки якщо є дані */}
+                    {hasFooterInfo && (
+                      <div className={styles.cardFooter}>
+                        {event.project_type === "Service" &&
+                          event.service_time && (
+                            <div className={styles.footerTag}>
+                              <FaClock /> {event.service_time}
+                            </div>
+                          )}
+                        {event.sq_ft && (
+                          <div className={styles.footerTag}>
+                            <FaRulerCombined /> {event.sq_ft} sq ft
+                          </div>
+                        )}
+                        {event.total_amount && (
+                          <div className={styles.footerTag}>
+                            <FaDollarSign /> {event.total_amount}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className={styles.noEvents}>No projects for this day.</div>
             )}
           </div>
-        </div>
+        </div>,
       );
     }
-    return <div className={styles.daysGrid}>{cells}</div>;
+
+    return <div className={styles.verticalList}>{days}</div>;
   };
 
-  const renderInfoPanel = () => {
-    const eventsForSelectedDay =
-      eventsByDate[format(selectedDate, "yyyy-MM-dd")] || [];
-
-    return (
-      <div className={styles.infoPanel}>
-        <h3>
-          Schedule for{" "}
-          <span className={styles.panelDate}>
-            {format(selectedDate, "EEEE, d MMMM")}
-          </span>
-        </h3>
-        {eventsForSelectedDay.length > 0 ? (
-          <ul className={styles.infoList}>
-            {eventsForSelectedDay.map((event) => {
-              const statusClass =
-                {
-                  "In Process": styles.statusInProgress,
-                  Ready: styles.statusReady,
-                  "Not Finished": styles.statusNotFinished,
-                }[event.status] || "";
-
-              // ОНОВЛЕНО: Додаємо клас для фону
-              const statusBackgroundClass =
-                {
-                  Ready: styles.readyBackground,
-                  "In Process": styles.inProcessBackground,
-                  "Not Finished": styles.notFinishedBackground,
-                }[event.status] || "";
-
-              return (
-                <li
-                  key={event.id}
-                  className={`${styles.infoItem} ${statusBackgroundClass}`} // Додано клас
-                  onClick={() => navigate(`/address/${event.id}`)}
-                >
-                  <span className={styles.infoAddress}>{event.address}</span>
-                  <span className={`${styles.infoStatus} ${statusClass}`}>
-                    {event.status}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className={styles.noEventsMessage}>No projects for this day.</p>
-        )}
-      </div>
-    );
-  };
-
-  const onDateClick = (day) => {
-    setSelectedDate(day);
-  };
-
-  const nextWeek = () => {
-    setCurrentDate(addWeeks(currentDate, 1));
-  };
-
-  const prevWeek = () => {
-    setCurrentDate(subWeeks(currentDate, 1));
-  };
+  const nextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
+  const prevWeek = () => setCurrentDate(subWeeks(currentDate, 1));
 
   return (
     <div className={styles.calendarContainer}>
-      <h1 className={styles.pageTitle}>Calendar</h1>
+      <h1 className={styles.pageTitle}>Schedule</h1>
       <div className={styles.layout}>
-        <div className={styles.mainContent}>
-          <div className={styles.calendar}>
-            {renderHeader()}
-            {renderDays()}
-            {loading ? <p>Loading...</p> : renderCells()}
-          </div>
-          {renderInfoPanel()}
+        <div className={styles.calendar}>
+          {renderHeader()}
+          {loading ? (
+            <p className={styles.loadingText}>Loading...</p>
+          ) : (
+            renderVerticalDays()
+          )}
         </div>
       </div>
     </div>
