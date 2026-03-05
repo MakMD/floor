@@ -16,6 +16,8 @@ import {
   FaTools,
   FaClock,
   FaExclamationTriangle,
+  FaDollarSign,
+  FaFilter,
 } from "react-icons/fa";
 import styles from "./AddressListPage.module.css";
 import commonStyles from "../styles/common.module.css";
@@ -65,14 +67,14 @@ const AddProjectSchema = Yup.object().shape({
     otherwise: (schema) => schema.notRequired(),
   }),
   total_amount: Yup.number().nullable(),
-  sq_ft: Yup.number().nullable(), // ДОДАНО ВАЛІДАЦІЮ
+  sq_ft: Yup.number().nullable(),
   store_id: Yup.number().nullable(),
   builder_id: Yup.number().nullable(),
 });
 
 const AddressListPage = () => {
   const { addresses, loading: addressesLoading, refetch } = useAddresses();
-  const { builders, stores, loading: listsLoading } = useAdminLists();
+  const { builders, stores, products, loading: listsLoading } = useAdminLists();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -86,6 +88,10 @@ const AddressListPage = () => {
   const [statusFilter, setStatusFilter] = useState(
     location.state?.statusFilter || "all",
   );
+
+  const [builderFilter, setBuilderFilter] = useState("all");
+  const [storeFilter, setStoreFilter] = useState("all");
+  const [productFilter, setProductFilter] = useState("all");
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedAddresses, setEditedAddresses] = useState({});
@@ -110,29 +116,127 @@ const AddressListPage = () => {
         (dateFilter === "today" && isToday(parseISO(item.date))) ||
         (dateFilter === "tomorrow" && isTomorrow(parseISO(item.date))) ||
         (dateFilter === "yesterday" && isYesterday(parseISO(item.date)));
-      return searchMatch && statusMatch && dateMatch;
-    });
-  }, [addresses, searchTerm, dateFilter, statusFilter]);
 
+      const builderMatch =
+        builderFilter === "all" ||
+        item.builder_id?.toString() === builderFilter;
+      const storeMatch =
+        storeFilter === "all" || item.store_id?.toString() === storeFilter;
+      const productMatch =
+        productFilter === "all" ||
+        (item.work_orders &&
+          item.work_orders.some(
+            (wo) => wo.product_id?.toString() === productFilter,
+          ));
+
+      return (
+        searchMatch &&
+        statusMatch &&
+        dateMatch &&
+        builderMatch &&
+        storeMatch &&
+        productMatch
+      );
+    });
+  }, [
+    addresses,
+    searchTerm,
+    dateFilter,
+    statusFilter,
+    builderFilter,
+    storeFilter,
+    productFilter,
+  ]);
+
+  // РОЗУМНА ПАГІНАЦІЯ ПО ТИЖНЯХ (UPCOMING ТА PAST)
   const groupedAddresses = useMemo(() => {
-    const today = [];
-    const tomorrow = [];
-    const past = [];
+    const todayList = [];
+    const tomorrowList = [];
+    const upcomingMap = {};
+    const pastMap = {};
+
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+
+    const tomorrowDate = new Date(todayDate);
+    tomorrowDate.setDate(todayDate.getDate() + 1);
+
+    const yesterdayDate = new Date(todayDate);
+    yesterdayDate.setDate(todayDate.getDate() - 1);
 
     filteredAddresses.forEach((item) => {
-      const date = parseISO(item.date);
-      if (isToday(date)) {
-        today.push(item);
-      } else if (isTomorrow(date)) {
-        tomorrow.push(item);
-      } else {
-        past.push(item);
+      if (!item.date) return; // Пропускаємо без дати, або можна додати окрему групу "No Date"
+
+      const dateOnly = new Date(parseISO(item.date));
+      dateOnly.setHours(0, 0, 0, 0);
+
+      if (dateOnly.getTime() === todayDate.getTime()) {
+        todayList.push(item);
+      } else if (dateOnly.getTime() === tomorrowDate.getTime()) {
+        tomorrowList.push(item);
+      } else if (dateOnly > tomorrowDate) {
+        // Upcoming: Блоки по 7 днів вперед
+        const dayAfterTomorrow = new Date(tomorrowDate);
+        dayAfterTomorrow.setDate(tomorrowDate.getDate() + 1);
+
+        const diffTime = dateOnly.getTime() - dayAfterTomorrow.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const weekIndex = Math.floor(diffDays / 7);
+
+        const startChunk = new Date(dayAfterTomorrow);
+        startChunk.setDate(dayAfterTomorrow.getDate() + weekIndex * 7);
+        const endChunk = new Date(startChunk);
+        endChunk.setDate(startChunk.getDate() + 6);
+
+        const key = startChunk.getTime().toString();
+        if (!upcomingMap[key])
+          upcomingMap[key] = { start: startChunk, end: endChunk, items: [] };
+        upcomingMap[key].items.push(item);
+      } else if (dateOnly < todayDate) {
+        // Past: Блоки по 7 днів назад від "вчора"
+        const diffTime = yesterdayDate.getTime() - dateOnly.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const weekIndex = Math.floor(diffDays / 7);
+
+        const endChunk = new Date(yesterdayDate);
+        endChunk.setDate(yesterdayDate.getDate() - weekIndex * 7);
+        const startChunk = new Date(endChunk);
+        startChunk.setDate(endChunk.getDate() - 6);
+
+        const key = endChunk.getTime().toString();
+        if (!pastMap[key])
+          pastMap[key] = { start: startChunk, end: endChunk, items: [] };
+        pastMap[key].items.push(item);
       }
     });
 
-    past.sort((a, b) => parseISO(b.date) - parseISO(a.date));
+    const formatDate = (d) =>
+      d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-    return { today, tomorrow, past };
+    // Сортуємо Upcoming від найближчого до найдальшого
+    const upcomingChunks = Object.values(upcomingMap)
+      .sort((a, b) => a.start - b.start)
+      .map((chunk) => ({
+        label: `${formatDate(chunk.start)} - ${formatDate(chunk.end)}`,
+        items: chunk.items,
+      }));
+
+    // Сортуємо Past від найсвіжішого минулого до старішого (від вчора і далі назад)
+    const pastChunks = Object.values(pastMap)
+      .sort((a, b) => b.end - a.end)
+      .map((chunk) => ({
+        label: `${formatDate(chunk.start)} - ${formatDate(chunk.end)}`,
+        items: chunk.items.sort(
+          (i1, i2) => parseISO(i2.date) - parseISO(i1.date),
+        ), // Сортуємо всередині тижня від новішого
+      }));
+
+    return {
+      today: todayList,
+      tomorrow: tomorrowList,
+      upcoming: upcomingChunks,
+      past: pastChunks,
+    };
   }, [filteredAddresses]);
 
   const handleAddAddress = async (values, { setSubmitting, resetForm }) => {
@@ -142,7 +246,7 @@ const AddressListPage = () => {
       total_amount: values.total_amount
         ? parseFloat(values.total_amount)
         : null,
-      sq_ft: values.sq_ft ? parseFloat(values.sq_ft) : null, // ДОДАНО ДО ОБ'ЄКТА
+      sq_ft: values.sq_ft ? parseFloat(values.sq_ft) : null,
       store_id: values.store_id ? parseInt(values.store_id) : null,
       builder_id: values.builder_id ? parseInt(values.builder_id) : null,
       status: "In Process",
@@ -221,9 +325,7 @@ const AddressListPage = () => {
         return (
           <li
             key={item.id}
-            className={`${styles.addressItem} ${
-              isEditing ? styles.editing : ""
-            } ${statusBackgroundClass}`}
+            className={`${styles.addressItem} ${isEditing ? styles.editing : ""} ${statusBackgroundClass}`}
             onClick={() => handleAddressClick(item.id)}
           >
             {isEditing ? (
@@ -261,7 +363,6 @@ const AddressListPage = () => {
                   <div className={styles.itemDetails}>
                     <span className={styles.addressName}>{item.address}</span>
                     <div className={styles.itemMeta}>
-                      {/* ДОДАНО: Work Order виглядає як інші бейджі */}
                       {item.work_order_number && (
                         <span>WO: #{item.work_order_number}</span>
                       )}
@@ -275,7 +376,31 @@ const AddressListPage = () => {
                     </div>
                   </div>
                 </div>
-                <StatusIndicator status={item.status} />
+
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                  <button
+                    type="button"
+                    className={commonStyles.buttonIcon}
+                    style={{
+                      color: item.is_paid ? "#10b981" : "#9ca3af",
+                      fontSize: "1.2rem",
+                      cursor: "pointer",
+                      background: "none",
+                      border: "none",
+                      padding: "4px",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toast("Invoice Payment tracking coming soon!");
+                    }}
+                    title="Invoice Payment Status"
+                  >
+                    <FaDollarSign />
+                  </button>
+                  <StatusIndicator status={item.status} />
+                </div>
               </>
             )}
           </li>
@@ -293,7 +418,7 @@ const AddressListPage = () => {
         >
           <FaArrowLeft /> Back to Main
         </button>
-        <h1 className={styles.pageTitle}>Address Notes</h1>
+        <h1 className={styles.pageTitle}>Projects</h1>
         <div className={styles.controls}>
           <button
             onClick={() => setIsEditing(!isEditing)}
@@ -318,7 +443,7 @@ const AddressListPage = () => {
             address: "",
             date: "",
             time: "",
-            sq_ft: "", // ДОДАНО ПОЧАТКОВЕ ЗНАЧЕННЯ
+            sq_ft: "",
             total_amount: "",
           }}
           validationSchema={AddProjectSchema}
@@ -348,7 +473,7 @@ const AddressListPage = () => {
                     disabled={listsLoading}
                   >
                     <option value="">Select a store</option>
-                    {stores.map((store) => (
+                    {stores?.map((store) => (
                       <option key={store.id} value={store.id}>
                         {store.name}
                       </option>
@@ -364,7 +489,7 @@ const AddressListPage = () => {
                     disabled={listsLoading}
                   >
                     <option value="">Select a builder</option>
-                    {builders.map((builder) => (
+                    {builders?.map((builder) => (
                       <option key={builder.id} value={builder.id}>
                         {builder.name}
                       </option>
@@ -407,16 +532,13 @@ const AddressListPage = () => {
                     />
                   </div>
                 )}
-                {/* ДОДАНО ПОЛЕ SQ FT */}
-                <div className={styles.inputGroup}>
+
+                {/* ПРИХОВАНО ПОЛЕ SQ FT */}
+                <div className={styles.inputGroup} style={{ display: "none" }}>
                   <label htmlFor="sq_ft">Square Feet (sq ft)</label>
-                  <Field
-                    id="sq_ft"
-                    type="number"
-                    name="sq_ft"
-                    placeholder="e.g. 1500"
-                  />
+                  <Field id="sq_ft" type="number" name="sq_ft" />
                 </div>
+
                 <div className={styles.inputGroup}>
                   <label htmlFor="total_amount">Total Amount</label>
                   <Field
@@ -443,6 +565,145 @@ const AddressListPage = () => {
         </Formik>
       </div>
 
+      {/* СТИЛІЗОВАНА ПАНЕЛЬ ФІЛЬТРІВ */}
+      <div
+        style={{
+          backgroundColor: "var(--color-surface)",
+          padding: "16px",
+          borderRadius: "8px",
+          border: "1px solid var(--color-border)",
+          marginBottom: "20px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "12px",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          <FaFilter />{" "}
+          <h3 style={{ margin: 0, fontSize: "1rem" }}>Advanced Filters</h3>
+        </div>
+        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+          <div
+            style={{
+              flex: "1 1 200px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+            }}
+          >
+            <label
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--color-text-secondary)",
+                fontWeight: "500",
+              }}
+            >
+              Builder
+            </label>
+            <select
+              value={builderFilter}
+              onChange={(e) => setBuilderFilter(e.target.value)}
+              style={{
+                padding: "10px",
+                borderRadius: "6px",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-background)",
+                color: "var(--color-text-primary)",
+                outline: "none",
+              }}
+            >
+              <option value="all">All Builders</option>
+              {builders?.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div
+            style={{
+              flex: "1 1 200px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+            }}
+          >
+            <label
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--color-text-secondary)",
+                fontWeight: "500",
+              }}
+            >
+              Store
+            </label>
+            <select
+              value={storeFilter}
+              onChange={(e) => setStoreFilter(e.target.value)}
+              style={{
+                padding: "10px",
+                borderRadius: "6px",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-background)",
+                color: "var(--color-text-primary)",
+                outline: "none",
+              }}
+            >
+              <option value="all">All Stores</option>
+              {stores?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div
+            style={{
+              flex: "1 1 200px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+            }}
+          >
+            <label
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--color-text-secondary)",
+                fontWeight: "500",
+              }}
+            >
+              Product
+            </label>
+            <select
+              value={productFilter}
+              onChange={(e) => setProductFilter(e.target.value)}
+              style={{
+                padding: "10px",
+                borderRadius: "6px",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-background)",
+                color: "var(--color-text-primary)",
+                outline: "none",
+              }}
+            >
+              <option value="all">All Products</option>
+              {products?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
       <AddressFilter
         onFilterChange={handleFilterChange}
         dateFilter={dateFilter}
@@ -452,7 +713,7 @@ const AddressListPage = () => {
       <div className={styles.toolbar}>
         <input
           type="text"
-          placeholder="Search..."
+          placeholder="Search by address..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className={styles.searchInput}
@@ -464,26 +725,72 @@ const AddressListPage = () => {
           <SkeletonLoader count={5} />
         </div>
       ) : filteredAddresses.length > 0 ? (
-        <>
-          {groupedAddresses.tomorrow.length > 0 && (
-            <div className={styles.listSection}>
-              <h2 className={styles.sectionTitle}>Tomorrow</h2>
-              {renderAddressList(groupedAddresses.tomorrow)}
-            </div>
-          )}
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {groupedAddresses.today.length > 0 && (
             <div className={styles.listSection}>
-              <h2 className={styles.sectionTitle}>Today</h2>
+              <h2
+                className={styles.sectionTitle}
+                style={{
+                  color: "var(--color-primary)",
+                  borderBottom: "2px solid var(--color-primary)",
+                  paddingBottom: "5px",
+                }}
+              >
+                Today
+              </h2>
               {renderAddressList(groupedAddresses.today)}
             </div>
           )}
-          {groupedAddresses.past.length > 0 && (
+
+          {/* 2. ЗАВТРА */}
+          {groupedAddresses.tomorrow.length > 0 && (
             <div className={styles.listSection}>
-              <h2 className={styles.sectionTitle}>Past</h2>
-              {renderAddressList(groupedAddresses.past)}
+              <h2
+                className={styles.sectionTitle}
+                style={{
+                  color: "#f59e0b",
+                  borderBottom: "2px solid #f59e0b",
+                  paddingBottom: "5px",
+                }}
+              >
+                Tomorrow
+              </h2>
+              {renderAddressList(groupedAddresses.tomorrow)}
             </div>
           )}
-        </>
+
+          {groupedAddresses.upcoming.map((chunk) => (
+            <div key={chunk.label} className={styles.listSection}>
+              <h2
+                className={styles.sectionTitle}
+                style={{
+                  color: "#3b82f6",
+                  borderBottom: "2px solid #3b82f6",
+                  paddingBottom: "5px",
+                }}
+              >
+                Upcoming: {chunk.label}
+              </h2>
+              {renderAddressList(chunk.items)}
+            </div>
+          ))}
+
+          {groupedAddresses.past.map((chunk) => (
+            <div key={chunk.label} className={styles.listSection}>
+              <h2
+                className={styles.sectionTitle}
+                style={{
+                  color: "#ef4444",
+                  borderBottom: "2px solid #ef4444",
+                  paddingBottom: "5px",
+                }}
+              >
+                Past: {chunk.label}
+              </h2>
+              {renderAddressList(chunk.items)}
+            </div>
+          ))}
+        </div>
       ) : (
         <EmptyState message="No projects found matching your criteria." />
       )}

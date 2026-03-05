@@ -1,26 +1,26 @@
-// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/components/App/App.jsx
-
 import { useState, useEffect, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   NavLink,
+  Navigate,
+  useNavigate,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import {
   FaRegAddressBook,
-  FaRegBuilding,
   FaSignOutAlt,
   FaUsers,
   FaWrench,
-  FaCalendarAlt,
-  FaHome,
   FaBars,
   FaTimes,
 } from "react-icons/fa";
 import { supabase } from "../../supabaseClient";
-import LoginModal from "../LoginModal/LoginModal";
+
+import LoginPage from "../../Pages/LoginPage";
+// ДОДАНО: імпортуємо наш компонент захисту
+import ProtectedRoute from "../ProtectedRoute/ProtectedRoute";
 import ThemeToggleButton from "../ThemeToggleButton/ThemeToggleButton";
 import logo from "../../../public/Flooring.Boss.svg";
 import styles from "./App.module.css";
@@ -32,28 +32,25 @@ const PersonPage = lazy(() => import("../../Pages/PersonPage"));
 const CompanyListPage = lazy(() => import("../../Pages/CompanyListPage"));
 const CompanyTablesPage = lazy(() => import("../../Pages/CompanyTablesPage"));
 const TableDetailsPage = lazy(() => import("../../Pages/TableDetailsPage"));
-const PersonTableDetailsPage = lazy(() =>
-  import("../../Pages/PersonTableDetailsPage")
+const PersonTableDetailsPage = lazy(
+  () => import("../../Pages/PersonTableDetailsPage"),
 );
-const InactiveWorkersPage = lazy(() =>
-  import("../../Pages/InactiveWorkersPage")
+const InactiveWorkersPage = lazy(
+  () => import("../../Pages/InactiveWorkersPage"),
 );
-const InactiveCompaniesPage = lazy(() =>
-  import("../../Pages/InactiveCompaniesPage")
+const InactiveCompaniesPage = lazy(
+  () => import("../../Pages/InactiveCompaniesPage"),
 );
 const AddressListPage = lazy(() => import("../../Pages/AddressListPage"));
 const AddressDetailsPage = lazy(() => import("../../Pages/AddressDetailsPage"));
 const AdminPage = lazy(() => import("../../Pages/AdminPage"));
 const CalendarPage = lazy(() => import("../../Pages/CalendarPage"));
 
-const AppContent = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  // ОНОВЛЕНО: Дефолтна тема змінена на 'dark'
+// ЦЕЙ КОМПОНЕНТ ПОКАЗУЄТЬСЯ ТІЛЬКИ АВТОРИЗОВАНИМ КОРИСТУВАЧАМ
+const AuthenticatedLayout = () => {
   const [theme, setTheme] = useState("dark");
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
@@ -63,220 +60,158 @@ const AppContent = () => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsLoggedIn(!!data.session);
-      setLoading(false);
-    };
-    checkSession();
-  }, []);
-
-  const handleLoginSuccess = () => setIsLoggedIn(true);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setIsLoggedIn(false);
+    navigate("/login"); // Після виходу перекидаємо на логін
   };
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <h2>Loading Application...</h2>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.appContainer}>
-      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-      {!isLoggedIn && <LoginModal onLoginSuccess={handleLoginSuccess} />}
-
       <header className={styles.header}>
         <NavLink to="/" className={`${styles.logoLink} ${styles.desktopOnly}`}>
           <img src={logo} alt="App Logo" className={styles.logo} />
         </NavLink>
-        {isLoggedIn && (
-          <button
-            className={styles.hamburgerButton}
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            <FaBars />
-          </button>
+
+        <button
+          className={styles.hamburgerButton}
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          <FaBars />
+        </button>
+
+        {isMobileMenuOpen && (
+          <div className={styles.overlay} onClick={closeMobileMenu}></div>
         )}
 
-        {isLoggedIn && (
-          <>
-            {isMobileMenuOpen && (
-              <div className={styles.overlay} onClick={closeMobileMenu}></div>
-            )}
-
-            <nav
-              className={`${styles.nav} ${
-                isMobileMenuOpen ? styles.navMobileOpen : ""
-              }`}
+        <nav
+          className={`${styles.nav} ${isMobileMenuOpen ? styles.navMobileOpen : ""}`}
+        >
+          <div className={styles.mobileMenuHeader}>
+            <NavLink
+              to="/"
+              className={styles.logoLink}
+              onClick={closeMobileMenu}
             >
-              <div className={styles.mobileMenuHeader}>
-                <NavLink
-                  to="/"
-                  className={styles.logoLink}
-                  onClick={closeMobileMenu}
-                >
-                  <img src={logo} alt="App Logo" className={styles.logo} />
-                </NavLink>
-                <button
-                  className={styles.closeButton}
-                  onClick={closeMobileMenu}
-                >
-                  <FaTimes />
-                </button>
-              </div>
+              <img src={logo} alt="App Logo" className={styles.logo} />
+            </NavLink>
+            <button className={styles.closeButton} onClick={closeMobileMenu}>
+              <FaTimes />
+            </button>
+          </div>
 
-              <NavLink
-                to="/"
-                end
-                className={({ isActive }) =>
-                  isActive
-                    ? `${styles.navLink} ${styles.activeLink}`
-                    : styles.navLink
-                }
-                onClick={closeMobileMenu}
-              >
-                <FaHome /> Dashboard
-              </NavLink>
-              <NavLink
-                to="/people"
-                className={({ isActive }) =>
-                  isActive
-                    ? `${styles.navLink} ${styles.activeLink}`
-                    : styles.navLink
-                }
-                onClick={closeMobileMenu}
-              >
-                <FaUsers /> People
-              </NavLink>
-              <NavLink
-                to="/addresses"
-                className={({ isActive }) =>
-                  isActive
-                    ? `${styles.navLink} ${styles.activeLink}`
-                    : styles.navLink
-                }
-                onClick={closeMobileMenu}
-              >
-                <FaRegAddressBook /> Address Notes
-              </NavLink>
-              <NavLink
-                to="/calendar"
-                className={({ isActive }) =>
-                  isActive
-                    ? `${styles.navLink} ${styles.activeLink}`
-                    : styles.navLink
-                }
-                onClick={closeMobileMenu}
-              >
-                <FaCalendarAlt /> Calendar
-              </NavLink>
-              <NavLink
-                to="/companies"
-                className={({ isActive }) =>
-                  isActive
-                    ? `${styles.navLink} ${styles.activeLink}`
-                    : styles.navLink
-                }
-                onClick={closeMobileMenu}
-              >
-                <FaRegBuilding /> Companies
-              </NavLink>
-              <NavLink
-                to="/admin"
-                className={({ isActive }) =>
-                  isActive
-                    ? `${styles.navLink} ${styles.activeLink}`
-                    : styles.navLink
-                }
-                onClick={closeMobileMenu}
-              >
-                <FaWrench /> Admin
-              </NavLink>
-              <div className={styles.navControls}>
-                <ThemeToggleButton theme={theme} toggleTheme={toggleTheme} />
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    closeMobileMenu();
-                  }}
-                  className={styles.logoutButton}
-                >
-                  <FaSignOutAlt /> Log Out
-                </button>
-              </div>
-            </nav>
-          </>
-        )}
+          <NavLink
+            to="/addresses"
+            className={({ isActive }) =>
+              isActive
+                ? `${styles.navLink} ${styles.activeLink}`
+                : styles.navLink
+            }
+            onClick={closeMobileMenu}
+          >
+            <FaRegAddressBook /> Projects
+          </NavLink>
+
+          <NavLink
+            to="/people"
+            className={({ isActive }) =>
+              isActive
+                ? `${styles.navLink} ${styles.activeLink}`
+                : styles.navLink
+            }
+            onClick={closeMobileMenu}
+          >
+            <FaUsers /> People
+          </NavLink>
+
+          <NavLink
+            to="/admin"
+            className={({ isActive }) =>
+              isActive
+                ? `${styles.navLink} ${styles.activeLink}`
+                : styles.navLink
+            }
+            onClick={closeMobileMenu}
+          >
+            <FaWrench /> Admin
+          </NavLink>
+
+          <div className={styles.navControls}>
+            <ThemeToggleButton theme={theme} toggleTheme={toggleTheme} />
+            <button
+              onClick={() => {
+                handleLogout();
+                closeMobileMenu();
+              }}
+              className={styles.logoutButton}
+            >
+              <FaSignOutAlt /> Log Out
+            </button>
+          </div>
+        </nav>
       </header>
 
-      {isLoggedIn && (
-        <main className={styles.mainContent}>
-          <Suspense
-            fallback={
-              <div style={{ textAlign: "center", padding: "40px" }}>
-                Loading...
-              </div>
-            }
-          >
-            <Routes>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/people" element={<PeopleSection />} />
-              <Route path="/companies" element={<CompanyListPage />} />
-              <Route path="/addresses" element={<AddressListPage />} />
-              <Route
-                path="/address/:addressId"
-                element={<AddressDetailsPage />}
-              />
-              <Route
-                path="/inactive-workers"
-                element={<InactiveWorkersPage />}
-              />
-              <Route
-                path="/inactive-companies"
-                element={<InactiveCompaniesPage />}
-              />
-              <Route
-                path="/company/:companyId"
-                element={<CompanyTablesPage />}
-              />
-              <Route
-                path="/company/:companyId/table/:tableId"
-                element={<TableDetailsPage />}
-              />
-              <Route path="/person/:personId" element={<PersonPage />} />
-              <Route
-                path="/person/:personId/tables/:tableId"
-                element={<PersonTableDetailsPage />}
-              />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/calendar" element={<CalendarPage />} />
-            </Routes>
-          </Suspense>
-        </main>
-      )}
+      <main className={styles.mainContent}>
+        <Suspense
+          fallback={
+            <div style={{ textAlign: "center", padding: "40px" }}>
+              Loading...
+            </div>
+          }
+        >
+          <Routes>
+            <Route path="/" element={<Navigate to="/addresses" replace />} />
+            <Route path="/people" element={<PeopleSection />} />
+            <Route path="/addresses" element={<AddressListPage />} />
+            <Route
+              path="/address/:addressId"
+              element={<AddressDetailsPage />}
+            />
+            <Route path="/person/:personId" element={<PersonPage />} />
+            <Route
+              path="/person/:personId/tables/:tableId"
+              element={<PersonTableDetailsPage />}
+            />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/inactive-workers" element={<InactiveWorkersPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/companies" element={<CompanyListPage />} />
+            <Route
+              path="/inactive-companies"
+              element={<InactiveCompaniesPage />}
+            />
+            <Route path="/company/:companyId" element={<CompanyTablesPage />} />
+            <Route
+              path="/company/:companyId/table/:tableId"
+              element={<TableDetailsPage />}
+            />
+            <Route path="/calendar" element={<CalendarPage />} />
+          </Routes>
+        </Suspense>
+      </main>
     </div>
   );
 };
 
+// ГОЛОВНИЙ КОМПОНЕНТ ДОДАТКУ
 const App = () => (
   <Router>
-    <AppContent />
+    <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+    <Routes>
+      {/* Відкритий маршрут для логіну */}
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* Захищені маршрути (все інше) */}
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <AuthenticatedLayout />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   </Router>
 );
 
