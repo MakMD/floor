@@ -292,7 +292,10 @@ const AddressListPage = () => {
   const handleDeleteAddress = async (id) => {
     if (!window.confirm("Are you sure you want to delete this address?"))
       return;
-    const { error } = await supabase.from("addresses").delete().eq("id", id);
+    const { error } = await supabase
+      .from("addresses")
+      .update({ is_deleted: true })
+      .eq("id", id);
     if (error) {
       toast.error("Failed to delete address.");
     } else {

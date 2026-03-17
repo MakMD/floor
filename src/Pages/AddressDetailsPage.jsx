@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { jsPDF } from "jspdf"; // ДОДАНО: Бібліотека для PDF
+import { jsPDF } from "jspdf";
 import {
   FaArrowLeft,
   FaPlus,
@@ -12,7 +12,7 @@ import {
   FaSpinner,
   FaTimes,
   FaFilePdf,
-  FaDownload, // ДОДАНО: Іконка завантаження
+  FaDownload,
 } from "react-icons/fa";
 import styles from "./AddressDetailsPage.module.css";
 import listStyles from "./AddressListPage.module.css";
@@ -107,10 +107,12 @@ const AddressDetailsPage = () => {
 
   const [addressData, setAddressData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [newMaterialNote, setNewMaterialNote] = useState("");
+
+  // Прив'язка до правильної колонки sq_ft_notes
+  const [newSqFtNote, setNewSqFtNote] = useState("");
   const [editedData, setEditedData] = useState({
     address: "",
-    material_notes: [],
+    sq_ft_notes: [],
     total_amount: "",
     date: "",
     status: "",
@@ -134,7 +136,7 @@ const AddressDetailsPage = () => {
   const { builders, stores, products, loading: listsLoading } = useAdminLists();
   const { people, loading: peopleLoading } = usePeople();
 
-  const BUCKET_NAME = "address-files";
+  const BUCKET_NAME = "material-photos";
 
   const fetchData = useCallback(async () => {
     if (!addressId) return;
@@ -154,7 +156,7 @@ const AddressDetailsPage = () => {
     setAddressData(addrData);
     setEditedData({
       address: addrData.address || "",
-      material_notes: addrData.material_notes || [],
+      sq_ft_notes: addrData.sq_ft_notes || [], // Підтягуємо дані з БД
       total_amount: addrData.total_amount || "",
       date: addrData.date || "",
       status: addrData.status || "In Process",
@@ -215,26 +217,24 @@ const AddressDetailsPage = () => {
     }
   };
 
-  const handleAddMaterialNote = async () => {
-    if (newMaterialNote.trim() === "") return;
-    const updatedNotes = [...editedData.material_notes, newMaterialNote.trim()];
-    const updated = await updateAddress({ material_notes: updatedNotes });
+  const handleAddSqFtNote = async () => {
+    if (newSqFtNote.trim() === "") return;
+    const updatedNotes = [...editedData.sq_ft_notes, newSqFtNote.trim()];
+    const updated = await updateAddress({ sq_ft_notes: updatedNotes });
     if (updated) {
-      setEditedData((prev) => ({ ...prev, material_notes: updatedNotes }));
-      setNewMaterialNote("");
-      toast.success("Material note added!");
+      setEditedData((prev) => ({ ...prev, sq_ft_notes: updatedNotes }));
+      setNewSqFtNote("");
+      toast.success("Note added!");
     }
   };
 
-  const handleDeleteMaterialNote = async (index) => {
+  const handleDeleteSqFtNote = async (index) => {
     if (!window.confirm("Are you sure?")) return;
-    const updatedNotes = editedData.material_notes.filter(
-      (_, i) => i !== index,
-    );
-    const updated = await updateAddress({ material_notes: updatedNotes });
+    const updatedNotes = editedData.sq_ft_notes.filter((_, i) => i !== index);
+    const updated = await updateAddress({ sq_ft_notes: updatedNotes });
     if (updated) {
-      setEditedData((prev) => ({ ...prev, material_notes: updatedNotes }));
-      toast.success("Material note deleted!");
+      setEditedData((prev) => ({ ...prev, sq_ft_notes: updatedNotes }));
+      toast.success("Note deleted!");
     }
   };
 
@@ -363,26 +363,23 @@ const AddressDetailsPage = () => {
   };
 
   // --- ЛОГІКА ГЕНЕРАЦІЇ PDF ---
-  // --- ЛОГІКА ГЕНЕРАЦІЇ PDF ---
   const generatePDF = (wo) => {
     const doc = new jsPDF();
 
-    // 1. Шапка (Header)
     doc.setFontSize(24);
     doc.setFont("helvetica", "bold");
     doc.text("FLOORING BOSS LTD.", 105, 25, { align: "center" });
 
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100); // Сірий колір для локації
+    doc.setTextColor(100, 100, 100);
     doc.text("Edmonton, Alberta", 105, 33, { align: "center" });
 
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(0, 0, 0); // Повертаємо чорний колір
+    doc.setTextColor(0, 0, 0);
     doc.text("WORK ORDER", 105, 50, { align: "center" });
 
-    // 2. Підготовка даних для таблиці
     const rows = [
       { label: "Client:", value: addressData.builders?.name || "N/A" },
       { label: "Project Address:", value: addressData.address || "N/A" },
@@ -394,19 +391,16 @@ const AddressDetailsPage = () => {
       },
     ];
 
-    // Додаємо Area тільки якщо вона заповнена
     if (wo.area && wo.area.trim() !== "") {
       rows.push({ label: "Area:", value: wo.area });
     }
 
-    // 3. Малювання таблиці
     let startY = 65;
     const leftMargin = 20;
     const col1Width = 50;
     const col2Width = 120;
     const rowHeight = 12;
 
-    // Малюємо зовнішню рамку таблиці
     doc.setLineWidth(0.3);
     doc.rect(
       leftMargin,
@@ -415,11 +409,9 @@ const AddressDetailsPage = () => {
       rows.length * rowHeight,
     );
 
-    // Заповнюємо рядки
     rows.forEach((row, i) => {
       const currentY = startY + i * rowHeight;
 
-      // Малюємо горизонтальні лінії (крім першого рядка)
       if (i > 0) {
         doc.line(
           leftMargin,
@@ -429,7 +421,6 @@ const AddressDetailsPage = () => {
         );
       }
 
-      // Малюємо вертикальну лінію-розділювач між колонками
       doc.line(
         leftMargin + col1Width,
         currentY,
@@ -437,17 +428,14 @@ const AddressDetailsPage = () => {
         currentY + rowHeight,
       );
 
-      // Текст першої колонки (Назва поля)
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.text(row.label, leftMargin + 5, currentY + 8);
 
-      // Текст другої колонки (Значення)
       doc.setFont("helvetica", "normal");
       doc.text(row.value.toString(), leftMargin + col1Width + 5, currentY + 8);
     });
 
-    // 4. Підписи та завершення (Футер)
     let footerY = startY + rows.length * rowHeight + 30;
 
     doc.setFontSize(12);
@@ -473,20 +461,17 @@ const AddressDetailsPage = () => {
     return doc;
   };
 
-  // Завантаження PDF по кнопці
   const handleDownloadPDF = (e, wo) => {
     e.stopPropagation();
     const doc = generatePDF(wo);
     doc.save(`WorkOrder_${wo.area || "Doc"}.pdf`);
   };
 
-  // Перетягування файлу
   const handleDragStart = (e, wo) => {
     const doc = generatePDF(wo);
     const dataUri = doc.output("datauristring");
     const fileName = `WorkOrder_${wo.area ? wo.area.replace(/\s+/g, "_") : "Doc"}.pdf`;
 
-    // Формуємо спец-URL для браузера, щоб він сприймав це як завантаження файлу
     e.dataTransfer.setData(
       "DownloadURL",
       `application/pdf:${fileName}:${dataUri}`,
@@ -735,7 +720,6 @@ const AddressDetailsPage = () => {
                         </span>
                       </div>
                       <div style={{ display: "flex", gap: "8px" }}>
-                        {/* КНОПКА ЗАВАНТАЖЕННЯ PDF */}
                         <button
                           onClick={(e) => handleDownloadPDF(e, wo)}
                           className={commonStyles.buttonIcon}
@@ -878,29 +862,26 @@ const AddressDetailsPage = () => {
             <MaterialsManager addressId={addressId} />
           </div>
           <div className={styles.detailCard}>
-            <h3>Material Notes</h3>
+            <h3>Square Feet Notes</h3>
             <div className={styles.addNoteForm}>
               <input
                 type="text"
-                value={newMaterialNote}
-                onChange={(e) => setNewMaterialNote(e.target.value)}
-                placeholder="Add a text note..."
+                value={newSqFtNote}
+                onChange={(e) => setNewSqFtNote(e.target.value)}
+                placeholder="Add a sq ft note..."
                 className={styles.noteInput}
               />
-              <button
-                onClick={handleAddMaterialNote}
-                className={styles.addButton}
-              >
+              <button onClick={handleAddSqFtNote} className={styles.addButton}>
                 <FaPlus />
               </button>
             </div>
-            {editedData.material_notes.length > 0 ? (
+            {editedData.sq_ft_notes.length > 0 ? (
               <ul className={styles.notesList}>
-                {editedData.material_notes.map((note, index) => (
+                {editedData.sq_ft_notes.map((note, index) => (
                   <li key={index} className={styles.noteItem}>
                     <span>{note}</span>
                     <button
-                      onClick={() => handleDeleteMaterialNote(index)}
+                      onClick={() => handleDeleteSqFtNote(index)}
                       className={commonStyles.buttonIcon}
                     >
                       <FaTrash />
@@ -909,7 +890,7 @@ const AddressDetailsPage = () => {
                 ))}
               </ul>
             ) : (
-              <p className={styles.noItemsMessage}>No material notes yet.</p>
+              <p className={styles.noItemsMessage}>No notes yet.</p>
             )}
           </div>
           <div className={styles.detailCard}>
