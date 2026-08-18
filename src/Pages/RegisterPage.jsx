@@ -1,39 +1,43 @@
-// src/Pages/LoginPage.jsx
+// src/Pages/RegisterPage.jsx
 import { useState } from "react";
-import { Link, useNavigate, Navigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import toast from "react-hot-toast";
-import { useAuth } from "../contexts/AuthContext";
 
-const LoginPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
 
-  // Якщо користувач вже авторизований, одразу перенаправляємо його на головну сторінку
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
-
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            role: "worker", // Тригер бази даних призначить цю роль
+          },
+        },
       });
 
       if (error) throw error;
 
-      toast.success("Успішний вхід!");
-      navigate("/");
+      toast.success("Реєстрація успішна! Тепер ви можете увійти.");
+      navigate("/login");
     } catch (error) {
-      console.error("Помилка входу:", error.message);
-      toast.error("Неправильний email або пароль.");
+      console.error("Помилка реєстрації:", error.message);
+      toast.error("Помилка: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -63,23 +67,62 @@ const LoginPage = () => {
           <h2
             style={{ margin: "0 0 10px 0", color: "var(--color-text-primary)" }}
           >
-            Flooring Boss
+            Реєстрація працівника
           </h2>
           <p style={{ margin: 0, color: "var(--color-text-secondary)" }}>
-            Увійдіть у свій акаунт
+            Створіть свій обліковий запис
           </p>
         </div>
 
         <form
-          onSubmit={handleLogin}
+          onSubmit={handleRegister}
           style={{ display: "flex", flexDirection: "column", gap: "20px" }}
         >
+          <div style={{ display: "flex", gap: "10px" }}>
+            <input
+              type="text"
+              required
+              placeholder="Ім'я"
+              value={formData.firstName}
+              onChange={(e) =>
+                setFormData({ ...formData, firstName: e.target.value })
+              }
+              style={{
+                width: "50%",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-background)",
+                color: "var(--color-text-primary)",
+              }}
+            />
+            <input
+              type="text"
+              required
+              placeholder="Прізвище"
+              value={formData.lastName}
+              onChange={(e) =>
+                setFormData({ ...formData, lastName: e.target.value })
+              }
+              style={{
+                width: "50%",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-background)",
+                color: "var(--color-text-primary)",
+              }}
+            />
+          </div>
+
           <input
             type="email"
             required
             placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={formData.email}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
             style={{
               width: "100%",
               padding: "12px",
@@ -90,13 +133,15 @@ const LoginPage = () => {
               boxSizing: "border-box",
             }}
           />
-
           <input
             type="password"
             required
-            placeholder="Пароль"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Пароль (мінімум 6 символів)"
+            value={formData.password}
+            onChange={(e) =>
+              setFormData({ ...formData, password: e.target.value })
+            }
+            minLength="6"
             style={{
               width: "100%",
               padding: "12px",
@@ -123,26 +168,25 @@ const LoginPage = () => {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Завантаження..." : "Увійти"}
+            {loading ? "Створення..." : "Зареєструватися"}
           </button>
         </form>
 
-        {/* Посилання на реєстрацію нового працівника */}
         <div
           style={{ marginTop: "20px", textAlign: "center", fontSize: "0.9rem" }}
         >
           <span style={{ color: "var(--color-text-secondary)" }}>
-            Немає акаунта?{" "}
+            Вже маєте акаунт?{" "}
           </span>
           <Link
-            to="/register"
+            to="/login"
             style={{
               color: "var(--color-primary)",
               textDecoration: "none",
               fontWeight: "bold",
             }}
           >
-            Створити
+            Увійти
           </Link>
         </div>
       </div>
@@ -150,4 +194,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default RegisterPage;

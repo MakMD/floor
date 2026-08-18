@@ -1,31 +1,19 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+// src/components/App/App.jsx
+import { lazy } from "react";
 import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  NavLink,
+  createBrowserRouter,
+  RouterProvider,
   Navigate,
-  useNavigate,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import {
-  FaRegAddressBook,
-  FaSignOutAlt,
-  FaUsers,
-  FaWrench,
-  FaBars,
-  FaTimes,
-} from "react-icons/fa";
-import { supabase } from "../../supabaseClient";
 
+import { ThemeProvider } from "../../contexts/ThemeContext";
+import { AuthProvider, useAuth } from "../../contexts/AuthContext";
+import AuthLayout from "../../layouts/AuthLayout";
+import AdminRoute from "../ProtectedRoute/AdminRoute";
 import LoginPage from "../../Pages/LoginPage";
-// ДОДАНО: імпортуємо наш компонент захисту
-import ProtectedRoute from "../ProtectedRoute/ProtectedRoute";
-import ThemeToggleButton from "../ThemeToggleButton/ThemeToggleButton";
-import logo from "../../../public/Flooring.Boss.svg";
-import styles from "./App.module.css";
-
-// Dynamic imports
+import RegisterPage from "../../Pages/RegisterPage";
+// Ліниве завантаження сторінок
 const DashboardPage = lazy(() => import("../../Pages/DashboardPage"));
 const PeopleSection = lazy(() => import("../PeopleSection/PeopleSection"));
 const PersonPage = lazy(() => import("../../Pages/PersonPage"));
@@ -46,173 +34,181 @@ const AddressDetailsPage = lazy(() => import("../../Pages/AddressDetailsPage"));
 const AdminPage = lazy(() => import("../../Pages/AdminPage"));
 const CalendarPage = lazy(() => import("../../Pages/CalendarPage"));
 
-// ЦЕЙ КОМПОНЕНТ ПОКАЗУЄТЬСЯ ТІЛЬКИ АВТОРИЗОВАНИМ КОРИСТУВАЧАМ
-const AuthenticatedLayout = () => {
-  const [theme, setTheme] = useState("dark");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
+// Заглушка для майбутнього кабінету працівника
+// const WorkerPortal = () => (
+//   <div style={{ padding: "40px" }}>
+//     <h1>Worker Portal</h1>
+//     <p>Under construction...</p>
+//   </div>
+// );
+const WorkerPortal = lazy(() => import("../../Pages/WorkerPortal"));
+// Розумний редирект для головної сторінки
+const IndexRedirect = () => {
+  const { userRole, loading } = useAuth();
 
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
-  };
+  if (loading) return null; // Чекаємо повного завантаження ролі
 
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+  // Якщо адмін - йдемо на проекти, якщо працівник - у портал
+  if (userRole === "admin") {
+    return <Navigate to="/addresses" replace />;
+  }
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login"); // Після виходу перекидаємо на логін
-  };
-
-  const closeMobileMenu = () => setIsMobileMenuOpen(false);
-
-  return (
-    <div className={styles.appContainer}>
-      <header className={styles.header}>
-        <NavLink to="/" className={`${styles.logoLink} ${styles.desktopOnly}`}>
-          <img src={logo} alt="App Logo" className={styles.logo} />
-        </NavLink>
-
-        <button
-          className={styles.hamburgerButton}
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          <FaBars />
-        </button>
-
-        {isMobileMenuOpen && (
-          <div className={styles.overlay} onClick={closeMobileMenu}></div>
-        )}
-
-        <nav
-          className={`${styles.nav} ${isMobileMenuOpen ? styles.navMobileOpen : ""}`}
-        >
-          <div className={styles.mobileMenuHeader}>
-            <NavLink
-              to="/"
-              className={styles.logoLink}
-              onClick={closeMobileMenu}
-            >
-              <img src={logo} alt="App Logo" className={styles.logo} />
-            </NavLink>
-            <button className={styles.closeButton} onClick={closeMobileMenu}>
-              <FaTimes />
-            </button>
-          </div>
-
-          <NavLink
-            to="/addresses"
-            className={({ isActive }) =>
-              isActive
-                ? `${styles.navLink} ${styles.activeLink}`
-                : styles.navLink
-            }
-            onClick={closeMobileMenu}
-          >
-            <FaRegAddressBook /> Projects
-          </NavLink>
-
-          <NavLink
-            to="/people"
-            className={({ isActive }) =>
-              isActive
-                ? `${styles.navLink} ${styles.activeLink}`
-                : styles.navLink
-            }
-            onClick={closeMobileMenu}
-          >
-            <FaUsers /> People
-          </NavLink>
-
-          <NavLink
-            to="/admin"
-            className={({ isActive }) =>
-              isActive
-                ? `${styles.navLink} ${styles.activeLink}`
-                : styles.navLink
-            }
-            onClick={closeMobileMenu}
-          >
-            <FaWrench /> Admin
-          </NavLink>
-
-          <div className={styles.navControls}>
-            <ThemeToggleButton theme={theme} toggleTheme={toggleTheme} />
-            <button
-              onClick={() => {
-                handleLogout();
-                closeMobileMenu();
-              }}
-              className={styles.logoutButton}
-            >
-              <FaSignOutAlt /> Log Out
-            </button>
-          </div>
-        </nav>
-      </header>
-
-      <main className={styles.mainContent}>
-        <Suspense
-          fallback={
-            <div style={{ textAlign: "center", padding: "40px" }}>
-              Loading...
-            </div>
-          }
-        >
-          <Routes>
-            <Route path="/" element={<Navigate to="/addresses" replace />} />
-            <Route path="/people" element={<PeopleSection />} />
-            <Route path="/addresses" element={<AddressListPage />} />
-            <Route
-              path="/address/:addressId"
-              element={<AddressDetailsPage />}
-            />
-            <Route path="/person/:personId" element={<PersonPage />} />
-            <Route
-              path="/person/:personId/tables/:tableId"
-              element={<PersonTableDetailsPage />}
-            />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/inactive-workers" element={<InactiveWorkersPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/companies" element={<CompanyListPage />} />
-            <Route
-              path="/inactive-companies"
-              element={<InactiveCompaniesPage />}
-            />
-            <Route path="/company/:companyId" element={<CompanyTablesPage />} />
-            <Route
-              path="/company/:companyId/table/:tableId"
-              element={<TableDetailsPage />}
-            />
-            <Route path="/calendar" element={<CalendarPage />} />
-          </Routes>
-        </Suspense>
-      </main>
-    </div>
-  );
+  return <Navigate to="/worker-portal" replace />;
 };
 
-// ГОЛОВНИЙ КОМПОНЕНТ ДОДАТКУ
-const App = () => (
-  <Router>
-    <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-    <Routes>
-      {/* Відкритий маршрут для логіну */}
-      <Route path="/login" element={<LoginPage />} />
-
-      {/* Захищені маршрути (все інше) */}
-      <Route
-        path="/*"
-        element={
-          <ProtectedRoute>
-            <AuthenticatedLayout />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
-  </Router>
+const router = createBrowserRouter(
+  [
+    {
+      path: "/login",
+      element: <LoginPage />,
+    },
+    {
+      path: "/register", // ДОДАНО
+      element: <RegisterPage />,
+    },
+    {
+      path: "/",
+      element: <AuthLayout />, // AuthLayout перевіряє наявність сесії
+      children: [
+        {
+          path: "/",
+          element: <IndexRedirect />,
+        },
+        // МАРШРУТ ДЛЯ ПРАЦІВНИКІВ
+        {
+          path: "worker-portal",
+          element: <WorkerPortal />,
+        },
+        // МАРШРУТИ ДЛЯ АДМІНІСТРАТОРІВ (захищені через AdminRoute)
+        {
+          path: "addresses",
+          element: (
+            <AdminRoute>
+              <AddressListPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "address/:addressId",
+          element: (
+            <AdminRoute>
+              <AddressDetailsPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "people",
+          element: (
+            <AdminRoute>
+              <PeopleSection />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "person/:personId",
+          element: (
+            <AdminRoute>
+              <PersonPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "person/:personId/tables/:tableId",
+          element: (
+            <AdminRoute>
+              <PersonTableDetailsPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "admin",
+          element: (
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "inactive-workers",
+          element: (
+            <AdminRoute>
+              <InactiveWorkersPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "dashboard",
+          element: (
+            <AdminRoute>
+              <DashboardPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "companies",
+          element: (
+            <AdminRoute>
+              <CompanyListPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "inactive-companies",
+          element: (
+            <AdminRoute>
+              <InactiveCompaniesPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "company/:companyId",
+          element: (
+            <AdminRoute>
+              <CompanyTablesPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "company/:companyId/table/:tableId",
+          element: (
+            <AdminRoute>
+              <TableDetailsPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "calendar",
+          element: (
+            <AdminRoute>
+              <CalendarPage />
+            </AdminRoute>
+          ),
+        },
+      ],
+    },
+  ],
+  {
+    // Налаштування для усунення жовтих попереджень React Router у консолі
+    future: {
+      v7_relativeSplatPath: true,
+      v7_startTransition: true,
+      v7_fetcherPersist: true,
+      v7_normalizeFormMethod: true,
+      v7_partialHydration: true,
+      v7_skipActionErrorRevalidation: true,
+    },
+  },
 );
+
+const App = () => {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ThemeProvider>
+  );
+};
 
 export default App;
