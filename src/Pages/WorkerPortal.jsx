@@ -1,365 +1,489 @@
-// src/Pages/WorkerPortal.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import PhotoUploader from "../components/PhotoUploader/PhotoUploader";
 import {
   FaClipboardList,
   FaUser,
   FaFileInvoiceDollar,
-  FaUpload,
-  FaFileAlt,
+  FaBell,
+  FaArrowLeft,
+  FaMapMarkerAlt,
+  FaCalendarAlt,
+  FaTools,
 } from "react-icons/fa";
 import styles from "./WorkerPortal.module.css";
 
 const WorkerPortal = () => {
-  const { user } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("work");
   const [loading, setLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Поля для звіту про роботу
-  const [workData, setWorkData] = useState({
-    workOrderId: "",
-    squareFeet: "",
+  const [myProjects, setMyProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
+
+  // Додано поле workerStatus у форму звіту
+  const [formData, setFormData] = useState({
+    workerStatus: "Ready",
     notes: "",
     photosBefore: [],
     photosAfter: [],
   });
 
-  // Поля для документів
-  const [docTitle, setDocTitle] = useState("");
-  const [docUrl, setDocUrl] = useState("");
-  const [myDocuments, setMyDocuments] = useState([]);
+  const [profile, setProfile] = useState({
+    first_name: "",
+    last_name: "",
+    status: "pending",
+  });
 
-  // Завантаження списку документів працівника
-  useEffect(() => {
-    if (user && activeTab === "profile") {
-      fetchDocuments();
+  const [documents, setDocuments] = useState([]);
+
+  const ensureProfileExists = useCallback(async () => {
+    if (!user) return;
+    try {
+      let { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        const newProfile = {
+          id: user.id,
+          first_name: user.user_metadata?.first_name || "Працівник",
+          last_name: user.user_metadata?.last_name || "",
+          role: "worker",
+        };
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert([newProfile]);
+        if (insertError) throw insertError;
+        data = newProfile;
+      }
+      setProfile(data);
+    } catch (error) {
+      console.error("Помилка ініціалізації профілю:", error.message);
+      toast.error("Не вдалося завантажити дані профілю.");
+    } finally {
+      setIsInitialized(true);
     }
-  }, [user, activeTab]);
+  }, [user]);
 
-  const fetchDocuments = async () => {
-    const { data, error } = await supabase
-      .from("worker_documents")
-      .select("*")
-      .eq("worker_id", user.id)
-      .order("created_at", { ascending: false });
+  useEffect(() => {
+    if (user && role === "worker" && !isInitialized) {
+      ensureProfileExists();
+    }
+  }, [user, role, isInitialized, ensureProfileExists]);
 
-    if (!error) {
-      setMyDocuments(data || []);
+  useEffect(() => {
+    if (isInitialized) {
+      if (activeTab === "work") fetchMyProjects();
+      if (activeTab === "profile") fetchWorkerDocuments();
+    }
+  }, [activeTab, isInitialized]);
+
+  const fetchMyProjects = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      // 1. Знаходимо внутрішній ID працівника
+      const { data: personRecords, error: personError } = await supabase
+        .from("people")
+        .select("id")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      if (personError) throw personError;
+
+      if (!personRecords || personRecords.length === 0) {
+        setMyProjects([]);
+        setLoading(false);
+        return;
+      }
+
+      const workerId = personRecords[0].id;
+      let allAddressIds = [];
+
+      // 2. Збираємо ID об'єктів з таблиці work_types
+      const { data: wtData, error: wtError } = await supabase
+        .from("work_types")
+        .select("address_id")
+        .eq("person_id", workerId);
+
+      if (!wtError && wtData) {
+        allAddressIds = [
+          ...allAddressIds,
+          ...wtData.map((wt) => wt.address_id),
+        ];
+      }
+
+      // 3. Збираємо ID об'єктів з прямих призначень у таблиці addresses
+      const { data: addrData, error: addrError } = await supabase
+        .from("addresses")
+        .select("id")
+        .eq("worker_id", workerId);
+
+      if (!addrError && addrData) {
+        allAddressIds = [...allAddressIds, ...addrData.map((a) => a.id)];
+      }
+
+      const uniqueAddressIds = [...new Set(allAddressIds.filter(Boolean))];
+
+      if (uniqueAddressIds.length === 0) {
+        setMyProjects([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: projects, error: projError } = await supabase
+        .from("addresses")
+        .select("*, builders(name)")
+        .in("id", uniqueAddressIds)
+        .order("date", { ascending: true });
+
+      if (projError) throw projError;
+      setMyProjects(projects || []);
+    } catch (error) {
+      console.error("Помилка завантаження об'єктів:", error.message);
+      toast.error("Не вдалося завантажити список об'єктів.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchWorkerDocuments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("worker_documents")
+        .select("*")
+        .eq("worker_id", user.id);
+      if (error) throw error;
+      setDocuments(data || []);
+    } catch (error) {
+      console.error("Помилка завантаження документів:", error.message);
+    }
+  };
+
+  const handleDocumentUploadComplete = async (urls) => {
+    if (!urls || urls.length === 0) return;
+    try {
+      setLoading(true);
+      const newDocs = urls.map((url) => ({
+        worker_id: user.id,
+        file_url: url,
+      }));
+      const { error } = await supabase.from("worker_documents").insert(newDocs);
+      if (error) throw error;
+      toast.success("Документи успішно завантажено!");
+      fetchWorkerDocuments();
+    } catch (error) {
+      toast.error("Помилка збереження: " + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleWorkSubmit = async (e) => {
     e.preventDefault();
-    if (!workData.workOrderId) {
-      toast.error("Вкажіть адресу або ID об'єкта");
-      return;
-    }
-
+    if (!selectedProject) return;
     setLoading(true);
     try {
+      // Додаємо статус обраний працівником у текст нотаток, щоб адмін його бачив
+      const finalNotes = `[Статус від працівника: ${formData.workerStatus}]\n${formData.notes ? formData.notes : "Без додаткових коментарів."}`;
+
       const { error } = await supabase.from("daily_reports").insert([
         {
           worker_id: user.id,
-          work_order_id: workData.workOrderId,
-          square_feet: workData.squareFeet
-            ? parseFloat(workData.squareFeet)
-            : 0,
-          notes: workData.notes,
-          photos_before: workData.photosBefore,
-          photos_after: workData.photosAfter,
+          address_id: selectedProject.id,
+          notes: finalNotes,
+          photos_before: formData.photosBefore,
+          photos_after: formData.photosAfter,
+          report_date: new Date().toISOString(),
         },
       ]);
 
       if (error) throw error;
-      toast.success("Звіт успішно надіслано!");
-      setWorkData({
-        workOrderId: "",
-        squareFeet: "",
+
+      toast.success("Звіт успішно надіслано на перевірку!");
+      setSelectedProject(null);
+      setFormData({
+        workerStatus: "Ready",
         notes: "",
         photosBefore: [],
         photosAfter: [],
       });
     } catch (error) {
-      console.error("Error submitting report:", error.message);
-      toast.error("Помилка відправки звіту");
+      toast.error("Помилка відправки: " + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDocSubmit = async (e) => {
-    e.preventDefault();
-    if (!docTitle || !docUrl) {
-      toast.error("Введіть назву документа та завантажте файл");
-      return;
-    }
+  if (authLoading || !role) {
+    return (
+      <div className={styles.loadingScreen}>Отримання прав доступу...</div>
+    );
+  }
 
-    setLoading(true);
-    try {
-      // 1. Додаємо документ у таблицю worker_documents
-      const { error: docError } = await supabase
-        .from("worker_documents")
-        .insert([
-          {
-            worker_id: user.id,
-            title: docTitle,
-            file_url: docUrl,
-            status: "pending",
-          },
-        ]);
-      if (docError) throw docError;
+  if (role === "admin") {
+    return <Navigate to="/addresses" replace />;
+  }
 
-      // 2. Створюємо сповіщення для адміна
-      const { error: notifError } = await supabase
-        .from("notifications")
-        .insert([
-          {
-            worker_id: user.id,
-            title: "Новий документ",
-            message: `Працівник завантажив новий документ: "${docTitle}"`,
-            is_read: false,
-          },
-        ]);
-      if (notifError) throw notifError;
-
-      toast.success("Документ успішно надіслано адміністратору!");
-      setDocTitle("");
-      setDocUrl("");
-      fetchDocuments();
-    } catch (error) {
-      console.error("Error uploading document:", error.message);
-      toast.error("Помилка завантаження документа");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!isInitialized) {
+    return (
+      <div className={styles.loadingScreen}>Завантаження даних кабінету...</div>
+    );
+  }
 
   return (
-    <div className={styles.container}>
-      {/* Вкладка: Робота */}
-      {activeTab === "work" && (
-        <div className={styles.card}>
-          <h2 className={styles.title}>Новий звіт про роботу</h2>
-          <form onSubmit={handleWorkSubmit} className={styles.form}>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Адреса / ID об'єкта</label>
-              <input
-                type="text"
-                value={workData.workOrderId}
-                onChange={(e) =>
-                  setWorkData({ ...workData, workOrderId: e.target.value })
-                }
-                placeholder="Наприклад: 123 Main St"
-                className={styles.input}
-              />
-            </div>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Площа (Square Feet)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={workData.squareFeet}
-                onChange={(e) =>
-                  setWorkData({ ...workData, squareFeet: e.target.value })
-                }
-                placeholder="0.00"
-                className={styles.input}
-              />
-            </div>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Нотатки</label>
-              <textarea
-                value={workData.notes}
-                onChange={(e) =>
-                  setWorkData({ ...workData, notes: e.target.value })
-                }
-                placeholder="Коментар до роботи..."
-                rows="3"
-                className={styles.textarea}
-              />
-            </div>
-
-            <PhotoUploader
-              label="Фото ДО роботи"
-              onUploadComplete={(urls) =>
-                setWorkData({ ...workData, photosBefore: urls })
-              }
-            />
-
-            <PhotoUploader
-              label="Фото ПІСЛЯ роботи"
-              onUploadComplete={(urls) =>
-                setWorkData({ ...workData, photosAfter: urls })
-              }
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-              className={styles.submitButton}
-            >
-              {loading ? "Відправка..." : "Надіслати звіт"}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Вкладка: Особисті дані та документи */}
-      {activeTab === "profile" && (
-        <div className={styles.card}>
-          <h2 className={styles.title}>Особисті документи</h2>
-          <p className={styles.description} style={{ marginBottom: "20px" }}>
-            Завантажте необхідні документи (WCB, страховка тощо) для перевірки
-            адміністратором.
-          </p>
-
-          <form
-            onSubmit={handleDocSubmit}
-            className={styles.form}
-            style={{ marginBottom: "30px" }}
-          >
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Назва документа</label>
-              <input
-                type="text"
-                value={docTitle}
-                onChange={(e) => setDocTitle(e.target.value)}
-                placeholder="Наприклад: WCB Clearance 2026"
-                className={styles.input}
-              />
-            </div>
-
-            {/* Використовуємо PhotoUploader, але можна завантажувати і документи (зображення/скани) */}
-            <PhotoUploader
-              label="Файл документа (фото / сканування)"
-              onUploadComplete={(urls) => setDocUrl(urls[0] || "")}
-            />
-
-            <button
-              type="submit"
-              disabled={loading || !docUrl}
-              className={styles.submitButton}
-            >
-              {loading ? "Збереження..." : "Надіслати документ адміну"}
-            </button>
-          </form>
-
-          <h3
-            style={{
-              fontSize: "1.1rem",
-              marginBottom: "12px",
-              color: "var(--color-text-primary)",
-            }}
-          >
-            Мої завантажені документи
-          </h3>
-          {myDocuments.length === 0 ? (
-            <p className={styles.description}>
-              Ще немає завантажених документів.
-            </p>
-          ) : (
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-            >
-              {myDocuments.map((doc) => (
-                <div
-                  key={doc.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 14px",
-                    backgroundColor: "var(--color-background)",
-                    borderRadius: "8px",
-                    border: "1px solid var(--color-border)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <FaFileAlt color="var(--color-primary)" />
-                    <div>
-                      <div
-                        style={{
-                          fontWeight: "600",
-                          fontSize: "0.95rem",
-                          color: "var(--color-text-primary)",
-                        }}
-                      >
-                        {doc.title}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "0.8rem",
-                          color: "var(--color-text-secondary)",
-                        }}
-                      >
-                        Статус: {doc.status}
-                      </div>
+    <div className={styles.portalWrapper}>
+      <div className={styles.portalContainer}>
+        <div className={styles.contentArea}>
+          {activeTab === "work" && (
+            <div className={styles.workTab}>
+              {!selectedProject ? (
+                <>
+                  <h2 className={styles.pageTitle}>Мої об'єкти</h2>
+                  {loading ? (
+                    <p className={styles.infoText}>Завантаження...</p>
+                  ) : myProjects.length === 0 ? (
+                    <p className={styles.infoText}>
+                      Наразі у вас немає призначених об'єктів.
+                    </p>
+                  ) : (
+                    <div className={styles.projectList}>
+                      {myProjects.map((proj) => (
+                        <div
+                          key={proj.id}
+                          className={styles.projectCard}
+                          onClick={() => setSelectedProject(proj)}
+                        >
+                          <div className={styles.cardHeader}>
+                            <span className={styles.cardNumber}>
+                              WO #{proj.work_order_number || "N/A"}
+                            </span>
+                            <span
+                              className={`${styles.statusBadge} ${styles[proj.status?.replace(/\s+/g, "")] || ""}`}
+                            >
+                              {proj.status || "Assigned"}
+                            </span>
+                          </div>
+                          <div className={styles.cardAddress}>
+                            <FaMapMarkerAlt className={styles.iconPin} />
+                            <span>{proj.address}</span>
+                          </div>
+                          <div className={styles.cardFooter}>
+                            <span className={styles.builderName}>
+                              <FaTools className={styles.iconSmall} />{" "}
+                              {proj.builders?.name || "Unknown"}
+                            </span>
+                            {proj.date && (
+                              <span className={styles.dateText}>
+                                <FaCalendarAlt className={styles.iconSmall} />{" "}
+                                {proj.date}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                  <a
-                    href={doc.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      color: "var(--color-primary)",
-                      fontSize: "0.9rem",
-                      fontWeight: "500",
-                      textDecoration: "none",
-                    }}
+                  )}
+                </>
+              ) : (
+                <div className={styles.projectDetail}>
+                  <button
+                    onClick={() => setSelectedProject(null)}
+                    className={styles.backButton}
                   >
-                    Переглянути
-                  </a>
+                    <FaArrowLeft /> Назад до списку
+                  </button>
+
+                  <div className={styles.detailHeader}>
+                    <h2 className={styles.detailTitle}>
+                      {selectedProject.address}
+                    </h2>
+                    <p className={styles.detailSubtitle}>
+                      WO #{selectedProject.work_order_number}
+                    </p>
+                  </div>
+
+                  {/* Форма відправки звіту тепер містить вибір статусу */}
+                  <form
+                    onSubmit={handleWorkSubmit}
+                    className={styles.reportForm}
+                  >
+                    <div className={styles.formGroup}>
+                      <label className={styles.sectionLabel}>
+                        Ваш статус роботи
+                      </label>
+                      <select
+                        className={styles.statusSelect}
+                        value={formData.workerStatus}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            workerStatus: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="Ready">Ready (Готово)</option>
+                        <option value="In Process">
+                          In Process (В процесі)
+                        </option>
+                        <option value="Not Finished">
+                          Not Finished (Не завершено)
+                        </option>
+                      </select>
+                    </div>
+
+                    <div className={styles.formGroup}>
+                      <label className={styles.sectionLabel}>
+                        Нотатки (опціонально)
+                      </label>
+                      <textarea
+                        value={formData.notes}
+                        onChange={(e) =>
+                          setFormData({ ...formData, notes: e.target.value })
+                        }
+                        placeholder="Опишіть виконану роботу або проблеми..."
+                        className={styles.textarea}
+                        rows="3"
+                      />
+                    </div>
+
+                    <div className={styles.photoUploaders}>
+                      <PhotoUploader
+                        label="Фото ДО (опціонально)"
+                        bucketName="worker-photos"
+                        onUploadComplete={(urls) =>
+                          setFormData({ ...formData, photosBefore: urls })
+                        }
+                      />
+                      <PhotoUploader
+                        label="Фото ПІСЛЯ (обов'язково)"
+                        bucketName="worker-photos"
+                        onUploadComplete={(urls) =>
+                          setFormData({ ...formData, photosAfter: urls })
+                        }
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading || formData.photosAfter.length === 0}
+                      className={styles.submitReportBtn}
+                    >
+                      {loading ? "Відправка..." : "Зберегти звіт та фото"}
+                    </button>
+                    {formData.photosAfter.length === 0 && (
+                      <p className={styles.warningText}>
+                        * Додайте хоча б одне фото результату
+                      </p>
+                    )}
+                  </form>
                 </div>
-              ))}
+              )}
+            </div>
+          )}
+
+          {activeTab === "profile" && (
+            <div className={styles.profileTab}>
+              <h2 className={styles.pageTitle}>Мій профіль</h2>
+              <div className={styles.profileInfo}>
+                <p>
+                  <strong>Ім'я:</strong> {profile.first_name}{" "}
+                  {profile.last_name}
+                </p>
+                <p>
+                  <strong>Статус:</strong>{" "}
+                  {profile.status === "approved"
+                    ? "Затверджено"
+                    : "На перевірці"}
+                </p>
+              </div>
+              <hr className={styles.divider} />
+              <h3 className={styles.subTitle}>Мої документи</h3>
+              <PhotoUploader
+                label="Завантажити документ (ID, Сертифікати)"
+                bucketName="worker-documents"
+                onUploadComplete={handleDocumentUploadComplete}
+              />
+              {documents.length > 0 && (
+                <ul className={styles.documentList}>
+                  {documents.map((doc, index) => (
+                    <li key={doc.id || index}>
+                      <a
+                        href={doc.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Переглянути документ #{index + 1}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {activeTab === "invoices" && (
+            <div className={styles.placeholderTab}>
+              <FaFileInvoiceDollar
+                size={40}
+                className={styles.placeholderIcon}
+              />
+              <h2>Виплати</h2>
+              <p>Розділ у розробці.</p>
+            </div>
+          )}
+
+          {activeTab === "notifications" && (
+            <div className={styles.placeholderTab}>
+              <FaBell size={40} className={styles.placeholderIcon} />
+              <h2>Сповіщення</h2>
+              <p>Немає нових повідомлень.</p>
             </div>
           )}
         </div>
-      )}
 
-      {/* Вкладка: Інвойси */}
-      {activeTab === "invoices" && (
-        <div className={styles.card}>
-          <h2 className={styles.title}>Мої Інвойси</h2>
-          <p className={styles.description}>
-            Історія нарахувань затверджених годин та площі.
-          </p>
+        <div className={styles.bottomNav}>
+          <button
+            className={`${styles.navItem} ${activeTab === "work" ? styles.activeNav : ""}`}
+            onClick={() => {
+              setActiveTab("work");
+              setSelectedProject(null);
+            }}
+          >
+            <FaClipboardList size={20} />
+            <span>Робота</span>
+          </button>
+          <button
+            className={`${styles.navItem} ${activeTab === "profile" ? styles.activeNav : ""}`}
+            onClick={() => setActiveTab("profile")}
+          >
+            <FaUser size={20} />
+            <span>Профіль</span>
+          </button>
+          <button
+            className={`${styles.navItem} ${activeTab === "invoices" ? styles.activeNav : ""}`}
+            onClick={() => setActiveTab("invoices")}
+          >
+            <FaFileInvoiceDollar size={20} />
+            <span>Виплати</span>
+          </button>
+          <button
+            className={`${styles.navItem} ${activeTab === "notifications" ? styles.activeNav : ""}`}
+            onClick={() => setActiveTab("notifications")}
+          >
+            <FaBell size={20} />
+            <span>Сповіщення</span>
+          </button>
         </div>
-      )}
-
-      {/* Нижня панель навігації */}
-      <div className={styles.bottomBar}>
-        <button
-          onClick={() => setActiveTab("work")}
-          className={`${styles.navButton} ${activeTab === "work" ? styles.navButtonActive : ""}`}
-        >
-          <FaClipboardList size={20} />
-          <span>Робота</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`${styles.navButton} ${activeTab === "profile" ? styles.navButtonActive : ""}`}
-        >
-          <FaUser size={20} />
-          <span>Профіль</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("invoices")}
-          className={`${styles.navButton} ${activeTab === "invoices" ? styles.navButtonActive : ""}`}
-        >
-          <FaFileInvoiceDollar size={20} />
-          <span>Інвойси</span>
-        </button>
       </div>
     </div>
   );

@@ -1,10 +1,14 @@
-// src/components/PhotoUploader/PhotoUploader.jsx
 import { useState } from "react";
 import { supabase } from "../../supabaseClient";
 import { FaCamera, FaSpinner } from "react-icons/fa";
+import imageCompression from "browser-image-compression";
 import styles from "./PhotoUploader.module.css";
 
-const PhotoUploader = ({ label, onUploadComplete }) => {
+const PhotoUploader = ({
+  label,
+  onUploadComplete,
+  bucketName = "worker-documents",
+}) => {
   const [uploading, setUploading] = useState(false);
   const [uploadedUrls, setUploadedUrls] = useState([]);
 
@@ -15,17 +19,37 @@ const PhotoUploader = ({ label, onUploadComplete }) => {
       const urls = [];
 
       for (const file of files) {
-        const fileExt = file.name.split(".").pop();
+        // Налаштування стиснення фото
+        const options = {
+          maxSizeMB: 2.5, // Збільшено ліміт до 2.5 МБ (оптимально для збереження деталей)
+          maxWidthOrHeight: 2560, // Роздільна здатність 2K (достатньо для зуму)
+          useWebWorker: true,
+          initialQuality: 0.85, // Висока початкова якість
+        };
+
+        let fileToUpload = file;
+        try {
+          // Стискаємо файл
+          fileToUpload = await imageCompression(file, options);
+        } catch (compressionError) {
+          console.error(
+            "Помилка стиснення, використовується оригінал:",
+            compressionError,
+          );
+        }
+
+        const fileExt = fileToUpload.name.split(".").pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
 
+        // Відправка стисненого файлу в Supabase
         const { error: uploadError } = await supabase.storage
-          .from("worker-photos")
-          .upload(fileName, file);
+          .from(bucketName)
+          .upload(fileName, fileToUpload);
 
         if (uploadError) throw uploadError;
 
         const { data } = supabase.storage
-          .from("worker-photos")
+          .from(bucketName)
           .getPublicUrl(fileName);
 
         urls.push(data.publicUrl);
@@ -35,8 +59,8 @@ const PhotoUploader = ({ label, onUploadComplete }) => {
       setUploadedUrls(newUrls);
       onUploadComplete(newUrls);
     } catch (error) {
-      console.error("Помилка завантаження фото:", error.message);
-      alert("Не вдалося завантажити фото.");
+      console.error("Помилка завантаження файлу:", error.message);
+      alert("Не вдалося завантажити файл: " + error.message);
     } finally {
       setUploading(false);
     }

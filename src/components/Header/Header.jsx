@@ -1,4 +1,3 @@
-// src/components/Header/Header.jsx
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -22,7 +21,6 @@ const Header = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Визначення активного посилання
   const getLinkClass = (path) => {
     return location.pathname.startsWith(path)
       ? `${styles.navLink} ${styles.activeLink}`
@@ -43,7 +41,6 @@ const Header = () => {
 
   return (
     <header className={styles.header}>
-      {/* Логотип */}
       <Link to="/" className={styles.logoLink} onClick={closeMobileMenu}>
         <img
           src="/Flooring.Boss.svg"
@@ -52,19 +49,24 @@ const Header = () => {
         />
       </Link>
 
-      {/* Кнопка відкриття мобільного меню (Гамбургер) */}
       <button className={styles.hamburgerButton} onClick={toggleMobileMenu}>
         <FaBars />
       </button>
 
-      {/* Навігація */}
       <nav
         className={`${styles.nav} ${isMobileMenuOpen ? styles.navMobileOpen : ""}`}
       >
-        {/* Шапка мобільного меню (видима тільки на мобільних, коли меню відкрите) */}
         {isMobileMenuOpen && (
           <div className={styles.mobileMenuHeader}>
-            <span style={{ fontWeight: "bold", fontSize: "1.2rem" }}>Меню</span>
+            <span
+              style={{
+                fontWeight: "bold",
+                fontSize: "1.2rem",
+                color: "var(--color-text-primary)",
+              }}
+            >
+              Меню
+            </span>
             <button className={styles.closeButton} onClick={closeMobileMenu}>
               <FaTimes />
             </button>
@@ -122,20 +124,29 @@ const Header = () => {
         {/* Контроли (Тема та Вихід) */}
         <div className={styles.navControls}>
           <button
-            onClick={toggleTheme}
+            onClick={() => {
+              toggleTheme();
+              closeMobileMenu(); // Закриваємо меню після зміни теми для зручності
+            }}
             className={styles.logoutButton}
             title="Змінити тему"
           >
             {theme === "light" ? <FaMoon /> : <FaSun />}
+            {/* Текст тільки для мобілки */}
+            <span className={styles.mobileOnlyText}>
+              {theme === "light" ? "Темна тема" : "Світла тема"}
+            </span>
           </button>
+
           <button onClick={handleLogout} className={styles.logoutButton}>
             <FaSignOutAlt />
             <span className={styles.desktopOnly}>Log Out</span>
+            {/* Текст тільки для мобілки */}
+            <span className={styles.mobileOnlyText}>Вийти з акаунта</span>
           </button>
         </div>
       </nav>
 
-      {/* Затемнення фону (Оверлей) при відкритому мобільному меню */}
       <div
         className={styles.overlay}
         onClick={closeMobileMenu}

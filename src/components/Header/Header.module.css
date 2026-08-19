@@ -140,6 +140,11 @@
   display: none;
 }
 
+/* Приховуємо мобільний текст на десктопі */
+.mobileOnlyText {
+  display: none;
+}
+
 /* Мобільна версія */
 @media (max-width: 992px) {
   .header {
@@ -151,12 +156,17 @@
     display: none;
   }
 
+  /* Показуємо текст на мобілці */
+  .mobileOnlyText {
+    display: inline;
+  }
+
   .nav {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 24px;
+    gap: 10px; /* Зменшено відстань між пунктами меню */
     position: fixed;
     top: 0;
     left: 0;
@@ -171,7 +181,7 @@
   }
 
   [data-theme="dark"] .nav {
-    background-color: #1a1a1a;
+    background-color: #1f2937;
   }
 
   .navMobileOpen {
@@ -182,18 +192,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
+    padding: 15px 20px;
     border-bottom: 1px solid var(--color-border);
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     box-sizing: border-box;
-    background-color: inherit;
+    background-color: var(--color-surface);
   }
 
   [data-theme="dark"] .mobileMenuHeader {
     border-bottom-color: #374151;
+    background-color: #1f2937;
   }
 
   .hamburgerButton,
@@ -214,15 +225,16 @@
   .navLink {
     border-radius: 0;
     padding: 12px 20px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .navControls {
     border-left: none;
-    padding: 20px;
-    margin: 0;
-    margin-top: auto;
+    padding: 15px 20px; /* Відступи по краях */
+    margin: 20px 0 0 0; /* Прибрали margin-top: auto, щоб кнопки були відразу під меню */
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start; /* Вирівнювання по лівому краю */
     width: 100%;
     box-sizing: border-box;
     gap: 15px;
@@ -234,7 +246,18 @@
   }
 
   .logoutButton {
+    width: 100%;
     justify-content: flex-start;
+    padding: 12px 20px;
+    font-size: 1.05rem; /* Трохи більший шрифт для зручності */
+    border-radius: 8px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+
+  [data-theme="dark"] .logoutButton {
+    background-color: #374151;
+    border-color: #4b5563;
   }
 
   .overlay {

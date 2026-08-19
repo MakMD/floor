@@ -1,7 +1,7 @@
+// src/Pages/AddressListPage.jsx
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { useAddresses } from "../hooks/useAddresses";
 import { useAdminLists } from "../hooks/useAdminLists";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
@@ -22,7 +22,7 @@ import {
 import styles from "./AddressListPage.module.css";
 import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
-import { isToday, isTomorrow, isYesterday, parseISO } from "date-fns";
+import { format, addDays, subDays, parseISO } from "date-fns";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 
@@ -73,7 +73,12 @@ const AddProjectSchema = Yup.object().shape({
 });
 
 const AddressListPage = () => {
-  const { addresses, loading: addressesLoading, refetch } = useAddresses();
+  const [addresses, setAddresses] = useState([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 40;
+
   const { builders, stores, products, loading: listsLoading } = useAdminLists();
 
   const navigate = useNavigate();
@@ -82,13 +87,14 @@ const AddressListPage = () => {
   const [searchTerm, setSearchTerm] = useState(
     location.state?.searchTerm || "",
   );
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+
   const [dateFilter, setDateFilter] = useState(
     location.state?.dateFilter || "all",
   );
   const [statusFilter, setStatusFilter] = useState(
     location.state?.statusFilter || "all",
   );
-
   const [builderFilter, setBuilderFilter] = useState("all");
   const [storeFilter, setStoreFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
@@ -96,51 +102,94 @@ const AddressListPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedAddresses, setEditedAddresses] = useState({});
 
-  const handleFilterChange = (filterType, value) => {
-    if (filterType === "date") {
-      setDateFilter(value);
-    } else if (filterType === "status") {
-      setStatusFilter(value);
+  // Дебаунс для пошуку (затримка перед запитом на сервер)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchAddresses = async (pageNumber = 1, reset = false) => {
+    setAddressesLoading(true);
+    const from = (pageNumber - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    // Базовий запит
+    let query = supabase
+      .from("addresses")
+      .select("*, builders(name), stores(name), work_orders(*)", {
+        count: "exact",
+      })
+      .eq("is_deleted", false)
+      .order("date", { ascending: false, nullsLast: true });
+
+    // СЕРВЕРНА ФІЛЬТРАЦІЯ (замість клієнтської)
+    if (debouncedSearch) {
+      query = query.ilike("address", `%${debouncedSearch}%`);
     }
+    if (statusFilter !== "all") {
+      query = query.eq("status", statusFilter);
+    }
+    if (builderFilter !== "all") {
+      query = query.eq("builder_id", builderFilter);
+    }
+    if (storeFilter !== "all") {
+      query = query.eq("store_id", storeFilter);
+    }
+
+    // Серверна фільтрація дат
+    if (dateFilter === "today") {
+      query = query.eq("date", format(new Date(), "yyyy-MM-dd"));
+    } else if (dateFilter === "tomorrow") {
+      query = query.eq("date", format(addDays(new Date(), 1), "yyyy-MM-dd"));
+    } else if (dateFilter === "yesterday") {
+      query = query.eq("date", format(subDays(new Date(), 1), "yyyy-MM-dd"));
+    }
+
+    // Запит з пагінацією
+    const { data, error, count } = await query.range(from, to);
+
+    if (error) {
+      toast.error(`Error fetching projects: ${error.message}`);
+    } else {
+      let newItems = data || [];
+
+      // Клієнтська фільтрація по продуктах (оскільки фільтрувати по вкладених масивах work_orders на сервері складно без RPC)
+      if (productFilter !== "all") {
+        newItems = newItems.filter(
+          (item) =>
+            item.work_orders &&
+            item.work_orders.some(
+              (wo) => wo.product_id?.toString() === productFilter,
+            ),
+        );
+      }
+
+      if (reset) {
+        setAddresses(newItems);
+      } else {
+        setAddresses((prev) => {
+          const existingIds = new Set(prev.map((i) => i.id));
+          const filteredNew = newItems.filter((i) => !existingIds.has(i.id));
+          return [...prev, ...filteredNew];
+        });
+      }
+
+      if (count !== null) {
+        setHasMore(from + (data?.length || 0) < count);
+      } else {
+        setHasMore((data?.length || 0) === PAGE_SIZE);
+      }
+    }
+    setAddressesLoading(false);
   };
 
-  const filteredAddresses = useMemo(() => {
-    return addresses.filter((item) => {
-      const searchMatch = (item.address || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const statusMatch =
-        statusFilter === "all" || item.status === statusFilter;
-      const dateMatch =
-        dateFilter === "all" ||
-        (dateFilter === "today" && isToday(parseISO(item.date))) ||
-        (dateFilter === "tomorrow" && isTomorrow(parseISO(item.date))) ||
-        (dateFilter === "yesterday" && isYesterday(parseISO(item.date)));
-
-      const builderMatch =
-        builderFilter === "all" ||
-        item.builder_id?.toString() === builderFilter;
-      const storeMatch =
-        storeFilter === "all" || item.store_id?.toString() === storeFilter;
-      const productMatch =
-        productFilter === "all" ||
-        (item.work_orders &&
-          item.work_orders.some(
-            (wo) => wo.product_id?.toString() === productFilter,
-          ));
-
-      return (
-        searchMatch &&
-        statusMatch &&
-        dateMatch &&
-        builderMatch &&
-        storeMatch &&
-        productMatch
-      );
-    });
+  // Перезавантажуємо дані з першої сторінки при зміні будь-якого фільтра
+  useEffect(() => {
+    setPage(1);
+    fetchAddresses(1, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    addresses,
-    searchTerm,
+    debouncedSearch,
     dateFilter,
     statusFilter,
     builderFilter,
@@ -148,7 +197,23 @@ const AddressListPage = () => {
     productFilter,
   ]);
 
-  // РОЗУМНА ПАГІНАЦІЯ ПО ТИЖНЯХ (UPCOMING ТА PAST)
+  const refetch = () => {
+    setPage(1);
+    fetchAddresses(1, true);
+  };
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchAddresses(nextPage, false);
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    if (filterType === "date") setDateFilter(value);
+    else if (filterType === "status") setStatusFilter(value);
+  };
+
+  // Групування дат залишається клієнтським, але воно тепер працює з коректно відфільтрованим на сервері масивом
   const groupedAddresses = useMemo(() => {
     const todayList = [];
     const tomorrowList = [];
@@ -164,8 +229,8 @@ const AddressListPage = () => {
     const yesterdayDate = new Date(todayDate);
     yesterdayDate.setDate(todayDate.getDate() - 1);
 
-    filteredAddresses.forEach((item) => {
-      if (!item.date) return; // Пропускаємо без дати, або можна додати окрему групу "No Date"
+    addresses.forEach((item) => {
+      if (!item.date) return;
 
       const dateOnly = new Date(parseISO(item.date));
       dateOnly.setHours(0, 0, 0, 0);
@@ -175,7 +240,6 @@ const AddressListPage = () => {
       } else if (dateOnly.getTime() === tomorrowDate.getTime()) {
         tomorrowList.push(item);
       } else if (dateOnly > tomorrowDate) {
-        // Upcoming: Блоки по 7 днів вперед
         const dayAfterTomorrow = new Date(tomorrowDate);
         dayAfterTomorrow.setDate(tomorrowDate.getDate() + 1);
 
@@ -193,7 +257,6 @@ const AddressListPage = () => {
           upcomingMap[key] = { start: startChunk, end: endChunk, items: [] };
         upcomingMap[key].items.push(item);
       } else if (dateOnly < todayDate) {
-        // Past: Блоки по 7 днів назад від "вчора"
         const diffTime = yesterdayDate.getTime() - dateOnly.getTime();
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         const weekIndex = Math.floor(diffDays / 7);
@@ -213,7 +276,6 @@ const AddressListPage = () => {
     const formatDate = (d) =>
       d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-    // Сортуємо Upcoming від найближчого до найдальшого
     const upcomingChunks = Object.values(upcomingMap)
       .sort((a, b) => a.start - b.start)
       .map((chunk) => ({
@@ -221,14 +283,13 @@ const AddressListPage = () => {
         items: chunk.items,
       }));
 
-    // Сортуємо Past від найсвіжішого минулого до старішого (від вчора і далі назад)
     const pastChunks = Object.values(pastMap)
       .sort((a, b) => b.end - a.end)
       .map((chunk) => ({
         label: `${formatDate(chunk.start)} - ${formatDate(chunk.end)}`,
         items: chunk.items.sort(
           (i1, i2) => parseISO(i2.date) - parseISO(i1.date),
-        ), // Сортуємо всередині тижня від новішого
+        ),
       }));
 
     return {
@@ -237,7 +298,7 @@ const AddressListPage = () => {
       upcoming: upcomingChunks,
       past: pastChunks,
     };
-  }, [filteredAddresses]);
+  }, [addresses]);
 
   const handleAddAddress = async (values, { setSubmitting, resetForm }) => {
     const newAddressObject = {
@@ -536,7 +597,6 @@ const AddressListPage = () => {
                   </div>
                 )}
 
-                {/* ПРИХОВАНО ПОЛЕ SQ FT */}
                 <div className={styles.inputGroup} style={{ display: "none" }}>
                   <label htmlFor="sq_ft">Square Feet (sq ft)</label>
                   <Field id="sq_ft" type="number" name="sq_ft" />
@@ -568,7 +628,6 @@ const AddressListPage = () => {
         </Formik>
       </div>
 
-      {/* СТИЛІЗОВАНА ПАНЕЛЬ ФІЛЬТРІВ */}
       <div
         style={{
           backgroundColor: "var(--color-surface)",
@@ -723,11 +782,11 @@ const AddressListPage = () => {
         />
       </div>
 
-      {addressesLoading ? (
+      {addressesLoading && addresses.length === 0 ? (
         <div className={styles.addressList}>
           <SkeletonLoader count={5} />
         </div>
-      ) : filteredAddresses.length > 0 ? (
+      ) : addresses.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {groupedAddresses.today.length > 0 && (
             <div className={styles.listSection}>
@@ -745,7 +804,6 @@ const AddressListPage = () => {
             </div>
           )}
 
-          {/* 2. ЗАВТРА */}
           {groupedAddresses.tomorrow.length > 0 && (
             <div className={styles.listSection}>
               <h2
@@ -793,6 +851,25 @@ const AddressListPage = () => {
               {renderAddressList(chunk.items)}
             </div>
           ))}
+
+          {hasMore && (
+            <div
+              style={{
+                textAlign: "center",
+                marginTop: "20px",
+                marginBottom: "40px",
+              }}
+            >
+              <button
+                onClick={loadMore}
+                disabled={addressesLoading}
+                className={commonStyles.buttonSecondary}
+                style={{ padding: "10px 24px", cursor: "pointer" }}
+              >
+                {addressesLoading ? "Loading..." : "Load More Projects"}
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <EmptyState message="No projects found matching your criteria." />

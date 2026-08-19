@@ -1,5 +1,5 @@
 // src/components/App/App.jsx
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import {
   createBrowserRouter,
   RouterProvider,
@@ -13,6 +13,7 @@ import AuthLayout from "../../layouts/AuthLayout";
 import AdminRoute from "../ProtectedRoute/AdminRoute";
 import LoginPage from "../../Pages/LoginPage";
 import RegisterPage from "../../Pages/RegisterPage";
+
 // Ліниве завантаження сторінок
 const DashboardPage = lazy(() => import("../../Pages/DashboardPage"));
 const PeopleSection = lazy(() => import("../PeopleSection/PeopleSection"));
@@ -33,23 +34,31 @@ const AddressListPage = lazy(() => import("../../Pages/AddressListPage"));
 const AddressDetailsPage = lazy(() => import("../../Pages/AddressDetailsPage"));
 const AdminPage = lazy(() => import("../../Pages/AdminPage"));
 const CalendarPage = lazy(() => import("../../Pages/CalendarPage"));
-
-// Заглушка для майбутнього кабінету працівника
-// const WorkerPortal = () => (
-//   <div style={{ padding: "40px" }}>
-//     <h1>Worker Portal</h1>
-//     <p>Under construction...</p>
-//   </div>
-// );
 const WorkerPortal = lazy(() => import("../../Pages/WorkerPortal"));
+
 // Розумний редирект для головної сторінки
 const IndexRedirect = () => {
-  const { userRole, loading } = useAuth();
+  const { role, loading } = useAuth();
 
-  if (loading) return null; // Чекаємо повного завантаження ролі
+  // ВИПРАВЛЕНО: Чекаємо не лише завантаження сесії, а й отримання самої ролі (щоб уникнути хибного редиректу при F5)
+  if (loading || !role)
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "var(--color-background)",
+          color: "var(--color-text-primary)",
+        }}
+      >
+        Перевірка сесії...
+      </div>
+    );
 
-  // Якщо адмін - йдемо на проекти, якщо працівник - у портал
-  if (userRole === "admin") {
+  // Адмін після входу переходить на сторінку об'єктів
+  if (role === "admin") {
     return <Navigate to="/addresses" replace />;
   }
 
@@ -63,12 +72,12 @@ const router = createBrowserRouter(
       element: <LoginPage />,
     },
     {
-      path: "/register", // ДОДАНО
+      path: "/register",
       element: <RegisterPage />,
     },
     {
       path: "/",
-      element: <AuthLayout />, // AuthLayout перевіряє наявність сесії
+      element: <AuthLayout />,
       children: [
         {
           path: "/",
@@ -79,7 +88,7 @@ const router = createBrowserRouter(
           path: "worker-portal",
           element: <WorkerPortal />,
         },
-        // МАРШРУТИ ДЛЯ АДМІНІСТРАТОРІВ (захищені через AdminRoute)
+        // МАРШРУТИ ДЛЯ АДМІНІСТРАТОРІВ
         {
           path: "addresses",
           element: (
@@ -188,7 +197,6 @@ const router = createBrowserRouter(
     },
   ],
   {
-    // Налаштування для усунення жовтих попереджень React Router у консолі
     future: {
       v7_relativeSplatPath: true,
       v7_startTransition: true,
@@ -205,7 +213,24 @@ const App = () => {
     <ThemeProvider>
       <AuthProvider>
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-        <RouterProvider router={router} />
+        <Suspense
+          fallback={
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100vh",
+                backgroundColor: "var(--color-background)",
+                color: "var(--color-text-primary)",
+              }}
+            >
+              Підготовка сторінки...
+            </div>
+          }
+        >
+          <RouterProvider router={router} />
+        </Suspense>
       </AuthProvider>
     </ThemeProvider>
   );

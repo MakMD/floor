@@ -1,9 +1,7 @@
-// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/components/PeopleSection/PeopleSection.jsx
-
-import { useState } from "react";
+// src/components/PeopleSection/PeopleSection.jsx
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
-import { usePeople } from "../../hooks/usePeople";
 import PeopleList from "../PeopleList/PeopleList";
 import SkeletonLoader from "../SkeletonLoader/SkeletonLoader";
 import EmptyState from "../EmptyState/EmptyState";
@@ -13,24 +11,58 @@ import commonStyles from "../../styles/common.module.css";
 import toast from "react-hot-toast";
 
 const PeopleSection = () => {
-  const { people, loading: isLoading, refetch: onPeopleUpdate } = usePeople();
+  // 1. ПЕРЕНОСИМО СТАН ЛОКАЛЬНО: Відмовляємося від зовнішнього хука для стабільності
+  const [people, setPeople] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const navigate = useNavigate();
 
+  // 2. ЛОКАЛЬНИЙ ЗАПИТ: Гарантовано керує станом isLoading
+  const fetchPeople = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("people")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+
+      const safeData = data || [];
+      const peopleWithStatus = safeData.map((person) => ({
+        ...person,
+        status: person.status || "active",
+      }));
+      setPeople(peopleWithStatus);
+    } catch (error) {
+      console.error("Помилка завантаження працівників:", error.message);
+      toast.error("Error fetching people.");
+      setPeople([]);
+    } finally {
+      setIsLoading(false); // ГАРАНТОВАНО вимикає скелетони
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPeople();
+  }, [fetchPeople]);
+
   const handleCreatePerson = async () => {
     if (newName.trim() === "") return;
     setAddLoading(true);
     const newPersonData = { name: newName.trim(), status: "active" };
     const { error } = await supabase.from("people").insert([newPersonData]);
+
     if (error) {
       toast.error("Error creating person.");
     } else {
       setNewName("");
       setIsAdding(false);
-      onPeopleUpdate();
+      fetchPeople(); // Оновлюємо список
     }
     setAddLoading(false);
   };
@@ -41,8 +73,9 @@ const PeopleSection = () => {
       .from("people")
       .update({ status: newStatus })
       .eq("id", personId);
+
     if (error) toast.error("Error updating status.");
-    else onPeopleUpdate();
+    else fetchPeople();
   };
 
   const handleUpdatePersonName = async (personId, newName) => {
@@ -50,21 +83,22 @@ const PeopleSection = () => {
       .from("people")
       .update({ name: newName })
       .eq("id", personId);
+
     if (error) toast.error("Error updating name.");
-    else onPeopleUpdate();
+    else fetchPeople();
   };
 
-  // НОВА ФУНКЦІЯ для оновлення телефону
   const handleUpdatePersonPhone = async (personId, newPhone) => {
     const { error } = await supabase
       .from("people")
       .update({ phone: newPhone.trim() })
       .eq("id", personId);
+
     if (error) {
       toast.error("Error updating phone number.");
     } else {
       toast.success("Phone number updated!");
-      onPeopleUpdate();
+      fetchPeople();
     }
   };
 
@@ -140,7 +174,7 @@ const PeopleSection = () => {
           isEditing={isEditing}
           onToggleStatus={handleToggleStatus}
           onUpdatePersonName={handleUpdatePersonName}
-          onUpdatePersonPhone={handleUpdatePersonPhone} // Передаємо нову функцію
+          onUpdatePersonPhone={handleUpdatePersonPhone}
         />
       ) : (
         <EmptyState message="No active workers found. Add one to get started!">

@@ -13,9 +13,9 @@ import {
   FaTimes,
   FaFilePdf,
   FaDownload,
+  FaCheckCircle,
 } from "react-icons/fa";
 import styles from "./AddressDetailsPage.module.css";
-import listStyles from "./AddressListPage.module.css";
 import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
 import FileUpload from "../components/FileUpload/FileUpload";
@@ -23,21 +23,6 @@ import { useAdminLists } from "../hooks/useAdminLists";
 import { usePeople } from "../hooks/usePeople";
 import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager";
 import MaterialsManager from "../components/MaterialsManager/MaterialsManager";
-
-const StatusIndicator = ({ status }) => {
-  const statusClass =
-    {
-      "In Process": listStyles.statusInProgress,
-      Ready: listStyles.statusReady,
-      "Not Finished": listStyles.statusNotFinished,
-    }[status] || "";
-
-  return (
-    <div className={`${listStyles.statusIndicator} ${statusClass}`}>
-      <span>{status || "No Status"}</span>
-    </div>
-  );
-};
 
 const FileListItem = ({ bucketName, fileIdentifier, onDelete }) => {
   const [signedUrl, setSignedUrl] = useState(null);
@@ -108,7 +93,6 @@ const AddressDetailsPage = () => {
   const [addressData, setAddressData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Прив'язка до правильної колонки sq_ft_notes
   const [newSqFtNote, setNewSqFtNote] = useState("");
   const [editedData, setEditedData] = useState({
     address: "",
@@ -121,6 +105,9 @@ const AddressDetailsPage = () => {
   });
 
   const [workOrders, setWorkOrders] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
+
   const [showWoForm, setShowWoForm] = useState(false);
   const [isSubmittingWo, setIsSubmittingWo] = useState(false);
   const [editingWoId, setEditingWoId] = useState(null);
@@ -156,7 +143,7 @@ const AddressDetailsPage = () => {
     setAddressData(addrData);
     setEditedData({
       address: addrData.address || "",
-      sq_ft_notes: addrData.sq_ft_notes || [], // Підтягуємо дані з БД
+      sq_ft_notes: addrData.sq_ft_notes || [],
       total_amount: addrData.total_amount || "",
       date: addrData.date || "",
       status: addrData.status || "In Process",
@@ -172,6 +159,40 @@ const AddressDetailsPage = () => {
 
     if (!woError) {
       setWorkOrders(woList || []);
+    }
+
+    const { data: reportsData, error: reportsError } = await supabase
+      .from("daily_reports")
+      .select("*")
+      .eq("address_id", addressId)
+      .order("created_at", { ascending: false });
+
+    if (reportsError) {
+      console.error("Помилка завантаження звітів:", reportsError);
+    } else if (reportsData && reportsData.length > 0) {
+      const workerIds = [
+        ...new Set(reportsData.map((r) => r.worker_id).filter(Boolean)),
+      ];
+
+      if (workerIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, first_name, last_name")
+          .in("id", workerIds);
+
+        const reportsWithProfiles = reportsData.map((report) => {
+          const profile = profilesData?.find((p) => p.id === report.worker_id);
+          return {
+            ...report,
+            profiles: profile || null,
+          };
+        });
+        setReports(reportsWithProfiles);
+      } else {
+        setReports(reportsData);
+      }
+    } else {
+      setReports([]);
     }
   }, [addressId, navigate]);
 
@@ -194,6 +215,23 @@ const AddressDetailsPage = () => {
     return data;
   };
 
+  // --- МИТТЄВА ЗМІНА СТАТУСУ ---
+  const handleStatusChange = async (e) => {
+    const newStatus = e.target.value;
+
+    // Миттєве оновлення локального стану для швидкого відгуку інтерфейсу
+    setEditedData((prev) => ({ ...prev, status: newStatus }));
+
+    // Збереження в БД
+    const updated = await updateAddress({ status: newStatus });
+    if (updated) {
+      toast.success(`Project status updated to ${newStatus}`);
+    } else {
+      // Якщо помилка — повертаємо попередній статус
+      setEditedData((prev) => ({ ...prev, status: addressData?.status }));
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedData((prev) => ({ ...prev, [name]: value }));
@@ -206,7 +244,7 @@ const AddressDetailsPage = () => {
         ? parseFloat(editedData.total_amount)
         : null,
       date: editedData.date || null,
-      status: editedData.status,
+      status: editedData.status, // статус теж збережеться, якщо його міняли
       builder_id: editedData.builder_id || null,
       store_id: editedData.store_id || null,
     };
@@ -217,6 +255,7 @@ const AddressDetailsPage = () => {
     }
   };
 
+  // --- ФУНКЦІЇ SQ FT NOTES ---
   const handleAddSqFtNote = async () => {
     if (newSqFtNote.trim() === "") return;
     const updatedNotes = [...editedData.sq_ft_notes, newSqFtNote.trim()];
@@ -238,6 +277,7 @@ const AddressDetailsPage = () => {
     }
   };
 
+  // --- ФУНКЦІЇ ФАЙЛІВ ---
   const handleFileUploaded = async (filePath) => {
     const updatedFiles = [...(addressData.files || []), filePath];
     const updated = await updateAddress({ files: updatedFiles });
@@ -478,10 +518,35 @@ const AddressDetailsPage = () => {
     );
   };
 
+  const handleApproveReport = async () => {
+    setEditedData((prev) => ({ ...prev, status: "Ready" }));
+    const updated = await updateAddress({ status: "Ready" });
+    if (updated) {
+      toast.success("Project marked as Ready based on report!");
+    }
+  };
+
   if (!addressData) return <p>Loading...</p>;
 
   return (
     <div className={styles.pageContainer}>
+      {/* Lightbox для повноекранного фото */}
+      {selectedImage && (
+        <div className={styles.lightbox} onClick={() => setSelectedImage(null)}>
+          <button
+            className={styles.closeLightbox}
+            onClick={() => setSelectedImage(null)}
+          >
+            <FaTimes />
+          </button>
+          <img
+            src={selectedImage}
+            alt="Fullscreen report photo"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       <div className={styles.header}>
         <button
           className={commonStyles.buttonSecondary}
@@ -755,25 +820,43 @@ const AddressDetailsPage = () => {
 
           <div className={styles.detailCard}>
             <h3>General Project Details</h3>
+
+            {/* === ОНОВЛЕНИЙ БЛОК СТАТУСУ (ЗАВЖДИ АКТИВНИЙ) === */}
             <div className={styles.detailItem}>
               <label>Status</label>
               <div className={styles.statusCell}>
-                {isEditing ? (
-                  <select
-                    name="status"
-                    value={editedData.status}
-                    onChange={handleInputChange}
-                    className={styles.editInput}
-                  >
-                    <option value="In Process">In Process</option>
-                    <option value="Ready">Ready</option>
-                    <option value="Not Finished">Not Finished</option>
-                  </select>
-                ) : (
-                  <StatusIndicator status={addressData.status} />
-                )}
+                <select
+                  name="status"
+                  value={editedData.status}
+                  onChange={handleStatusChange}
+                  className={styles.editInput}
+                  style={{
+                    backgroundColor:
+                      editedData.status === "Ready"
+                        ? "rgba(40, 167, 69, 0.15)"
+                        : editedData.status === "Not Finished"
+                          ? "rgba(220, 53, 69, 0.15)"
+                          : "rgba(255, 193, 7, 0.15)",
+                    color:
+                      editedData.status === "Ready"
+                        ? "#28a745"
+                        : editedData.status === "Not Finished"
+                          ? "#dc3545"
+                          : "#d39e00",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    border: "none",
+                    outline: "none",
+                    padding: "10px 14px",
+                  }}
+                >
+                  <option value="In Process">In Process</option>
+                  <option value="Ready">Ready</option>
+                  <option value="Not Finished">Not Finished</option>
+                </select>
               </div>
             </div>
+
             <div className={styles.detailItem}>
               <label>Client (Builder)</label>
               {isEditing ? (
@@ -857,6 +940,106 @@ const AddressDetailsPage = () => {
         </div>
 
         <div className={styles.gridColumn}>
+          {/* === НОВИЙ БЛОК: WORKER REPORTS === */}
+          <div className={styles.detailCard}>
+            <h3>Worker Daily Reports</h3>
+            {reports.length > 0 ? (
+              <div className={styles.reportsList}>
+                {reports.map((report) => (
+                  <div key={report.id} className={styles.reportCard}>
+                    <div className={styles.reportHeader}>
+                      <div>
+                        <strong>
+                          {report.profiles?.first_name}{" "}
+                          {report.profiles?.last_name || ""}
+                        </strong>
+                        <div
+                          style={{
+                            fontSize: "0.85rem",
+                            color: "var(--color-text-secondary)",
+                          }}
+                        >
+                          {new Date(report.report_date).toLocaleString()}
+                        </div>
+                      </div>
+                      {editedData.status === "Ready" ? (
+                        <span
+                          style={{
+                            color: "#10b981",
+                            fontSize: "0.95rem",
+                            fontWeight: "bold",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <FaCheckCircle /> Approved (Ready)
+                        </span>
+                      ) : (
+                        <button
+                          className={commonStyles.buttonSuccess}
+                          style={{ padding: "6px 12px", fontSize: "0.85rem" }}
+                          onClick={handleApproveReport}
+                          title="Approve report and mark project as Ready"
+                        >
+                          <FaCheckCircle /> Approve
+                        </button>
+                      )}
+                    </div>
+
+                    {report.notes && (
+                      <div className={styles.reportNotes}>
+                        <p>{report.notes}</p>
+                      </div>
+                    )}
+
+                    {report.photos_before?.length > 0 && (
+                      <div className={styles.photoSection}>
+                        <span className={styles.photoSectionTitle}>
+                          Photos Before:
+                        </span>
+                        <div className={styles.photoGrid}>
+                          {report.photos_before.map((url, i) => (
+                            <img
+                              key={`before-${i}`}
+                              src={url}
+                              alt="Before"
+                              className={styles.thumbnail}
+                              onClick={() => setSelectedImage(url)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {report.photos_after?.length > 0 && (
+                      <div className={styles.photoSection}>
+                        <span className={styles.photoSectionTitle}>
+                          Photos After:
+                        </span>
+                        <div className={styles.photoGrid}>
+                          {report.photos_after.map((url, i) => (
+                            <img
+                              key={`after-${i}`}
+                              src={url}
+                              alt="After"
+                              className={styles.thumbnail}
+                              onClick={() => setSelectedImage(url)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className={styles.noItemsMessage}>
+                No reports submitted by workers yet.
+              </p>
+            )}
+          </div>
+
           <div className={styles.detailCard}>
             <h3>Materials</h3>
             <MaterialsManager addressId={addressId} />

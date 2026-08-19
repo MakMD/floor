@@ -1,85 +1,109 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../supabaseClient";
 
-const AuthContext = createContext();
+const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [userRole, setUserRole] = useState(null);
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
+  // Зберігаємо ID поточного користувача, щоб ігнорувати фонові оновлення сесії
+  const currentUserId = useRef(null);
 
-    // 1. Функція для отримання ролі з БД
-    const fetchProfile = async (userId) => {
+  useEffect(() => {
+    const fetchRoleAndSetState = async (sessionUser) => {
+      if (!sessionUser) {
+        setUser(null);
+        setRole(null);
+        currentUserId.current = null;
+        setLoading(false);
+        return;
+      }
+
       try {
+        setUser(sessionUser);
+        currentUserId.current = sessionUser.id;
         const { data, error } = await supabase
           .from("profiles")
           .select("role")
-          .eq("id", userId)
-          .single();
+          .eq("id", sessionUser.id)
+          .maybeSingle();
 
-        if (error) throw error;
-        return data?.role || "worker";
+        if (error) {
+          console.error("[Auth] Роль не знайдено:", error);
+        }
+
+        setRole(data?.role || "worker");
       } catch (error) {
-        console.error("[Auth] Помилка завантаження ролі:", error.message);
-        return "worker"; // Безпечний fallback
-      }
-    };
-
-    // 2. Єдина функція обробки сесії (щоб уникнути дублювання)
-    const handleSession = async (session) => {
-      if (session?.user) {
-        const role = await fetchProfile(session.user.id);
-        if (isMounted) {
-          setUser(session.user);
-          setUserRole(role);
-        }
-      } else {
-        if (isMounted) {
-          setUser(null);
-          setUserRole(null);
-        }
-      }
-
-      if (isMounted) {
+        console.error("[Auth] Критична помилка запиту ролі:", error);
+        setRole("worker");
+      } finally {
         setLoading(false);
       }
     };
 
-    // 3. Зчитуємо поточну сесію при старті
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) console.error("[Auth] Помилка отримання сесії:", error);
-      handleSession(session);
+      if (error) {
+        console.error("[Auth] Помилка getSession:", error);
+        setLoading(false);
+        return;
+      }
+      fetchRoleAndSetState(session?.user);
     });
 
-    // 4. Підписуємось на зміни (логін, логаут, оновлення токена)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      // Ігноруємо INITIAL_SESSION, бо ми вже обробили його через getSession() вище
       if (event === "INITIAL_SESSION") return;
-      handleSession(session);
+
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        setRole(null);
+        currentUserId.current = null;
+        setLoading(false);
+      } else if (
+        event === "SIGNED_IN" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "USER_UPDATED"
+      ) {
+        // Якщо сесія оновлюється для того ж користувача, який вже залогінений,
+        // ми НЕ вмикаємо екран завантаження, а просто тихо оновлюємо дані
+        if (session?.user?.id === currentUserId.current) {
+          setUser(session.user);
+        } else {
+          // Екран завантаження показується ТІЛЬКИ при новому вході
+          setLoading(true);
+          fetchRoleAndSetState(session?.user);
+        }
+      }
     });
 
-    // Очищення при розмонтуванні
     return () => {
-      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  const signOut = async () => {
-    setLoading(true); // Показуємо завантаження під час виходу
-    await supabase.auth.signOut();
+  const handleSignOut = async () => {
+    setLoading(true);
+    localStorage.clear();
+    sessionStorage.clear();
+    setUser(null);
+    setRole(null);
+    currentUserId.current = null;
+    await supabase.auth.signOut().catch(console.error);
+    window.location.href = "/login";
   };
 
-  return (
-    <AuthContext.Provider value={{ user, userRole, loading, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    role,
+    userRole: role,
+    loading,
+    signOut: handleSignOut,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);

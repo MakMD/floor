@@ -1,331 +1,242 @@
+/* --- БАЗОВИЙ КОНТЕЙНЕР --- */
 .calendarContainer {
-  padding: 20px;
-  background-color: var(--color-background);
-}
-
-.pageTitle {
-  font-size: 2.8rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 40px;
-  color: var(--color-text-primary);
-  letter-spacing: -1px;
-}
-
-.layout {
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.calendar {
-  padding-bottom: 40px;
-}
-
-/* --- ШАПКА --- */
-.header {
+  min-height: 100vh;
+  background-color: var(--color-background, #f5f5f5);
+  padding: 16px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-  padding: 20px;
-  background-color: var(--color-surface);
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
+  justify-content: center;
+  align-items: flex-start; /* Щоб контейнер не розтягувався по вертикалі */
 }
 
-.headerDateContainer {
+/* --- ГОЛОВНИЙ МАКЕТ (АДАПТИВНИЙ) --- */
+.mobileLayout {
+  width: 100%;
+  max-width: 1200px; /* Розширено для десктопа */
+  background-color: #ffffff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* М'якша тінь */
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
+}
+
+/* --- ВЕРХНЯ НАВІГАЦІЯ --- */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background-color: #2c2c2c; /* Точний темний колір з оригіналу */
+  flex-wrap: wrap; /* Для дуже вузьких екранів */
+  gap: 12px;
+}
+
+.navGroup {
+  display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.headerDate {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
+.datePicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #ffffff;
+  color: #333333;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.95rem;
 }
 
-.todayButton {
-  background-color: transparent;
-  border: 1px solid var(--color-primary);
-  color: var(--color-primary);
-  padding: 4px 16px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+.calendarIcon {
+  color: #666666;
 }
 
-.todayButton:hover {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.navButton {
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-  padding: 12px;
-  border-radius: 50%;
+/* Золотисті кнопки */
+.iconBtn {
+  background: #2c2c2c;
+  border: 1px solid #cfa85c; /* Золотиста рамка */
+  color: #cfa85c; /* Золотистий колір іконки */
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  font-size: 1.2rem;
-  color: var(--color-text-secondary);
-}
-
-.navButton:hover {
-  background-color: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-.loadingText {
-  text-align: center;
-  padding: 40px;
-  color: var(--color-text-secondary);
-  font-size: 1.2rem;
-}
-
-/* --- ВЕРТИКАЛЬНИЙ СПИСОК (БЛОКИ ДНІВ) --- */
-.verticalList {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.daySection {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-  transition: border-color 0.2s;
-}
-
-.isTodaySection {
-  border: 2px solid var(--color-primary);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-/* --- ЗАГОЛОВОК ДНЯ --- */
-.dayHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.dayDateWrap {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.dayNumber {
-  font-size: 2.5rem;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--color-text-primary);
-}
-
-.isTodaySection .dayNumber {
-  color: var(--color-primary);
-}
-
-.dayTextWrap {
-  display: flex;
-  flex-direction: column;
-}
-
-.dayName {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.dayMonth {
-  font-size: 0.95rem;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-}
-
-.todayBadge {
-  background-color: var(--color-primary);
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* --- СІТКА КАРТОК --- */
-.eventsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-}
-
-.noEvents {
-  color: var(--color-text-secondary);
-  font-style: italic;
-  font-size: 0.95rem;
-  padding: 10px 0;
-  grid-column: 1 / -1; /* Розтягнути на всю ширину */
-}
-
-/* --- КАРТКИ ПОДІЙ --- */
-.eventCard {
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  padding: 16px;
+  border-radius: 4px;
   cursor: pointer;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  transition: all 0.2s;
+}
+
+.iconBtn:hover {
+  background-color: #444444;
+}
+
+.activeViewBtn {
+  background-color: #cfa85c;
+  color: #2c2c2c;
+}
+
+.activeViewBtn:hover {
+  background-color: #b38f42;
+}
+
+/* --- КОНТЕНТ ТА РОЗДІЛЬНИКИ --- */
+.content {
+  background-color: #ffffff;
+  min-height: 500px;
+}
+
+.loadingText,
+.noEvents {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666666;
+  font-size: 1.05rem;
+}
+
+.listContainer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
-.eventCard:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
-
-.cardHeader {
+.dayGroup {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
 }
 
-.cardWo {
-  font-weight: 700;
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-  letter-spacing: 0.5px;
-}
-
-.cardTitle {
-  font-size: 1.15rem;
+/* Сірий роздільник (Section Header) */
+.sectionHeader {
+  background-color: #e8e6df; /* Світло-бежевий з фото */
+  color: #4a4a4a;
+  padding: 12px 20px;
+  font-size: 0.95rem;
   font-weight: 600;
+  border-top: 1px solid #dcdad3;
+  border-bottom: 1px solid #dcdad3;
+}
+
+:root[data-theme="dark"] .sectionHeader {
+  background-color: #2a2a2a;
+  color: #d1d1d1;
+  border-color: #444;
+}
+
+/* --- СІТКА КАРТОК (АДАПТИВНА) --- */
+.cardsList {
+  display: grid;
+  grid-template-columns: 1fr; /* За замовчуванням 1 колонка (мобілка) */
+  gap: 0;
+}
+
+/* --- СТИЛІ КАРТКИ --- */
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card:hover {
+  background-color: #f9f9f9;
+}
+
+:root[data-theme="dark"] .card {
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #333;
+}
+
+.cardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 12px;
+}
+
+/* Примусові кольори для виправлення блідості */
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #222222 !important;
+  line-height: 1.4;
+}
+
+.cardAddress {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  line-height: 1.3;
-  color: var(--color-text-primary);
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #555555 !important;
 }
 
-.addressIcon {
-  margin-top: 3px;
-  flex-shrink: 0;
-  color: var(--color-primary);
-}
-
-.serviceIcon {
-  margin-top: 3px;
-  flex-shrink: 0;
-  color: #f59e0b; /* Оранжевий для сервісів */
-}
-
-.cardMeta {
-  display: flex;
-  gap: 16px;
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
+.pinIcon {
+  color: #b02a48;
   margin-top: 2px;
+  flex-shrink: 0;
+  font-size: 1.1rem;
 }
 
-.cardMeta strong {
-  color: var(--color-text-primary);
-  font-weight: 600;
-}
-
-/* --- ІНФОРМАТИВНИЙ ФУТЕР КАРТКИ --- */
-.cardFooter {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+.cardNotes {
+  font-size: 0.95rem;
+  color: #444444 !important;
   margin-top: 4px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--color-border);
+  line-height: 1.5;
 }
 
-.footerTag {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  background-color: rgba(0, 0, 0, 0.03);
-  padding: 4px 8px;
+/* --- КНОПКА CONFIRM MATERIALS --- */
+.confirmBtn {
+  margin-top: 6px;
+  background-color: #90273c; /* Точний бордовий колір з оригіналу */
+  color: #ffffff !important;
+  border: none;
+  padding: 8px 16px;
   border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  align-self: flex-start;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-:root[data-theme="dark"] .footerTag {
-  background-color: rgba(255, 255, 255, 0.05);
+.confirmBtn:hover {
+  background-color: #7a2032;
 }
 
-.footerTag svg {
-  color: var(--color-text-primary);
-  opacity: 0.7;
+.chevronIcon {
+  color: #aaaaaa;
+  font-size: 1.8rem;
+  opacity: 0.8;
 }
 
-/* --- БЕЙДЖІ СТАТУСІВ --- */
-.statusBadge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 12px;
-  text-transform: uppercase;
-}
-.badgeReady {
-  background-color: #d1e7dd;
-  color: #0f5132;
-}
-.badgeProcess {
-  background-color: #fff3cd;
-  color: #664d03;
-}
-.badgeNotFinished {
-  background-color: #f8d7da;
-  color: #721c24;
-}
+/* =========================================
+   ДЕСКТОПНА ВЕРСІЯ (Екрани ширші за 768px)
+   ========================================= */
+@media (min-width: 768px) {
+  .cardsList {
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(380px, 1fr)
+    ); /* Створює сітку карток */
+    gap: 16px;
+    padding: 16px 20px;
+    background-color: #fcfcfc; /* Легкий фон під картками */
+  }
 
-/* --- КОЛЬОРИ ФОНУ КАРТОК --- */
-.readyBackground {
-  background-color: #f8fff9;
-  border-color: #c6f6d5;
-}
-.inProcessBackground {
-  background-color: #fffdf5;
-  border-color: #fef08a;
-}
-.notFinishedBackground {
-  background-color: #fff8f8;
-  border-color: #fed7d7;
-}
+  .card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid #e0e0e0 !important; /* Прибирає лінійний вигляд */
+  }
 
-:root[data-theme="dark"] .readyBackground {
-  background-color: rgba(40, 167, 69, 0.05);
-  border-color: rgba(40, 167, 69, 0.2);
-}
-:root[data-theme="dark"] .inProcessBackground {
-  background-color: rgba(255, 193, 7, 0.05);
-  border-color: rgba(255, 193, 7, 0.2);
-}
-:root[data-theme="dark"] .notFinishedBackground {
-  background-color: rgba(220, 53, 69, 0.05);
-  border-color: rgba(220, 53, 69, 0.2);
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
 }

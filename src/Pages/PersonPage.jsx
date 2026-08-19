@@ -1,6 +1,6 @@
-// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/PersonPage.jsx
+// src/Pages/PersonPage.jsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaPlus, FaTrash, FaArrowLeft, FaEdit, FaCheck } from "react-icons/fa";
 import { supabase } from "../supabaseClient";
@@ -10,31 +10,24 @@ import styles from "./PersonPage.module.css";
 import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
 
-// === ДОДАНО: Функція для парсингу дати з назви таблиці ===
 const parseTableNameToDate = (name) => {
   if (!name) return new Date(0);
 
-  // 1. Пробуємо формат "DD.MM.YYYY" (наприклад, "15.02.2025")
   const numericMatch = name.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
   if (numericMatch) {
     const [, day, month, year] = numericMatch;
-    // Місяці в JS: 0-11, тому month - 1
     return new Date(year, month - 1, day);
   }
 
-  // 2. Пробуємо текстовий формат "Month DD-DD YYYY" (наприклад, "October 1-15 2025")
-  // Регулярка шукає: [Слово] [Число]-[що завгодно] [4 цифри]
   const textMatch = name.match(/^([A-Za-z]+)\s(\d{1,2})-(?:.*)\s(\d{4})$/);
   if (textMatch) {
     const [, monthStr, dayStr, yearStr] = textMatch;
-    // Створюємо дату: "October 1, 2025"
     const date = new Date(`${monthStr} ${dayStr}, ${yearStr}`);
     if (!isNaN(date.getTime())) {
       return date;
     }
   }
 
-  // Якщо не вдалося розпізнати, повертаємо стару дату, щоб такі таблиці були в кінці
   return new Date(0);
 };
 
@@ -47,7 +40,8 @@ const PersonPage = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const fetchPersonData = async () => {
+  // ОПТИМІЗАЦІЯ: Використання useCallback для стабілізації посилання на функцію
+  const fetchPersonData = useCallback(async () => {
     if (!personId) return;
     setLoading(true);
 
@@ -78,28 +72,24 @@ const PersonPage = () => {
         invoiceCount: t.invoices[0]?.count || 0,
       }));
 
-      // === ОНОВЛЕНО: Логіка сортування ===
       formattedTables.sort((a, b) => {
         const dateA = parseTableNameToDate(a.name);
         const dateB = parseTableNameToDate(b.name);
 
-        // Якщо обидві дати валідні (не epoch 0), сортуємо за часом
         if (dateA.getTime() > 0 && dateB.getTime() > 0) {
-          return dateB - dateA; // Від новішого до старішого
+          return dateB - dateA;
         }
-
-        // Якщо одна з дат не розпізнана, використовуємо алфавітне сортування як запасний варіант
         return b.name.localeCompare(a.name);
       });
 
       setTables(formattedTables);
     }
     setLoading(false);
-  };
+  }, [personId]);
 
   useEffect(() => {
     fetchPersonData();
-  }, [personId]);
+  }, [fetchPersonData]);
 
   const handleAddTable = async () => {
     if (!newTableName.trim()) return;
@@ -120,7 +110,7 @@ const PersonPage = () => {
   const handleDeleteTable = async (tableId) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this table and all its invoices?"
+        "Are you sure you want to delete this table and all its invoices?",
       )
     )
       return;
