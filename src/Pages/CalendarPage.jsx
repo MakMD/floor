@@ -17,20 +17,59 @@ import {
   FaRegCalendar,
   FaMapMarkerAlt,
 } from "react-icons/fa";
-// Використовуємо тонкий шеврон для карток
 import { MdOutlineChevronRight } from "react-icons/md";
 import { supabase } from "../supabaseClient";
 import toast from "react-hot-toast";
 import styles from "./CalendarPage.module.css";
 
+const STORAGE_KEY = "calendar_state";
+const EXPIRATION_TIME = 3 * 60 * 1000; // 3 хвилини у мілісекундах
+
 const CalendarPage = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState("day"); // 'day' або 'week'
+  // 1. Ініціалізація стану з перевіркою пам'яті браузера
+  const [selectedDate, setSelectedDate] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Date.now() - parsed.timestamp < EXPIRATION_TIME) {
+          return new Date(parsed.selectedDate);
+        }
+      }
+    } catch (e) {
+      console.error("Помилка читання збереженої дати:", e);
+    }
+    return new Date();
+  });
+
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Date.now() - parsed.timestamp < EXPIRATION_TIME) {
+          return parsed.viewMode || "day";
+        }
+      }
+    } catch (e) {}
+    return "day";
+  });
+
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const weekStartsOn = 1; // Понеділок
+
+  // 2. Збереження поточного стану при будь-якій його зміні
+  useEffect(() => {
+    const stateToSave = {
+      selectedDate: selectedDate.toISOString(),
+      viewMode,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+  }, [selectedDate, viewMode]);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -108,7 +147,6 @@ const CalendarPage = () => {
   return (
     <div className={styles.calendarContainer}>
       <div className={styles.mobileLayout}>
-        {/* --- НАВІГАЦІЙНА ПАНЕЛЬ ЯК НА СКРІНШОТІ --- */}
         <div className={styles.navbar}>
           <div className={styles.navGroup}>
             <button onClick={handlePrev} className={styles.iconBtn}>
@@ -144,7 +182,6 @@ const CalendarPage = () => {
           </div>
         </div>
 
-        {/* --- КОНТЕНТ --- */}
         <div className={styles.content}>
           {loading ? (
             <p className={styles.loadingText}>Loading schedule...</p>
@@ -164,7 +201,6 @@ const CalendarPage = () => {
 
                 return (
                   <div key={dateKey} className={styles.dayGroup}>
-                    {/* СЕРВІСИ */}
                     {dayData.services.length > 0 && (
                       <div className={styles.section}>
                         <div className={styles.sectionHeader}>
@@ -204,7 +240,6 @@ const CalendarPage = () => {
                       </div>
                     )}
 
-                    {/* РОБОТИ (JOBS) */}
                     {dayData.jobs.length > 0 && (
                       <div className={styles.section}>
                         <div className={styles.sectionHeader}>
@@ -244,7 +279,6 @@ const CalendarPage = () => {
                       </div>
                     )}
 
-                    {/* Порожній день (тільки для Day View) */}
                     {dayData.services.length === 0 &&
                       dayData.jobs.length === 0 && (
                         <div className={styles.noEvents}>
