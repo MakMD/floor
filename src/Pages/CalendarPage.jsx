@@ -16,6 +16,7 @@ import {
   FaRegCalendarAlt,
   FaRegCalendar,
   FaMapMarkerAlt,
+  FaSearch,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
 import { supabase } from "../supabaseClient";
@@ -23,10 +24,9 @@ import toast from "react-hot-toast";
 import styles from "./CalendarPage.module.css";
 
 const STORAGE_KEY = "calendar_state";
-const EXPIRATION_TIME = 3 * 60 * 1000; // 3 хвилини у мілісекундах
+const EXPIRATION_TIME = 3 * 60 * 1000;
 
 const CalendarPage = () => {
-  // 1. Ініціалізація стану з перевіркою пам'яті браузера
   const [selectedDate, setSelectedDate] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -57,11 +57,13 @@ const CalendarPage = () => {
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Новий стан для пошуку
+  const [searchQuery, setSearchQuery] = useState("");
+
   const navigate = useNavigate();
+  const weekStartsOn = 1;
 
-  const weekStartsOn = 1; // Понеділок
-
-  // 2. Збереження поточного стану при будь-якій його зміні
   useEffect(() => {
     const stateToSave = {
       selectedDate: selectedDate.toISOString(),
@@ -122,8 +124,21 @@ const CalendarPage = () => {
     toast.success(`Materials confirmed for Job #${id}`);
   };
 
-  // Групування подій
-  const groupedEvents = events.reduce((acc, event) => {
+  // ФІЛЬТРАЦІЯ ПОДІЙ ЗА ПОШУКОМ
+  const filteredEvents = events.filter((event) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const address = (event.address || "").toLowerCase();
+    const builder = (event.builders?.name || "").toLowerCase();
+    const wo = (event.work_order_number || "").toLowerCase();
+
+    return (
+      address.includes(query) || builder.includes(query) || wo.includes(query)
+    );
+  });
+
+  // Групування вже ВІДФІЛЬТРОВАНИХ подій
+  const groupedEvents = filteredEvents.reduce((acc, event) => {
     if (!acc[event.date]) acc[event.date] = { services: [], jobs: [] };
     if (event.project_type === "Service") acc[event.date].services.push(event);
     else acc[event.date].jobs.push(event);
@@ -147,38 +162,53 @@ const CalendarPage = () => {
   return (
     <div className={styles.calendarContainer}>
       <div className={styles.mobileLayout}>
+        {/* --- ЛИПКА НАВІГАЦІЯ --- */}
         <div className={styles.navbar}>
-          <div className={styles.navGroup}>
-            <button onClick={handlePrev} className={styles.iconBtn}>
-              <FaChevronLeft size={14} />
-            </button>
+          <div className={styles.navTopRow}>
+            <div className={styles.navGroup}>
+              <button onClick={handlePrev} className={styles.iconBtn}>
+                <FaChevronLeft size={14} />
+              </button>
 
-            <div className={styles.datePicker}>
-              <span className={styles.dateText}>{getHeaderText()}</span>
-              <FaRegCalendarAlt className={styles.calendarIcon} size={16} />
+              <div className={styles.datePicker}>
+                <span className={styles.dateText}>{getHeaderText()}</span>
+                <FaRegCalendarAlt className={styles.calendarIcon} size={16} />
+              </div>
+
+              <button onClick={handleNext} className={styles.iconBtn}>
+                <FaChevronRight size={14} />
+              </button>
+              <button onClick={fetchEvents} className={styles.iconBtn}>
+                <FaSyncAlt size={14} />
+              </button>
             </div>
 
-            <button onClick={handleNext} className={styles.iconBtn}>
-              <FaChevronRight size={14} />
-            </button>
-            <button onClick={fetchEvents} className={styles.iconBtn}>
-              <FaSyncAlt size={14} />
-            </button>
+            <div className={styles.navGroup}>
+              <button
+                onClick={() => setViewMode("day")}
+                className={`${styles.iconBtn} ${viewMode === "day" ? styles.activeViewBtn : ""}`}
+              >
+                <FaRegCalendar size={16} />
+              </button>
+              <button
+                onClick={() => setViewMode("week")}
+                className={`${styles.iconBtn} ${viewMode === "week" ? styles.activeViewBtn : ""}`}
+              >
+                <FaRegCalendarAlt size={16} />
+              </button>
+            </div>
           </div>
 
-          <div className={styles.navGroup}>
-            <button
-              onClick={() => setViewMode("day")}
-              className={`${styles.iconBtn} ${viewMode === "day" ? styles.activeViewBtn : ""}`}
-            >
-              <FaRegCalendar size={16} />
-            </button>
-            <button
-              onClick={() => setViewMode("week")}
-              className={`${styles.iconBtn} ${viewMode === "week" ? styles.activeViewBtn : ""}`}
-            >
-              <FaRegCalendarAlt size={16} />
-            </button>
+          {/* ПОШУКОВИЙ РЯДОК */}
+          <div className={styles.searchContainer}>
+            <FaSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Шукати адресу, клієнта або WO..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={styles.searchInput}
+            />
           </div>
         </div>
 
@@ -186,7 +216,11 @@ const CalendarPage = () => {
           {loading ? (
             <p className={styles.loadingText}>Loading schedule...</p>
           ) : datesToRender.length === 0 ? (
-            <div className={styles.noEvents}>No projects for this period.</div>
+            <div className={styles.noEvents}>
+              {searchQuery
+                ? "Нічого не знайдено за вашим запитом."
+                : "No projects for this period."}
+            </div>
           ) : (
             <div className={styles.listContainer}>
               {datesToRender.map((dateKey) => {

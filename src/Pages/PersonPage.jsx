@@ -1,8 +1,14 @@
-// src/Pages/PersonPage.jsx
-
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaPlus, FaTrash, FaArrowLeft, FaEdit, FaCheck } from "react-icons/fa";
+import {
+  FaPlus,
+  FaTrash,
+  FaArrowLeft,
+  FaEdit,
+  FaCheck,
+  FaFolder,
+} from "react-icons/fa";
+import { MdOutlineChevronRight } from "react-icons/md";
 import { supabase } from "../supabaseClient";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
@@ -40,7 +46,6 @@ const PersonPage = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // ОПТИМІЗАЦІЯ: Використання useCallback для стабілізації посилання на функцію
   const fetchPersonData = useCallback(async () => {
     if (!personId) return;
     setLoading(true);
@@ -129,73 +134,93 @@ const PersonPage = () => {
   };
 
   return (
-    <div className={styles.personPage}>
-      <div className={styles.header}>
-        <button
-          className={commonStyles.buttonSecondary}
-          onClick={() => navigate("/")}
-        >
-          <FaArrowLeft /> Back
-        </button>
-        <h1 className={styles.pageTitle}>
-          {person ? `${person.name}'s Tables` : "Loading..."}
-        </h1>
-        <button
-          className={
-            isEditing ? commonStyles.buttonSuccess : commonStyles.buttonPrimary
-          }
-          onClick={() => setIsEditing(!isEditing)}
-        >
-          {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
-        </button>
-      </div>
+    <div className={styles.pageContainer}>
+      <div className={styles.mobileLayout}>
+        <div className={styles.header}>
+          <button
+            className={commonStyles.buttonSecondary}
+            onClick={() => navigate(-1)}
+            style={{ border: "none" }}
+          >
+            <FaArrowLeft /> Back
+          </button>
+          <h1 className={styles.pageTitle}>
+            {person ? `${person.name}'s Tables` : "Loading..."}
+          </h1>
+          <button
+            className={
+              isEditing
+                ? commonStyles.buttonSuccess
+                : commonStyles.buttonSecondary
+            }
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
+          </button>
+        </div>
 
-      <div className={styles.addTableForm}>
-        <input
-          type="text"
-          value={newTableName}
-          onChange={(e) => setNewTableName(e.target.value)}
-          placeholder="Enter new table name (e.g., DD.MM.YYYY)"
-          className={styles.inputField}
-        />
-        <button onClick={handleAddTable} className={commonStyles.buttonSuccess}>
-          <FaPlus /> Add Table
-        </button>
-      </div>
+        <div className={styles.addTableForm}>
+          <input
+            type="text"
+            value={newTableName}
+            onChange={(e) => setNewTableName(e.target.value)}
+            placeholder="Enter new table name (e.g., DD.MM.YYYY)"
+            className={styles.inputField}
+          />
+          <button
+            onClick={handleAddTable}
+            className={commonStyles.buttonPrimary}
+          >
+            <FaPlus /> Add Table
+          </button>
+        </div>
 
-      {loading ? (
-        <SkeletonLoader count={3} />
-      ) : tables.length > 0 ? (
-        <ul className={styles.tableList}>
-          {tables.map((table) => (
-            <li key={table.id} className={styles.tableItem}>
-              <div
-                className={styles.tableInfo}
-                onClick={() =>
-                  navigate(`/person/${personId}/tables/${table.id}`)
-                }
-              >
-                <span className={styles.tableName}>{table.name}</span>
-                <div className={styles.tableDetails}>
-                  <span>
-                    Invoices: <strong>{table.invoiceCount}</strong>
-                  </span>
-                </div>
-              </div>
-              {isEditing && (
-                <button
-                  onClick={() => handleDeleteTable(table.id)}
-                  className={commonStyles.buttonIcon}
+        <div className={styles.content}>
+          {loading ? (
+            <div style={{ padding: "20px" }}>
+              <SkeletonLoader count={3} />
+            </div>
+          ) : tables.length > 0 ? (
+            <div className={styles.cardsList}>
+              {tables.map((table) => (
+                <div
+                  key={table.id}
+                  className={`${styles.card} ${isEditing ? styles.editing : ""}`}
                 >
-                  <FaTrash />
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <EmptyState message="No tables have been created for this person yet." />
-      )}
+                  <div
+                    className={styles.cardContent}
+                    onClick={() =>
+                      !isEditing &&
+                      navigate(`/person/${personId}/tables/${table.id}`)
+                    }
+                  >
+                    <div className={styles.cardTitle}>
+                      <FaFolder className={styles.iconGold} />
+                      {table.name}
+                    </div>
+                    <div className={styles.cardSubtitle}>
+                      Invoices included: {table.invoiceCount}
+                    </div>
+                  </div>
+
+                  {isEditing ? (
+                    <button
+                      onClick={() => handleDeleteTable(table.id)}
+                      className={commonStyles.buttonIcon}
+                    >
+                      <FaTrash />
+                    </button>
+                  ) : (
+                    <MdOutlineChevronRight className={styles.chevronIcon} />
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState message="No tables have been created for this person yet." />
+          )}
+        </div>
+      </div>
     </div>
   );
 };

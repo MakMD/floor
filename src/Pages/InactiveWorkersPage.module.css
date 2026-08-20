@@ -1,43 +1,75 @@
-/* src/Pages/InactiveWorkersPage.module.css */
-
 .pageContainer {
+  min-height: 100vh;
+  background-color: var(--color-background);
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.mobileLayout {
+  width: 100%;
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f4f5f7;
-  font-family: "Lora", serif;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e0e0e0);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  padding: 16px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--color-border, #e0e0e0);
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .pageTitle {
-  font-family: "Montserrat", sans-serif;
-  font-size: 32px;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #333333;
-  text-align: center;
+  color: #222222;
   margin: 0;
-}
-
-.backButton,
-.editButton {
-  padding: 10px 20px;
-  background-color: #4a90e2;
-  color: #ffffff;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
   text-align: center;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
+  flex-grow: 1;
 }
 
-.backButton:hover,
-.editButton:hover {
-  background-color: #357ab8;
+.content {
+  background-color: #ffffff;
+  min-height: 50vh;
+}
+
+/* --- ПОВНІСТЮ МОБІЛЬНА ВЕРСІЯ --- */
+@media (max-width: 767px) {
+  .pageContainer {
+    padding: 0;
+    /* Хак для ігнорування відступів AuthLayout */
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+  }
+
+  .mobileLayout {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  .header {
+    flex-direction: column;
+    padding: 16px 12px;
+    align-items: stretch;
+  }
+
+  .header button {
+    width: 100%;
+  }
+
+  .pageTitle {
+    margin-bottom: 8px;
+  }
 }

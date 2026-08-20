@@ -1,215 +1,147 @@
-/* makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/PersonPage.module.css */
+.pageContainer {
+  min-height: 100vh;
+  background-color: var(--color-background);
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
 
-.personPage {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+.mobileLayout {
+  width: 100%;
+  max-width: 800px;
+  background-color: #ffffff;
+  box-shadow: var(--shadow-md);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
+  padding: 16px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--color-border);
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .pageTitle {
-  font-size: 1.8rem;
-  color: var(--color-text-primary);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #222222;
   margin: 0;
+  flex-grow: 1;
+  text-align: center;
 }
 
 .addTableForm {
   display: flex;
   gap: 12px;
-  margin-bottom: 24px;
-  background-color: var(--color-surface);
-  padding: 16px;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
+  padding: 16px 20px;
+  background-color: #fcfcfc;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .inputField {
   flex: 1;
-  padding: 10px 12px;
+  padding: 10px 14px;
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  background-color: var(--color-background);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background-color: #ffffff;
   color: var(--color-text-primary);
 }
 
-.tableList {
-  list-style: none;
-  padding: 0;
+.content {
+  background-color: #ffffff;
+}
+
+.cardsList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 
-/* === Стилі для Desktop (якщо ви використовуєте div-верстку) === */
-.tableItem {
+.card {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  background-color: var(--color-surface);
-  padding: 16px;
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--color-border);
-  transition: all 0.2s ease-in-out;
-}
-
-.tableItem:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
-}
-
-.tableInfo {
-  flex: 1;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
   cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-right: 16px;
+  transition: background-color 0.2s;
 }
 
-.tableName {
+.card:hover {
+  background-color: #f9f9f9;
+}
+
+.card.editing {
+  cursor: default;
+}
+
+.cardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 12px;
+}
+
+.cardTitle {
+  font-size: 1.05rem;
   font-weight: 600;
-  font-size: 1.1rem;
-  color: var(--color-text-primary);
-}
-
-.tableDetails {
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
+  color: #222222;
   display: flex;
-  gap: 16px;
+  align-items: center;
+  gap: 10px;
 }
 
-/* ==========================================================================
-   АДАПТИВНІСТЬ ДЛЯ HTML TABLE (ВАШ ВИПАДОК НА СКРІНШОТІ)
-   ========================================================================== */
+.iconGold {
+  color: #cfa85c;
+  font-size: 1.1rem;
+}
 
-@media screen and (max-width: 768px) {
-  /* 1. Адаптація верхньої частини (Форма і заголовок) */
-  .personPage {
-    padding: 12px;
+.cardSubtitle {
+  font-size: 0.9rem;
+  color: #555555;
+  margin-top: 2px;
+}
+
+.chevronIcon {
+  color: #aaaaaa;
+  font-size: 1.8rem;
+  opacity: 0.8;
+}
+
+@media (max-width: 767px) {
+  .pageContainer {
+    padding: 0;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
   }
-
+  .mobileLayout {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
   .header {
     flex-direction: column;
-    align-items: stretch;
-    text-align: center;
   }
-
+  .header button {
+    width: 100%;
+  }
   .addTableForm {
     flex-direction: column;
   }
-
   .addTableForm button {
     width: 100%;
-  }
-
-  /* 2. ПЕРЕТВОРЕННЯ ТАБЛИЦІ НА КАРТКИ (GRID METHOD) */
-
-  /* Скидаємо табличну поведінку */
-  table,
-  thead,
-  tbody,
-  th,
-  td,
-  tr {
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  /* Ховаємо шапку */
-  thead {
-    display: none;
-  }
-
-  /* Стиль картки (рядка таблиці) */
-  tbody tr {
-    margin-bottom: 16px;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-sm);
-    padding: 8px 16px;
-  }
-
-  /* Стиль рядка всередині картки */
-  td {
-    /* Використовуємо GRID: 110px на заголовок, все інше (1fr) на текст */
-    display: grid;
-    grid-template-columns: 110px 1fr;
-    gap: 12px;
-    align-items: start; /* Вирівнювання по верху */
-
-    padding: 12px 0;
-    border-bottom: 1px solid var(--color-border);
-
-    color: var(--color-text-primary);
-    font-size: 0.95rem;
-    text-align: right; /* Текст значення справа */
-
-    /* Критично для довгих слів/адрес */
-    word-break: break-word;
-    overflow-wrap: anywhere;
-  }
-
-  /* Прибираємо лінію в останнього елемента */
-  td:last-child {
-    border-bottom: none;
-  }
-
-  /* Стилізація віртуальних заголовків зліва */
-  td::before {
-    content: attr(data-label); /* Беремо з HTML, якщо є */
-    text-align: left;
-    font-weight: 700;
-    color: var(--color-text-secondary);
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    /* Не даємо заголовку стискатися */
-    min-width: 110px;
-  }
-
-  /* === ЗАГОЛОВКИ КОЛОНОК (HARDCODED) === */
-  /* Це замінить data-label, якщо в HTML їх немає */
-
-  td:nth-of-type(1)::before {
-    content: "Date";
-  }
-  td:nth-of-type(2)::before {
-    content: "Address";
-  }
-  td:nth-of-type(3)::before {
-    content: "Store";
-  }
-  td:nth-of-type(4)::before {
-    content: "Work Type";
-  }
-  td:nth-of-type(5)::before {
-    content: "Total";
-  }
-
-  /* Якщо є колонка дій (кнопка видалення тощо) */
-  td:nth-of-type(6) {
-    display: flex;
-    justify-content: center;
-    padding-top: 16px;
-  }
-  td:nth-of-type(6)::before {
-    display: none; /* Не показувати заголовок для кнопки */
-  }
-
-  /* Фікс саме для адреси (2-га колонка), щоб вона точно була видна */
-  td:nth-of-type(2) {
-    white-space: normal;
   }
 }

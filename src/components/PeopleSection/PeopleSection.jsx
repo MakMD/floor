@@ -1,17 +1,15 @@
-// src/components/PeopleSection/PeopleSection.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import PeopleList from "../PeopleList/PeopleList";
 import SkeletonLoader from "../SkeletonLoader/SkeletonLoader";
 import EmptyState from "../EmptyState/EmptyState";
-import { FaPlus, FaUsersSlash, FaEdit, FaCheck } from "react-icons/fa";
+import { FaPlus, FaUsersSlash, FaEdit, FaCheck, FaTimes } from "react-icons/fa";
 import styles from "./PeopleSection.module.css";
 import commonStyles from "../../styles/common.module.css";
 import toast from "react-hot-toast";
 
 const PeopleSection = () => {
-  // 1. ПЕРЕНОСИМО СТАН ЛОКАЛЬНО: Відмовляємося від зовнішнього хука для стабільності
   const [people, setPeople] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -21,7 +19,6 @@ const PeopleSection = () => {
   const [addLoading, setAddLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 2. ЛОКАЛЬНИЙ ЗАПИТ: Гарантовано керує станом isLoading
   const fetchPeople = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -43,7 +40,7 @@ const PeopleSection = () => {
       toast.error("Error fetching people.");
       setPeople([]);
     } finally {
-      setIsLoading(false); // ГАРАНТОВАНО вимикає скелетони
+      setIsLoading(false);
     }
   }, []);
 
@@ -62,7 +59,7 @@ const PeopleSection = () => {
     } else {
       setNewName("");
       setIsAdding(false);
-      fetchPeople(); // Оновлюємо список
+      fetchPeople();
     }
     setAddLoading(false);
   };
@@ -105,87 +102,82 @@ const PeopleSection = () => {
   const activePeople = people.filter((p) => p.status === "active");
 
   return (
-    <div className={styles.peopleSectionContainer}>
-      <div className={styles.titleContainer}>
-        <h2 className={styles.sectionTitle}>People</h2>
-        <div className={styles.controls}>
-          {!isAdding && (
+    <div className={styles.pageContainer}>
+      <div className={styles.mobileLayout}>
+        <div className={styles.header}>
+          <h1 className={styles.pageTitle}>People</h1>
+          <div className={styles.controls}>
             <button
-              onClick={() => setIsAdding(true)}
-              className={commonStyles.buttonSuccess}
+              onClick={() => setIsAdding(!isAdding)}
+              className={commonStyles.buttonPrimary}
             >
-              <FaPlus /> Add Worker
+              {isAdding ? <FaTimes /> : <FaPlus />} {isAdding ? "Close" : "New"}
             </button>
+            <button
+              onClick={() => navigate("/inactive-workers")}
+              className={commonStyles.buttonSecondary}
+            >
+              <FaUsersSlash /> Inactive
+            </button>
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={
+                isEditing
+                  ? commonStyles.buttonSuccess
+                  : commonStyles.buttonSecondary
+              }
+            >
+              {isEditing ? <FaCheck /> : <FaEdit />}{" "}
+              {isEditing ? "Done" : "Edit"}
+            </button>
+          </div>
+        </div>
+
+        {isAdding && (
+          <div className={styles.createPersonForm}>
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Enter person name..."
+              className={styles.inputField}
+              disabled={addLoading}
+            />
+            <button
+              onClick={handleCreatePerson}
+              className={commonStyles.buttonPrimary}
+              disabled={addLoading}
+            >
+              {addLoading ? "Creating..." : "Create"}
+            </button>
+          </div>
+        )}
+
+        <div className={styles.content}>
+          {isLoading ? (
+            <div style={{ padding: "20px" }}>
+              <SkeletonLoader count={6} />
+            </div>
+          ) : activePeople.length > 0 ? (
+            <PeopleList
+              people={activePeople}
+              isEditing={isEditing}
+              onToggleStatus={handleToggleStatus}
+              onUpdatePersonName={handleUpdatePersonName}
+              onUpdatePersonPhone={handleUpdatePersonPhone}
+            />
+          ) : (
+            <EmptyState message="No active workers found. Add one to get started!">
+              <button
+                onClick={() => setIsAdding(true)}
+                className={commonStyles.buttonSuccess}
+              >
+                <FaPlus /> Add First Worker
+              </button>
+            </EmptyState>
           )}
-          <button
-            onClick={() => navigate("/inactive-workers")}
-            className={commonStyles.buttonSecondary}
-          >
-            <FaUsersSlash /> Inactive
-          </button>
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className={commonStyles.buttonPrimary}
-          >
-            {isEditing ? (
-              <>
-                <FaCheck /> Done
-              </>
-            ) : (
-              <>
-                <FaEdit /> Edit
-              </>
-            )}
-          </button>
         </div>
       </div>
-
-      {isAdding && (
-        <div className={styles.createPersonForm}>
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Enter person name"
-            className={styles.inputField}
-            disabled={addLoading}
-          />
-          <button
-            onClick={handleCreatePerson}
-            className={commonStyles.buttonPrimary}
-            disabled={addLoading}
-          >
-            {addLoading ? "Creating..." : "Create"}
-          </button>
-          <button
-            onClick={() => setIsAdding(false)}
-            className={commonStyles.buttonSecondary}
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {isLoading ? (
-        <SkeletonLoader count={6} />
-      ) : activePeople.length > 0 ? (
-        <PeopleList
-          people={activePeople}
-          isEditing={isEditing}
-          onToggleStatus={handleToggleStatus}
-          onUpdatePersonName={handleUpdatePersonName}
-          onUpdatePersonPhone={handleUpdatePersonPhone}
-        />
-      ) : (
-        <EmptyState message="No active workers found. Add one to get started!">
-          <button
-            onClick={() => setIsAdding(true)}
-            className={commonStyles.buttonSuccess}
-          >
-            <FaPlus /> Add First Worker
-          </button>
-        </EmptyState>
-      )}
     </div>
   );
 };

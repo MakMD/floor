@@ -1,72 +1,102 @@
-/* makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/Pages/PersonTableDetailsPage.module.css */
-
-.pageLayout {
-  display: grid;
-  grid-template-columns: 2.5fr 1fr;
-  gap: 30px;
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 20px;
+.pageContainer {
+  min-height: 100vh;
+  background-color: var(--color-background);
+  padding: 16px;
+  display: flex;
+  justify-content: center;
   align-items: flex-start;
 }
 
-.mainContent {
-  background-color: var(--color-surface);
-  border-radius: var(--border-radius-lg);
-  padding: 24px;
-  border: 1px solid var(--color-border);
-}
-
-.sidebar {
-  position: sticky;
-  top: 20px;
+.mobileLayout {
+  width: 100%;
+  max-width: 1400px;
+  background-color: #f5f5f5; /* Фон для десктопа між картками */
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
+  padding: 16px 20px;
+  background-color: #ffffff;
   border-bottom: 1px solid var(--color-border);
+  border-radius: 8px 8px 0 0;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .pageTitle {
-  font-size: 2rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #222222;
   margin: 0;
   text-align: center;
   flex-grow: 1;
 }
 
-.addInvoiceForm {
-  padding: 20px;
-  background-color: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
+.detailsGrid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 15px;
-  align-items: flex-end;
-  margin-bottom: 24px;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  padding: 20px 0;
+  align-items: start;
 }
 
-.addInvoiceForm h3 {
-  grid-column: 1 / -1;
-  margin-bottom: 10px;
-  font-size: 1.25rem;
+.gridColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.addInvoiceForm > button {
-  grid-column: 1 / -1;
-  margin-top: 10px;
+.detailCard {
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.detailCard h3 {
+  margin: 0;
+  background-color: #e8e6df;
+  color: #4a4a4a;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-bottom: 1px solid #dcdad3;
+}
+
+:root[data-theme="dark"] .detailCard h3 {
+  background-color: #2a2a2a;
+  color: #d1d1d1;
+  border-color: #444;
+}
+
+.cardContentWrapper {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.addInvoiceForm {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
 }
 
 .inputField {
   width: 100%;
-  padding: 10px;
+  padding: 10px 12px;
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  font-size: 1rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
   box-sizing: border-box;
 }
 
@@ -82,18 +112,18 @@
 .invoiceTable th,
 .invoiceTable td {
   border-bottom: 1px solid var(--color-border);
-  padding: 14px 16px;
+  padding: 14px 20px;
   text-align: left;
   vertical-align: middle;
   white-space: nowrap;
 }
 
 .invoiceTable th {
-  background-color: var(--color-surface-accent);
-  font-weight: 500;
-  font-size: 0.875rem;
+  background-color: #f5f5f5;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #555555;
   text-transform: uppercase;
-  color: var(--color-text-secondary);
 }
 
 .invoiceTable tbody tr:last-child td {
@@ -103,45 +133,71 @@
 .invoiceTable input {
   width: 100%;
   padding: 8px;
-  border: 1px solid var(--color-primary);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   box-sizing: border-box;
-  min-width: 150px;
+  min-width: 120px;
 }
 
 .totalRow td {
-  font-weight: bold;
-  background-color: var(--color-surface-accent);
+  font-weight: 700;
+  background-color: #fcfcfc;
   border-top: 2px solid var(--color-border);
+  font-size: 1.05rem;
 }
 
 .totalRow td:first-child {
   text-align: right;
+  color: #555555;
 }
 
 .calculationButtons {
-  margin-top: 20px;
+  margin-top: 10px;
+  padding: 0 20px 20px 20px;
   display: flex;
   gap: 10px;
   justify-content: flex-end;
 }
 
-@media (max-width: var(--breakpoint-md)) {
-  .pageLayout {
-    grid-template-columns: 1fr;
+@media (max-width: 767px) {
+  .pageContainer {
+    padding: 0;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
   }
-  .sidebar {
-    position: static;
-    margin-top: 30px;
+
+  .mobileLayout {
+    border-radius: 0;
   }
+
   .header {
+    border-radius: 0;
     flex-direction: column;
-    gap: 16px;
   }
-  .pageTitle {
-    font-size: 1.5rem;
-    order: -1;
+
+  .header button {
+    width: 100%;
   }
+
+  .detailsGrid {
+    grid-template-columns: 1fr;
+    padding: 0;
+    gap: 0;
+  }
+
+  .gridColumn {
+    gap: 0;
+  }
+
+  .detailCard {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    box-shadow: none;
+  }
+
   .addInvoiceForm {
     grid-template-columns: 1fr;
   }
@@ -150,12 +206,15 @@
     display: none;
   }
 
+  /* СТИЛІЗАЦІЯ МОБІЛЬНОЇ ТАБЛИЦІ ПІД ПЛАСКІ КАРТКИ */
   .invoiceTable tr {
     display: block;
-    margin-bottom: 16px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-md);
-    padding: 10px;
+    border-bottom: 1px solid var(--color-border);
+    padding: 16px 0;
+  }
+
+  .invoiceTable tbody tr:last-child {
+    border-bottom: none;
   }
 
   .invoiceTable td {
@@ -163,37 +222,37 @@
     justify-content: space-between;
     align-items: center;
     text-align: right;
-    padding: 10px 5px;
-    border-bottom: 1px solid var(--color-border);
-    white-space: normal;
-  }
-
-  .invoiceTable td:last-child {
+    padding: 8px 20px;
     border-bottom: none;
+    white-space: normal;
   }
 
   .invoiceTable td::before {
     content: attr(data-label);
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 0.85rem;
     text-align: left;
     margin-right: 10px;
     color: var(--color-text-secondary);
   }
 
   .invoiceTable tfoot {
-    display: contents;
+    display: block;
+    background-color: #f9f9f9;
+    padding: 10px 0;
   }
 
   .invoiceTable tfoot .totalRow td {
     display: flex;
     justify-content: space-between;
+    padding: 10px 20px;
   }
+
   .invoiceTable tfoot .totalRow td:first-child::before {
     content: "TOTAL";
   }
 
   .invoiceTable input {
-    min-width: 100px;
     text-align: right;
   }
 

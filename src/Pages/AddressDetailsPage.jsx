@@ -215,19 +215,13 @@ const AddressDetailsPage = () => {
     return data;
   };
 
-  // --- МИТТЄВА ЗМІНА СТАТУСУ ---
   const handleStatusChange = async (e) => {
     const newStatus = e.target.value;
-
-    // Миттєве оновлення локального стану для швидкого відгуку інтерфейсу
     setEditedData((prev) => ({ ...prev, status: newStatus }));
-
-    // Збереження в БД
     const updated = await updateAddress({ status: newStatus });
     if (updated) {
       toast.success(`Project status updated to ${newStatus}`);
     } else {
-      // Якщо помилка — повертаємо попередній статус
       setEditedData((prev) => ({ ...prev, status: addressData?.status }));
     }
   };
@@ -244,7 +238,7 @@ const AddressDetailsPage = () => {
         ? parseFloat(editedData.total_amount)
         : null,
       date: editedData.date || null,
-      status: editedData.status, // статус теж збережеться, якщо його міняли
+      status: editedData.status,
       builder_id: editedData.builder_id || null,
       store_id: editedData.store_id || null,
     };
@@ -255,7 +249,6 @@ const AddressDetailsPage = () => {
     }
   };
 
-  // --- ФУНКЦІЇ SQ FT NOTES ---
   const handleAddSqFtNote = async () => {
     if (newSqFtNote.trim() === "") return;
     const updatedNotes = [...editedData.sq_ft_notes, newSqFtNote.trim()];
@@ -277,7 +270,6 @@ const AddressDetailsPage = () => {
     }
   };
 
-  // --- ФУНКЦІЇ ФАЙЛІВ ---
   const handleFileUploaded = async (filePath) => {
     const updatedFiles = [...(addressData.files || []), filePath];
     const updated = await updateAddress({ files: updatedFiles });
@@ -305,7 +297,6 @@ const AddressDetailsPage = () => {
     if (updated) toast.success("File deleted successfully!");
   };
 
-  // --- ФУНКЦІЇ WORK ORDERS ---
   const handleWoChange = (e) => {
     const { name, value } = e.target;
     setWoData((prev) => ({ ...prev, [name]: value }));
@@ -374,7 +365,6 @@ const AddressDetailsPage = () => {
           editingWoId ? "Work Order updated!" : "Work Order added!",
         );
         handleCancelWO();
-
         const { data } = await supabase
           .from("work_orders")
           .select("*, products(name), people(name)")
@@ -402,19 +392,15 @@ const AddressDetailsPage = () => {
     }
   };
 
-  // --- ЛОГІКА ГЕНЕРАЦІЇ PDF ---
   const generatePDF = (wo) => {
     const doc = new jsPDF();
-
     doc.setFontSize(24);
     doc.setFont("helvetica", "bold");
     doc.text("FLOORING BOSS LTD.", 105, 25, { align: "center" });
-
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 100, 100);
     doc.text("Edmonton, Alberta", 105, 33, { align: "center" });
-
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 0, 0);
@@ -451,7 +437,6 @@ const AddressDetailsPage = () => {
 
     rows.forEach((row, i) => {
       const currentY = startY + i * rowHeight;
-
       if (i > 0) {
         doc.line(
           leftMargin,
@@ -460,38 +445,31 @@ const AddressDetailsPage = () => {
           currentY,
         );
       }
-
       doc.line(
         leftMargin + col1Width,
         currentY,
         leftMargin + col1Width,
         currentY + rowHeight,
       );
-
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.text(row.label, leftMargin + 5, currentY + 8);
-
       doc.setFont("helvetica", "normal");
       doc.text(row.value.toString(), leftMargin + col1Width + 5, currentY + 8);
     });
 
     let footerY = startY + rows.length * rowHeight + 30;
-
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text("Installer Signature:", 20, footerY);
-
     doc.setFont("helvetica", "normal");
     const installerName = wo.people?.name
       ? wo.people.name
       : "_________________________________";
     doc.text(installerName, 65, footerY);
-
     footerY += 15;
     doc.setFont("helvetica", "bold");
     doc.text("Date Completed:", 20, footerY);
-
     doc.setFont("helvetica", "normal");
     const dateCompleted = wo.date_completed
       ? wo.date_completed
@@ -511,7 +489,6 @@ const AddressDetailsPage = () => {
     const doc = generatePDF(wo);
     const dataUri = doc.output("datauristring");
     const fileName = `WorkOrder_${wo.area ? wo.area.replace(/\s+/g, "_") : "Doc"}.pdf`;
-
     e.dataTransfer.setData(
       "DownloadURL",
       `application/pdf:${fileName}:${dataUri}`,
@@ -528,574 +505,573 @@ const AddressDetailsPage = () => {
 
   if (!addressData) return <p>Loading...</p>;
 
+  const getStatusStyle = (status) => {
+    if (status === "Ready")
+      return { bg: "rgba(40, 167, 69, 0.15)", color: "#28a745" };
+    if (status === "Not Finished")
+      return { bg: "rgba(220, 53, 69, 0.15)", color: "#dc3545" };
+    return { bg: "rgba(255, 193, 7, 0.15)", color: "#d39e00" };
+  };
+
+  const statusStyle = getStatusStyle(editedData.status);
+
   return (
     <div className={styles.pageContainer}>
-      {/* Lightbox для повноекранного фото */}
-      {selectedImage && (
-        <div className={styles.lightbox} onClick={() => setSelectedImage(null)}>
-          <button
-            className={styles.closeLightbox}
+      <div className={styles.mobileLayout}>
+        {selectedImage && (
+          <div
+            className={styles.lightbox}
             onClick={() => setSelectedImage(null)}
           >
-            <FaTimes />
-          </button>
-          <img
-            src={selectedImage}
-            alt="Fullscreen report photo"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
-
-      <div className={styles.header}>
-        <button
-          className={commonStyles.buttonSecondary}
-          onClick={() => navigate("/addresses", { state: searchState })}
-        >
-          <FaArrowLeft /> Back
-        </button>
-        {isEditing ? (
-          <input
-            type="text"
-            name="address"
-            value={editedData.address}
-            onChange={handleInputChange}
-            className={styles.titleInput}
-          />
-        ) : (
-          <h1 className={styles.pageTitle}>{addressData.address}</h1>
-        )}
-        <button
-          className={commonStyles.buttonPrimary}
-          onClick={() => (isEditing ? handleSaveChanges() : setIsEditing(true))}
-        >
-          {isEditing ? <FaCheck /> : <FaEdit />}{" "}
-          {isEditing ? "Save" : "Edit Details"}
-        </button>
-      </div>
-
-      <div className={styles.detailsGrid}>
-        <div className={styles.gridColumn}>
-          {/* === БЛОК: WORK ORDERS === */}
-          <div
-            className={styles.detailCard}
-            style={{ borderLeft: "4px solid var(--color-primary)" }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "16px",
-              }}
+            <button
+              className={styles.closeLightbox}
+              onClick={() => setSelectedImage(null)}
             >
-              <h3 style={{ margin: 0 }}>Work Orders</h3>
-              {!showWoForm && (
-                <button
-                  onClick={() => {
-                    setEditingWoId(null);
-                    setShowWoForm(true);
-                  }}
-                  className={commonStyles.buttonPrimary}
-                  style={{ padding: "6px 12px", fontSize: "0.85rem" }}
-                >
-                  <FaPlus /> Add New
-                </button>
-              )}
-            </div>
+              <FaTimes />
+            </button>
+            <img
+              src={selectedImage}
+              alt="Fullscreen report photo"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
 
-            {showWoForm ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                  padding: "16px",
-                  backgroundColor: "var(--color-background)",
-                  borderRadius: "8px",
-                  border: "1px solid var(--color-border)",
-                }}
-              >
-                <h4>{editingWoId ? "Edit Work Order" : "Create Work Order"}</h4>
+        <div className={styles.header}>
+          <button
+            className={commonStyles.buttonSecondary}
+            onClick={() => navigate(-1)}
+            style={{ border: "none" }}
+          >
+            <FaArrowLeft /> Back
+          </button>
+          {isEditing ? (
+            <input
+              type="text"
+              name="address"
+              value={editedData.address}
+              onChange={handleInputChange}
+              className={styles.titleInput}
+            />
+          ) : (
+            <h1 className={styles.pageTitle}>{addressData.address}</h1>
+          )}
+          <button
+            className={commonStyles.buttonPrimary}
+            onClick={() =>
+              isEditing ? handleSaveChanges() : setIsEditing(true)
+            }
+          >
+            {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Save" : "Edit"}
+          </button>
+        </div>
+
+        <div className={styles.detailsGrid}>
+          {/* ЛІВА КОЛОНКА */}
+          <div className={styles.gridColumn}>
+            {/* 1. GENERAL DETAILS */}
+            <div className={styles.detailCard}>
+              <h3>General Project Details</h3>
+              <div className={styles.cardContentWrapper}>
                 <div className={styles.detailItem}>
-                  <label>Area (e.g. Main Floor)</label>
-                  <input
-                    type="text"
-                    name="area"
-                    value={woData.area}
-                    onChange={handleWoChange}
-                    className={styles.editInput}
-                    placeholder="Area..."
-                  />
-                </div>
-                <div className={styles.detailItem}>
-                  <label>Product</label>
-                  <select
-                    name="product_id"
-                    value={woData.product_id}
-                    onChange={handleWoChange}
-                    className={styles.editInput}
-                    disabled={listsLoading}
-                  >
-                    <option value="">Select Product</option>
-                    {products?.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className={styles.detailItem}>
-                  <label>Square Feet</label>
-                  <input
-                    type="number"
-                    name="sq_ft"
-                    value={woData.sq_ft}
-                    onChange={handleWoChange}
-                    className={styles.editInput}
-                    placeholder="Sq ft"
-                  />
-                </div>
-                <div className={styles.detailItem}>
-                  <label>Installer Signature</label>
-                  <select
-                    name="worker_id"
-                    value={woData.worker_id}
-                    onChange={handleWoChange}
-                    className={styles.editInput}
-                    disabled={peopleLoading}
-                  >
-                    <option value="">Select Installer (Optional)</option>
-                    {people?.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className={styles.detailItem}>
-                  <label>People on Site</label>
-                  <input
-                    type="number"
-                    name="people_count"
-                    value={woData.people_count}
-                    onChange={handleWoChange}
-                    className={styles.editInput}
-                    placeholder="Count"
-                  />
-                </div>
-                <div className={styles.detailItem}>
-                  <label>Date Completed</label>
-                  <input
-                    type="date"
-                    name="date_completed"
-                    value={woData.date_completed}
-                    onChange={handleWoChange}
-                    className={styles.editInput}
-                  />
+                  <label>Status</label>
+                  <div className={styles.statusCell}>
+                    <select
+                      name="status"
+                      value={editedData.status}
+                      onChange={handleStatusChange}
+                      className={styles.editInput}
+                      style={{
+                        backgroundColor: statusStyle.bg,
+                        color: statusStyle.color,
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        border: "none",
+                        outline: "none",
+                        padding: "8px 14px",
+                      }}
+                    >
+                      <option value="In Process">In Process</option>
+                      <option value="Ready">Ready</option>
+                      <option value="Not Finished">Not Finished</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div
-                  style={{ display: "flex", gap: "10px", marginTop: "10px" }}
-                >
-                  <button
-                    onClick={handleSaveWO}
-                    disabled={isSubmittingWo}
-                    className={commonStyles.buttonSuccess}
-                  >
-                    {isSubmittingWo ? (
-                      <FaSpinner className="spin" />
-                    ) : (
-                      <>
-                        <FaCheck /> Save WO
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={handleCancelWO}
-                    className={commonStyles.buttonSecondary}
-                  >
-                    <FaTimes /> Cancel
-                  </button>
+                <div className={styles.detailItem}>
+                  <label>Client (Builder)</label>
+                  {isEditing ? (
+                    <select
+                      name="builder_id"
+                      value={editedData.builder_id}
+                      onChange={handleInputChange}
+                      className={styles.editInput}
+                      disabled={listsLoading}
+                    >
+                      <option value="">Select a builder</option>
+                      {builders?.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p>{addressData.builders?.name || "N/A"}</p>
+                  )}
+                </div>
+                <div className={styles.detailItem}>
+                  <label>Store</label>
+                  {isEditing ? (
+                    <select
+                      name="store_id"
+                      value={editedData.store_id}
+                      onChange={handleInputChange}
+                      className={styles.editInput}
+                      disabled={listsLoading}
+                    >
+                      <option value="">Select a store</option>
+                      {stores?.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p>{addressData.stores?.name || "N/A"}</p>
+                  )}
+                </div>
+                <div className={styles.detailItem}>
+                  <label>Project Date</label>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      name="date"
+                      value={editedData.date}
+                      onChange={handleInputChange}
+                      className={styles.editInput}
+                    />
+                  ) : (
+                    <p>{addressData.date || "N/A"}</p>
+                  )}
+                </div>
+                <div className={styles.detailItem}>
+                  <label>Total Amount</label>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      name="total_amount"
+                      value={editedData.total_amount}
+                      onChange={handleInputChange}
+                      className={styles.editInput}
+                    />
+                  ) : (
+                    <p>
+                      {addressData.total_amount
+                        ? `$${addressData.total_amount.toFixed(2)}`
+                        : "N/A"}
+                    </p>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                }}
-              >
-                {workOrders.length > 0 ? (
-                  workOrders.map((wo) => (
+            </div>
+
+            {/* 2. MATERIALS */}
+            <div className={styles.detailCard}>
+              <h3>Materials</h3>
+              <div className={styles.cardContentWrapper}>
+                <MaterialsManager addressId={addressId} />
+              </div>
+            </div>
+
+            {/* 3. WORK TYPES & PAYMENTS (Перенесено сюди за вашою стрілкою) */}
+            <div className={styles.detailCard}>
+              <h3>Work Types & Payments</h3>
+              <div className={styles.cardContentWrapper}>
+                <WorkTypesManager
+                  addressId={addressId}
+                  addressData={addressData}
+                />
+              </div>
+            </div>
+
+            {/* 4. WORK ORDERS */}
+            <div className={styles.detailCard}>
+              <div className={styles.cardHeader}>
+                <h3>Work Orders</h3>
+                {!showWoForm && (
+                  <button
+                    onClick={() => {
+                      setEditingWoId(null);
+                      setShowWoForm(true);
+                    }}
+                    className={commonStyles.buttonPrimary}
+                    style={{ padding: "4px 12px", fontSize: "0.85rem" }}
+                  >
+                    <FaPlus /> Add New
+                  </button>
+                )}
+              </div>
+              <div className={styles.cardContentWrapper}>
+                {showWoForm ? (
+                  <div className={styles.formContainer}>
+                    <h4>
+                      {editingWoId ? "Edit Work Order" : "Create Work Order"}
+                    </h4>
+                    <div className={styles.detailItem}>
+                      <label>Area (e.g. Main Floor)</label>
+                      <input
+                        type="text"
+                        name="area"
+                        value={woData.area}
+                        onChange={handleWoChange}
+                        className={styles.editInput}
+                        placeholder="Area..."
+                      />
+                    </div>
+                    <div className={styles.detailItem}>
+                      <label>Product</label>
+                      <select
+                        name="product_id"
+                        value={woData.product_id}
+                        onChange={handleWoChange}
+                        className={styles.editInput}
+                        disabled={listsLoading}
+                      >
+                        <option value="">Select Product</option>
+                        {products?.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className={styles.detailItem}>
+                      <label>Square Feet</label>
+                      <input
+                        type="number"
+                        name="sq_ft"
+                        value={woData.sq_ft}
+                        onChange={handleWoChange}
+                        className={styles.editInput}
+                        placeholder="Sq ft"
+                      />
+                    </div>
+                    <div className={styles.detailItem}>
+                      <label>Installer Signature</label>
+                      <select
+                        name="worker_id"
+                        value={woData.worker_id}
+                        onChange={handleWoChange}
+                        className={styles.editInput}
+                        disabled={peopleLoading}
+                      >
+                        <option value="">Select Installer (Optional)</option>
+                        {people?.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className={styles.detailItem}>
+                      <label>People on Site</label>
+                      <input
+                        type="number"
+                        name="people_count"
+                        value={woData.people_count}
+                        onChange={handleWoChange}
+                        className={styles.editInput}
+                        placeholder="Count"
+                      />
+                    </div>
+                    <div className={styles.detailItem}>
+                      <label>Date Completed</label>
+                      <input
+                        type="date"
+                        name="date_completed"
+                        value={woData.date_completed}
+                        onChange={handleWoChange}
+                        className={styles.editInput}
+                      />
+                    </div>
                     <div
-                      key={wo.id}
-                      draggable="true"
-                      onDragStart={(e) => handleDragStart(e, wo)}
-                      onClick={(e) => handleEditWO(e, wo)}
                       style={{
                         display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "12px",
-                        border: "1px solid var(--color-border)",
-                        borderRadius: "6px",
-                        backgroundColor: "var(--color-background)",
-                        cursor: "grab",
-                        transition: "background-color 0.2s",
+                        gap: "10px",
+                        marginTop: "10px",
                       }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "var(--color-surface)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "var(--color-background)")
-                      }
-                      title="Drag to desktop or click to edit"
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "4px",
-                        }}
+                      <button
+                        onClick={handleSaveWO}
+                        disabled={isSubmittingWo}
+                        className={commonStyles.buttonSuccess}
                       >
-                        <strong
-                          style={{
-                            color: "var(--color-text-primary)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                          }}
-                        >
-                          <FaFilePdf style={{ color: "#e11d48" }} /> Area:{" "}
-                          {wo.area || "N/A"}
-                        </strong>
-                        <span
-                          style={{
-                            fontSize: "0.85rem",
-                            color: "var(--color-text-secondary)",
-                          }}
-                        >
-                          {wo.products?.name || "No Product"} •{" "}
-                          {wo.sq_ft ? `${wo.sq_ft} sq ft` : "No sqft"} •
-                          Installer: {wo.people?.name || "TBD"}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button
-                          onClick={(e) => handleDownloadPDF(e, wo)}
-                          className={commonStyles.buttonIcon}
-                          title="Download PDF"
-                          style={{ color: "var(--color-primary)" }}
-                        >
-                          <FaDownload />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteWO(e, wo.id)}
-                          className={commonStyles.buttonIcon}
-                          title="Delete"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
+                        {isSubmittingWo ? (
+                          <FaSpinner className="spin" />
+                        ) : (
+                          <>
+                            <FaCheck /> Save WO
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={handleCancelWO}
+                        className={commonStyles.buttonSecondary}
+                      >
+                        <FaTimes /> Cancel
+                      </button>
                     </div>
-                  ))
+                  </div>
                 ) : (
-                  <p
+                  <div
                     style={{
-                      color: "var(--color-text-secondary)",
-                      fontStyle: "italic",
-                      fontSize: "0.9rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
                     }}
                   >
-                    No work orders created for this project yet.
+                    {workOrders.length > 0 ? (
+                      workOrders.map((wo) => (
+                        <div
+                          key={wo.id}
+                          draggable="true"
+                          onDragStart={(e) => handleDragStart(e, wo)}
+                          onClick={(e) => handleEditWO(e, wo)}
+                          className={styles.draggableCard}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "4px",
+                            }}
+                          >
+                            <strong
+                              style={{
+                                color: "var(--color-text-primary)",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                            >
+                              <FaFilePdf
+                                style={{ color: "var(--color-danger)" }}
+                              />{" "}
+                              Area: {wo.area || "N/A"}
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: "0.85rem",
+                                color: "var(--color-text-secondary)",
+                              }}
+                            >
+                              {wo.products?.name || "No Product"} •{" "}
+                              {wo.sq_ft ? `${wo.sq_ft} sq ft` : "No sqft"} •
+                              Installer: {wo.people?.name || "TBD"}
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <button
+                              onClick={(e) => handleDownloadPDF(e, wo)}
+                              className={commonStyles.buttonIcon}
+                              title="Download PDF"
+                              style={{ color: "var(--color-primary)" }}
+                            >
+                              <FaDownload />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteWO(e, wo.id)}
+                              className={commonStyles.buttonIcon}
+                              title="Delete"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className={styles.noItemsMessage}>
+                        No work orders created for this project yet.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ПРАВА КОЛОНКА */}
+          <div className={styles.gridColumn}>
+            {/* 1. WORKER REPORTS */}
+            <div className={styles.detailCard}>
+              <h3>Worker Daily Reports</h3>
+              <div className={styles.cardContentWrapper}>
+                {reports.length > 0 ? (
+                  <div className={styles.reportsList}>
+                    {reports.map((report) => (
+                      <div key={report.id} className={styles.reportCard}>
+                        <div className={styles.reportHeader}>
+                          <div>
+                            <strong>
+                              {report.profiles?.first_name}{" "}
+                              {report.profiles?.last_name || ""}
+                            </strong>
+                            <div
+                              style={{
+                                fontSize: "0.85rem",
+                                color: "var(--color-text-secondary)",
+                              }}
+                            >
+                              {new Date(report.report_date).toLocaleString()}
+                            </div>
+                          </div>
+                          {editedData.status === "Ready" ? (
+                            <span
+                              style={{
+                                color: "#10b981",
+                                fontSize: "0.95rem",
+                                fontWeight: "bold",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                            >
+                              <FaCheckCircle /> Approved
+                            </span>
+                          ) : (
+                            <button
+                              className={commonStyles.buttonSuccess}
+                              style={{
+                                padding: "6px 12px",
+                                fontSize: "0.85rem",
+                              }}
+                              onClick={handleApproveReport}
+                              title="Approve report and mark project as Ready"
+                            >
+                              <FaCheckCircle /> Approve
+                            </button>
+                          )}
+                        </div>
+
+                        {report.notes && (
+                          <div className={styles.reportNotes}>
+                            <p>{report.notes}</p>
+                          </div>
+                        )}
+
+                        {report.photos_before?.length > 0 && (
+                          <div className={styles.photoSection}>
+                            <span className={styles.photoSectionTitle}>
+                              Photos Before:
+                            </span>
+                            <div className={styles.photoGrid}>
+                              {report.photos_before.map((url, i) => (
+                                <img
+                                  key={`before-${i}`}
+                                  src={url}
+                                  alt="Before"
+                                  className={styles.thumbnail}
+                                  onClick={() => setSelectedImage(url)}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {report.photos_after?.length > 0 && (
+                          <div className={styles.photoSection}>
+                            <span className={styles.photoSectionTitle}>
+                              Photos After:
+                            </span>
+                            <div className={styles.photoGrid}>
+                              {report.photos_after.map((url, i) => (
+                                <img
+                                  key={`after-${i}`}
+                                  src={url}
+                                  alt="After"
+                                  className={styles.thumbnail}
+                                  onClick={() => setSelectedImage(url)}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.noItemsMessage}>
+                    No reports submitted by workers yet.
                   </p>
                 )}
               </div>
-            )}
-          </div>
-
-          <div className={styles.detailCard}>
-            <h3>General Project Details</h3>
-
-            {/* === ОНОВЛЕНИЙ БЛОК СТАТУСУ (ЗАВЖДИ АКТИВНИЙ) === */}
-            <div className={styles.detailItem}>
-              <label>Status</label>
-              <div className={styles.statusCell}>
-                <select
-                  name="status"
-                  value={editedData.status}
-                  onChange={handleStatusChange}
-                  className={styles.editInput}
-                  style={{
-                    backgroundColor:
-                      editedData.status === "Ready"
-                        ? "rgba(40, 167, 69, 0.15)"
-                        : editedData.status === "Not Finished"
-                          ? "rgba(220, 53, 69, 0.15)"
-                          : "rgba(255, 193, 7, 0.15)",
-                    color:
-                      editedData.status === "Ready"
-                        ? "#28a745"
-                        : editedData.status === "Not Finished"
-                          ? "#dc3545"
-                          : "#d39e00",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    border: "none",
-                    outline: "none",
-                    padding: "10px 14px",
-                  }}
-                >
-                  <option value="In Process">In Process</option>
-                  <option value="Ready">Ready</option>
-                  <option value="Not Finished">Not Finished</option>
-                </select>
-              </div>
             </div>
 
-            <div className={styles.detailItem}>
-              <label>Client (Builder)</label>
-              {isEditing ? (
-                <select
-                  name="builder_id"
-                  value={editedData.builder_id}
-                  onChange={handleInputChange}
-                  className={styles.editInput}
-                  disabled={listsLoading}
-                >
-                  <option value="">Select a builder</option>
-                  {builders?.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p>{addressData.builders?.name || "N/A"}</p>
-              )}
-            </div>
-            <div className={styles.detailItem}>
-              <label>Store</label>
-              {isEditing ? (
-                <select
-                  name="store_id"
-                  value={editedData.store_id}
-                  onChange={handleInputChange}
-                  className={styles.editInput}
-                  disabled={listsLoading}
-                >
-                  <option value="">Select a store</option>
-                  {stores?.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p>{addressData.stores?.name || "N/A"}</p>
-              )}
-            </div>
-            <div className={styles.detailItem}>
-              <label>Project Date</label>
-              {isEditing ? (
-                <input
-                  type="date"
-                  name="date"
-                  value={editedData.date}
-                  onChange={handleInputChange}
-                  className={styles.editInput}
-                />
-              ) : (
-                <p>{addressData.date || "N/A"}</p>
-              )}
-            </div>
-            <div className={styles.detailItem}>
-              <label>Total Amount</label>
-              {isEditing ? (
-                <input
-                  type="number"
-                  name="total_amount"
-                  value={editedData.total_amount}
-                  onChange={handleInputChange}
-                  className={styles.editInput}
-                />
-              ) : (
-                <p>
-                  {addressData.total_amount
-                    ? `$${addressData.total_amount.toFixed(2)}`
-                    : "N/A"}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className={styles.detailCard}>
-            <h3>Work Types & Payments</h3>
-            <WorkTypesManager addressId={addressId} addressData={addressData} />
-          </div>
-        </div>
-
-        <div className={styles.gridColumn}>
-          {/* === НОВИЙ БЛОК: WORKER REPORTS === */}
-          <div className={styles.detailCard}>
-            <h3>Worker Daily Reports</h3>
-            {reports.length > 0 ? (
-              <div className={styles.reportsList}>
-                {reports.map((report) => (
-                  <div key={report.id} className={styles.reportCard}>
-                    <div className={styles.reportHeader}>
-                      <div>
-                        <strong>
-                          {report.profiles?.first_name}{" "}
-                          {report.profiles?.last_name || ""}
-                        </strong>
-                        <div
-                          style={{
-                            fontSize: "0.85rem",
-                            color: "var(--color-text-secondary)",
-                          }}
-                        >
-                          {new Date(report.report_date).toLocaleString()}
-                        </div>
-                      </div>
-                      {editedData.status === "Ready" ? (
-                        <span
-                          style={{
-                            color: "#10b981",
-                            fontSize: "0.95rem",
-                            fontWeight: "bold",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                          }}
-                        >
-                          <FaCheckCircle /> Approved (Ready)
-                        </span>
-                      ) : (
-                        <button
-                          className={commonStyles.buttonSuccess}
-                          style={{ padding: "6px 12px", fontSize: "0.85rem" }}
-                          onClick={handleApproveReport}
-                          title="Approve report and mark project as Ready"
-                        >
-                          <FaCheckCircle /> Approve
-                        </button>
-                      )}
-                    </div>
-
-                    {report.notes && (
-                      <div className={styles.reportNotes}>
-                        <p>{report.notes}</p>
-                      </div>
-                    )}
-
-                    {report.photos_before?.length > 0 && (
-                      <div className={styles.photoSection}>
-                        <span className={styles.photoSectionTitle}>
-                          Photos Before:
-                        </span>
-                        <div className={styles.photoGrid}>
-                          {report.photos_before.map((url, i) => (
-                            <img
-                              key={`before-${i}`}
-                              src={url}
-                              alt="Before"
-                              className={styles.thumbnail}
-                              onClick={() => setSelectedImage(url)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {report.photos_after?.length > 0 && (
-                      <div className={styles.photoSection}>
-                        <span className={styles.photoSectionTitle}>
-                          Photos After:
-                        </span>
-                        <div className={styles.photoGrid}>
-                          {report.photos_after.map((url, i) => (
-                            <img
-                              key={`after-${i}`}
-                              src={url}
-                              alt="After"
-                              className={styles.thumbnail}
-                              onClick={() => setSelectedImage(url)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className={styles.noItemsMessage}>
-                No reports submitted by workers yet.
-              </p>
-            )}
-          </div>
-
-          <div className={styles.detailCard}>
-            <h3>Materials</h3>
-            <MaterialsManager addressId={addressId} />
-          </div>
-          <div className={styles.detailCard}>
-            <h3>Square Feet Notes</h3>
-            <div className={styles.addNoteForm}>
-              <input
-                type="text"
-                value={newSqFtNote}
-                onChange={(e) => setNewSqFtNote(e.target.value)}
-                placeholder="Add a sq ft note..."
-                className={styles.noteInput}
-              />
-              <button onClick={handleAddSqFtNote} className={styles.addButton}>
-                <FaPlus />
-              </button>
-            </div>
-            {editedData.sq_ft_notes.length > 0 ? (
-              <ul className={styles.notesList}>
-                {editedData.sq_ft_notes.map((note, index) => (
-                  <li key={index} className={styles.noteItem}>
-                    <span>{note}</span>
-                    <button
-                      onClick={() => handleDeleteSqFtNote(index)}
-                      className={commonStyles.buttonIcon}
-                    >
-                      <FaTrash />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.noItemsMessage}>No notes yet.</p>
-            )}
-          </div>
-          <div className={styles.detailCard}>
-            <h3>Files & Photos</h3>
-            <FileUpload
-              bucketName={BUCKET_NAME}
-              onUploadSuccess={handleFileUploaded}
-            />
-            {addressData.files?.length > 0 ? (
-              <ul className={styles.fileList}>
-                {addressData.files.map((id) => (
-                  <FileListItem
-                    key={id}
-                    bucketName={BUCKET_NAME}
-                    fileIdentifier={id}
-                    onDelete={handleFileDelete}
+            {/* 2. SQUARE FEET NOTES */}
+            <div className={styles.detailCard}>
+              <h3>Square Feet Notes</h3>
+              <div className={styles.cardContentWrapper}>
+                <div className={styles.addNoteForm}>
+                  <input
+                    type="text"
+                    value={newSqFtNote}
+                    onChange={(e) => setNewSqFtNote(e.target.value)}
+                    placeholder="Add a sq ft note..."
+                    className={styles.noteInput}
                   />
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.noItemsMessage}>No files uploaded yet.</p>
-            )}
+                  <button
+                    onClick={handleAddSqFtNote}
+                    className={styles.addButton}
+                  >
+                    <FaPlus />
+                  </button>
+                </div>
+                {editedData.sq_ft_notes.length > 0 ? (
+                  <ul className={styles.notesList}>
+                    {editedData.sq_ft_notes.map((note, index) => (
+                      <li key={index} className={styles.noteItem}>
+                        <span>{note}</span>
+                        <button
+                          onClick={() => handleDeleteSqFtNote(index)}
+                          className={commonStyles.buttonIcon}
+                        >
+                          <FaTrash />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={styles.noItemsMessage}>No notes yet.</p>
+                )}
+              </div>
+            </div>
+
+            {/* 3. FILES & PHOTOS */}
+            <div className={styles.detailCard}>
+              <h3>Files & Photos</h3>
+              <div className={styles.cardContentWrapper}>
+                <FileUpload
+                  bucketName={BUCKET_NAME}
+                  onUploadSuccess={handleFileUploaded}
+                />
+                {addressData.files?.length > 0 ? (
+                  <ul className={styles.fileList}>
+                    {addressData.files.map((id) => (
+                      <FileListItem
+                        key={id}
+                        bucketName={BUCKET_NAME}
+                        fileIdentifier={id}
+                        onDelete={handleFileDelete}
+                      />
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={styles.noItemsMessage}>
+                    No files uploaded yet.
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

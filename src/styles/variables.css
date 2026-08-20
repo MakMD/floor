@@ -1,71 +1,39 @@
 :root {
-  /* Fonts */
-  --font-main: "Inter", system-ui, sans-serif;
+  /* --- ГОЛОВНІ КОЛЬОРИ (Стиль Календаря) --- */
+  --color-primary: #cfa85c; /* Золотистий (Акценти) */
+  --color-primary-hover: #b38f42;
+  --color-secondary: #2c2c2c; /* Темно-сірий (Панелі, Хедери) */
+  --color-secondary-hover: #444444;
+  --color-danger: #b02a48; /* Бордовий (Іконки пін, видалення) */
+  --color-danger-hover: #90273c;
+  --color-success: #28a745;
 
-  /* Colors */
-  --color-primary: #0d6efd;
-  --color-primary-hover: #0b5ed7;
-  --color-secondary: #6c757d;
-  --color-success: #198754;
-  --color-danger: #dc3545;
-  --color-warning: #ffc107;
+  /* --- ФОН ТА ПОВЕРХНІ --- */
+  --color-background: #f5f5f5; /* Загальний фон сторінок */
+  --color-surface: #ffffff; /* Фон карток */
+  --color-border: #e0e0e0; /* Рамки карток та інпутів */
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(45deg, #0d6efd, #3b82f6);
-  --gradient-success: linear-gradient(45deg, #198754, #22c55e);
-
-  /* Background & Surface */
-  --color-background: #f8f9fa;
-  --color-surface: #ffffff;
-  --color-surface-accent: #f8f9fa;
-
-  /* Text */
-  --color-text-primary: #212529;
-  --color-text-secondary: #6c757d;
+  /* --- ТЕКСТ --- */
+  --color-text-primary: #222222;
+  --color-text-secondary: #555555;
   --color-text-light: #ffffff;
 
-  /* Border */
-  --color-border: #dee2e6;
-
-  /* Shadow */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.1);
-
-  /* Border Radius */
+  /* --- ТІНІ ТА ЗАОКРУГЛЕННЯ --- */
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --border-radius-sm: 4px;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
 
-  /* Breakpoints */
-  --breakpoint-md: 768px;
+  --font-main: "Inter", sans-serif;
 }
 
-/* Dark Theme */
+/* --- ТЕМНА ТЕМА --- */
 :root[data-theme="dark"] {
-  /* Colors */
-  --color-primary: #3b82f6;
-  --color-primary-hover: #60a5fa;
-  --color-secondary: #8b94a1;
-  --color-success: #22c55e;
-  --color-danger: #ef4444;
-  --color-warning: #f59e0b;
-
-  /* Gradients */
-  --gradient-primary: linear-gradient(45deg, #3b82f6, #60a5fa);
-  --gradient-success: linear-gradient(45deg, #22c55e, #4ade80);
-
-  /* Background & Surface */
-  --color-background: #111827;
-  --color-surface: #1f2937;
-  --color-surface-accent: #374151;
-
-  /* Text */
-  --color-text-primary: #e5e7eb;
-  --color-text-secondary: #9ca3af;
-
-  /* Border */
-  --color-border: #374151;
-
-  /* Shadow */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.3);
+  --color-background: #121212;
+  --color-surface: #1a1a1a;
+  --color-border: #333333;
+  --color-text-primary: #f5f5f5;
+  --color-text-secondary: #aaaaaa;
+  --color-secondary: #1f1f1f;
 }

@@ -123,20 +123,21 @@ const Header = () => {
 
         {/* Контроли (Тема та Вихід) */}
         <div className={styles.navControls}>
+          {/* Тимчасово приховано перемикач теми
           <button
             onClick={() => {
               toggleTheme();
-              closeMobileMenu(); // Закриваємо меню після зміни теми для зручності
+              closeMobileMenu();
             }}
             className={styles.logoutButton}
             title="Змінити тему"
           >
             {theme === "light" ? <FaMoon /> : <FaSun />}
-            {/* Текст тільки для мобілки */}
             <span className={styles.mobileOnlyText}>
               {theme === "light" ? "Темна тема" : "Світла тема"}
             </span>
           </button>
+          */}
 
           <button onClick={handleLogout} className={styles.logoutButton}>
             <FaSignOutAlt />

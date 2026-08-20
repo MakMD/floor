@@ -1,5 +1,3 @@
-// makmd/floor/floor-65963b367ef8c4d4dde3af32af465a056bcb8db5/src/Pages/PersonTableDetailsPage.jsx
-
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -8,8 +6,8 @@ import AutocompleteInput from "../components/AutocompleteInput/AutocompleteInput
 import AddressHistory from "../components/AddressHistory/AddressHistory";
 import PersonDetailsModal from "../components/PersonDetailsModal/PersonDetailsModal";
 import styles from "./PersonTableDetailsPage.module.css";
-import commonStyles from "../styles/common.module.css"; // ІМПОРТ
-import { FaTrash } from "react-icons/fa";
+import commonStyles from "../styles/common.module.css";
+import { FaTrash, FaArrowLeft, FaEdit, FaCheck, FaPlus } from "react-icons/fa";
 
 const PersonTableDetailsPage = () => {
   const { personId, tableId } = useParams();
@@ -93,7 +91,7 @@ const PersonTableDetailsPage = () => {
 
   const handleInvoiceChange = (e, invoiceId, field) => {
     const updatedInvoices = invoices.map((inv) =>
-      inv.id === invoiceId ? { ...inv, [field]: e.target.value } : inv
+      inv.id === invoiceId ? { ...inv, [field]: e.target.value } : inv,
     );
     setInvoices(updatedInvoices);
   };
@@ -142,7 +140,7 @@ const PersonTableDetailsPage = () => {
           date: inv.date,
           total_income: parseFloat(inv.total_income || 0),
         })
-        .eq("id", inv.id)
+        .eq("id", inv.id),
     );
     const results = await Promise.all(updatePromises);
     const hasError = results.some((res) => res.error);
@@ -172,7 +170,7 @@ const PersonTableDetailsPage = () => {
   const totalIncome = useMemo(() => {
     return invoices.reduce(
       (acc, inv) => acc + parseFloat(inv.total_income || 0),
-      0
+      0,
     );
   }, [invoices]);
 
@@ -195,8 +193,11 @@ const PersonTableDetailsPage = () => {
 
   if (loading || !person || !tableInfo) {
     return (
-      <div className={styles.pageLayout}>
-        <div className={styles.mainContent} style={{ textAlign: "center" }}>
+      <div className={styles.pageContainer}>
+        <div
+          className={styles.mobileLayout}
+          style={{ textAlign: "center", padding: "40px" }}
+        >
           <p>Loading details...</p>
         </div>
       </div>
@@ -204,192 +205,224 @@ const PersonTableDetailsPage = () => {
   }
 
   return (
-    <div className={styles.pageLayout}>
-      <div className={styles.mainContent}>
+    <div className={styles.pageContainer}>
+      <div className={styles.mobileLayout}>
         <div className={styles.header}>
           <button
-            className={commonStyles.buttonSecondary} // ВИКОРИСТАННЯ
+            className={commonStyles.buttonSecondary}
             onClick={() => navigate(-1)}
+            style={{ border: "none" }}
           >
-            Back
+            <FaArrowLeft /> Back
           </button>
           <h1 className={styles.pageTitle}>
             {person.name} - {tableInfo.name}
           </h1>
           <button
             onClick={isEditing ? handleSaveChanges : () => setIsEditing(true)}
-            className={commonStyles.buttonPrimary} // ВИКОРИСТАННЯ
+            className={
+              isEditing
+                ? commonStyles.buttonSuccess
+                : commonStyles.buttonSecondary
+            }
           >
-            {isEditing ? "Save" : "Edit"}
+            {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Save" : "Edit"}
           </button>
         </div>
 
-        <div className={styles.addInvoiceForm}>
-          <h3>Add New Invoice</h3>
-          <AutocompleteInput
-            name="address"
-            value={newInvoice.address}
-            onChange={handleNewInvoiceChange}
-            placeholder="Address"
-            suggestions={uniqueAddresses}
-          />
-          <input
-            type="date"
-            name="date"
-            value={newInvoice.date}
-            onChange={handleNewInvoiceChange}
-            className={styles.inputField}
-          />
-          <input
-            type="number"
-            name="total_income"
-            value={newInvoice.total_income}
-            onChange={handleNewInvoiceChange}
-            placeholder="Total Income"
-            className={styles.inputField}
-          />
-          <button
-            onClick={handleAddInvoice}
-            className={commonStyles.buttonSuccess} // ВИКОРИСТАННЯ
-          >
-            Add Invoice
-          </button>
-        </div>
+        <div className={styles.detailsGrid}>
+          {/* ЛІВА КОЛОНКА (Форма та Інвойси) */}
+          <div className={styles.gridColumn}>
+            <div className={styles.detailCard}>
+              <h3>Add New Invoice</h3>
+              <div className={styles.cardContentWrapper}>
+                <div className={styles.addInvoiceForm}>
+                  <AutocompleteInput
+                    name="address"
+                    value={newInvoice.address}
+                    onChange={handleNewInvoiceChange}
+                    placeholder="Address"
+                    suggestions={uniqueAddresses}
+                  />
+                  <input
+                    type="date"
+                    name="date"
+                    value={newInvoice.date}
+                    onChange={handleNewInvoiceChange}
+                    className={styles.inputField}
+                  />
+                  <input
+                    type="number"
+                    name="total_income"
+                    value={newInvoice.total_income}
+                    onChange={handleNewInvoiceChange}
+                    placeholder="Total Income"
+                    className={styles.inputField}
+                  />
+                  <button
+                    onClick={handleAddInvoice}
+                    className={commonStyles.buttonPrimary}
+                  >
+                    <FaPlus /> Add
+                  </button>
+                </div>
+              </div>
+            </div>
 
-        <div className={styles.tableWrapper}>
-          <table className={styles.invoiceTable}>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Address</th>
-                <th>Store</th>
-                <th>Work Type</th>
-                <th>Total</th>
-                {isEditing && <th></th>}
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map((invoice) => (
-                <tr key={invoice.id}>
-                  <td data-label="Date">
-                    {isEditing ? (
-                      <input
-                        type="date"
-                        value={invoice.date}
-                        onChange={(e) =>
-                          handleInvoiceChange(e, invoice.id, "date")
-                        }
-                      />
-                    ) : (
-                      invoice.date
-                    )}
-                  </td>
-                  <td data-label="Address">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={invoice.address}
-                        onChange={(e) =>
-                          handleInvoiceChange(e, invoice.id, "address")
-                        }
-                      />
-                    ) : (
-                      invoice.address
-                    )}
-                  </td>
-                  <td data-label="Store">{invoice.stores?.name || "N/A"}</td>
-                  <td data-label="Work Type">
-                    {invoice.work_types?.work_type_templates?.name || "N/A"}
-                  </td>
-                  <td data-label="Total">
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        value={invoice.total_income}
-                        onChange={(e) =>
-                          handleInvoiceChange(e, invoice.id, "total_income")
-                        }
-                      />
-                    ) : (
-                      `$${parseFloat(invoice.total_income || 0).toFixed(2)}`
-                    )}
-                  </td>
-                  {isEditing && (
-                    <td data-label="Actions">
-                      <button
-                        className={commonStyles.buttonIcon} // ВИКОРИСТАННЯ
-                        onClick={() => handleDeleteInvoice(invoice.id)}
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className={styles.totalRow}>
-                <td colSpan="4">
-                  <strong>TOTAL:</strong>
-                </td>
-                <td>
-                  <strong>${totalIncome.toFixed(2)}</strong>
-                </td>
-                {isEditing && <td></td>}
-              </tr>
-              {showGST && (
-                <tr className={styles.totalRow}>
-                  <td colSpan="4">
-                    <strong>Total with GST:</strong>
-                  </td>
-                  <td>
-                    <strong>${totalWithGST}</strong>
-                  </td>
-                  {isEditing && <td></td>}
-                </tr>
-              )}
-              {showWCB && (
-                <tr className={styles.totalRow}>
-                  <td colSpan="4">
-                    <strong>Total - WCB:</strong>
-                  </td>
-                  <td>
-                    <strong>${wcb}</strong>
-                  </td>
-                  {isEditing && <td></td>}
-                </tr>
-              )}
-            </tfoot>
-          </table>
-        </div>
-        <div className={styles.calculationButtons}>
-          <button
-            onClick={calculateTotalWithGST}
-            className={commonStyles.button}
-          >
-            {" "}
-            {/* ВИКОРИСТАННЯ */}
-            +GST (5%)
-          </button>
-          <button
-            onClick={calculateWCB}
-            className={commonStyles.buttonSecondary}
-          >
-            {" "}
-            {/* ВИКОРИСТАННЯ */}
-            -WCB (3%)
-          </button>
+            <div className={styles.detailCard}>
+              <h3>Invoices List</h3>
+              <div
+                className={styles.cardContentWrapper}
+                style={{ padding: "0" }}
+              >
+                <div className={styles.tableWrapper}>
+                  <table className={styles.invoiceTable}>
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Address</th>
+                        <th>Store</th>
+                        <th>Work Type</th>
+                        <th>Total</th>
+                        {isEditing && <th></th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invoices.map((invoice) => (
+                        <tr key={invoice.id}>
+                          <td data-label="Date">
+                            {isEditing ? (
+                              <input
+                                type="date"
+                                value={invoice.date}
+                                onChange={(e) =>
+                                  handleInvoiceChange(e, invoice.id, "date")
+                                }
+                              />
+                            ) : (
+                              invoice.date
+                            )}
+                          </td>
+                          <td data-label="Address">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={invoice.address}
+                                onChange={(e) =>
+                                  handleInvoiceChange(e, invoice.id, "address")
+                                }
+                              />
+                            ) : (
+                              invoice.address
+                            )}
+                          </td>
+                          <td data-label="Store">
+                            {invoice.stores?.name || "N/A"}
+                          </td>
+                          <td data-label="Work Type">
+                            {invoice.work_types?.work_type_templates?.name ||
+                              "N/A"}
+                          </td>
+                          <td data-label="Total">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                value={invoice.total_income}
+                                onChange={(e) =>
+                                  handleInvoiceChange(
+                                    e,
+                                    invoice.id,
+                                    "total_income",
+                                  )
+                                }
+                              />
+                            ) : (
+                              `$${parseFloat(invoice.total_income || 0).toFixed(2)}`
+                            )}
+                          </td>
+                          {isEditing && (
+                            <td data-label="Actions">
+                              <button
+                                className={commonStyles.buttonIcon}
+                                onClick={() => handleDeleteInvoice(invoice.id)}
+                              >
+                                <FaTrash />
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className={styles.totalRow}>
+                        <td colSpan="4">
+                          <strong>TOTAL:</strong>
+                        </td>
+                        <td>
+                          <strong>${totalIncome.toFixed(2)}</strong>
+                        </td>
+                        {isEditing && <td></td>}
+                      </tr>
+                      {showGST && (
+                        <tr className={styles.totalRow}>
+                          <td colSpan="4">
+                            <strong>Total with GST:</strong>
+                          </td>
+                          <td>
+                            <strong>${totalWithGST}</strong>
+                          </td>
+                          {isEditing && <td></td>}
+                        </tr>
+                      )}
+                      {showWCB && (
+                        <tr className={styles.totalRow}>
+                          <td colSpan="4">
+                            <strong>Total - WCB:</strong>
+                          </td>
+                          <td>
+                            <strong>${wcb}</strong>
+                          </td>
+                          {isEditing && <td></td>}
+                        </tr>
+                      )}
+                    </tfoot>
+                  </table>
+                </div>
+
+                <div className={styles.calculationButtons}>
+                  <button
+                    onClick={calculateTotalWithGST}
+                    className={commonStyles.buttonSecondary}
+                  >
+                    +GST (5%)
+                  </button>
+                  <button
+                    onClick={calculateWCB}
+                    className={commonStyles.buttonSecondary}
+                  >
+                    -WCB (3%)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ПРАВА КОЛОНКА (Історія) */}
+          <div className={styles.gridColumn}>
+            <div className={styles.detailCard}>
+              <h3>Address History</h3>
+              <div className={styles.cardContentWrapper}>
+                <AddressHistory
+                  allPeople={allPeople}
+                  currentAddress={newInvoice.address}
+                  currentPersonId={person.id}
+                  onPersonClick={handleHistoryPersonClick}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      <aside className={styles.sidebar}>
-        <AddressHistory
-          allPeople={allPeople}
-          currentAddress={newInvoice.address}
-          currentPersonId={person.id}
-          onPersonClick={handleHistoryPersonClick}
-        />
-      </aside>
 
       {selectedPersonForModal && (
         <PersonDetailsModal

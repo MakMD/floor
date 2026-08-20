@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import AdminListManager from "../components/AdminListManager/AdminListManager";
 import styles from "./AdminPage.module.css";
 import {
@@ -6,55 +6,100 @@ import {
   FaHardHat,
   FaPaintRoller,
   FaClipboardList,
-  FaBox, // Додано нову іконку
+  FaBox,
 } from "react-icons/fa";
+import { MdKeyboardArrowDown } from "react-icons/md"; // Додано іконку стрілочки
+
+// Конфігурація всіх розділів для чистоти коду
+const SECTIONS = [
+  {
+    id: "builders",
+    title: "Builders",
+    icon: FaHardHat,
+    tableName: "builders",
+    itemName: "builder",
+  },
+  {
+    id: "stores",
+    title: "Stores",
+    icon: FaStore,
+    tableName: "stores",
+    itemName: "store",
+  },
+  {
+    id: "materials",
+    title: "Materials",
+    icon: FaPaintRoller,
+    tableName: "materials",
+    itemName: "material",
+  },
+  {
+    id: "workTypes",
+    title: "Work Types",
+    icon: FaClipboardList,
+    tableName: "work_type_templates",
+    itemName: "work type",
+  },
+  {
+    id: "products",
+    title: "Products",
+    icon: FaBox,
+    tableName: "products",
+    itemName: "product",
+  },
+];
 
 const AdminPage = () => {
+  // Стан для збереження відкритих секцій
+  const [expandedSections, setExpandedSections] = useState({});
+
+  const toggleSection = (id) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   return (
     <div className={styles.pageContainer}>
-      <h1 className={styles.pageTitle}>Admin Panel</h1>
-      <p className={styles.pageSubtitle}>
-        Manage your application's reference lists here.
-      </p>
-      <div className={styles.managersGrid}>
-        <div className={styles.managerCard}>
-          <div className={styles.cardHeader}>
-            <FaHardHat className={styles.cardIcon} />
-            <h2>Builders</h2>
-          </div>
-          <AdminListManager tableName="builders" itemName="builder" />
+      <div className={styles.mobileLayout}>
+        <div className={styles.header}>
+          <h1 className={styles.pageTitle}>Admin Panel</h1>
+          <p className={styles.pageSubtitle}>
+            Manage your application's reference lists here.
+          </p>
         </div>
-        <div className={styles.managerCard}>
-          <div className={styles.cardHeader}>
-            <FaStore className={styles.cardIcon} />
-            <h2>Stores</h2>
-          </div>
-          <AdminListManager tableName="stores" itemName="store" />
-        </div>
-        <div className={styles.managerCard}>
-          <div className={styles.cardHeader}>
-            <FaPaintRoller className={styles.cardIcon} />
-            <h2>Materials</h2>
-          </div>
-          <AdminListManager tableName="materials" itemName="material" />
-        </div>
-        <div className={styles.managerCard}>
-          <div className={styles.cardHeader}>
-            <FaClipboardList className={styles.cardIcon} />
-            <h2>Work Types</h2>
-          </div>
-          <AdminListManager
-            tableName="work_type_templates"
-            itemName="work type"
-          />
-        </div>
-        {/* --- НОВА КАРТКА ДЛЯ ПРОДУКТІВ --- */}
-        <div className={styles.managerCard}>
-          <div className={styles.cardHeader}>
-            <FaBox className={styles.cardIcon} />
-            <h2>Products</h2>
-          </div>
-          <AdminListManager tableName="products" itemName="product" />
+
+        {/* Замість сітки тепер вертикальний список акордеонів */}
+        <div className={styles.managersList}>
+          {SECTIONS.map((sec) => (
+            <div key={sec.id} className={styles.managerCard}>
+              {/* Клікабельний заголовок */}
+              <div
+                className={`${styles.cardHeader} ${expandedSections[sec.id] ? styles.open : ""}`}
+                onClick={() => toggleSection(sec.id)}
+              >
+                <div className={styles.headerTitleGroup}>
+                  <sec.icon className={styles.cardIcon} />
+                  <h2>{sec.title}</h2>
+                </div>
+                {/* Стрілочка, яка крутиться */}
+                <MdKeyboardArrowDown
+                  className={`${styles.chevron} ${expandedSections[sec.id] ? styles.open : ""}`}
+                />
+              </div>
+
+              {/* Контент (рендериться тільки якщо секція відкрита) */}
+              {expandedSections[sec.id] && (
+                <div className={styles.cardContent}>
+                  <AdminListManager
+                    tableName={sec.tableName}
+                    itemName={sec.itemName}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

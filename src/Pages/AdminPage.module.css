@@ -1,78 +1,177 @@
 .pageContainer {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  min-height: 100vh;
+  background-color: var(--color-background);
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.mobileLayout {
+  width: 100%;
+  max-width: 800px; /* Звужено для кращого вигляду списків на ПК */
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background-color: #ffffff;
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 8px 8px 0 0;
+  text-align: center;
 }
 
 .pageTitle {
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  color: var(--color-text-primary);
-  margin-bottom: 8px;
-  text-align: center;
+  color: #222222;
+  margin: 0 0 8px 0;
 }
 
 .pageSubtitle {
-  font-size: 1.1rem;
-  color: var(--color-text-secondary);
-  text-align: center;
-  margin-bottom: 40px;
+  font-size: 1rem;
+  color: #555555;
+  margin: 0;
 }
 
-.managersGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 32px;
-  align-items: start;
+.managersList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
 }
 
 .managerCard {
-  background-color: var(--color-surface);
-  border-radius: var(--border-radius-lg);
+  background-color: #ffffff;
+  border-radius: 8px;
   border: 1px solid var(--color-border);
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .cardHeader {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  padding: 16px 20px;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  /* При закритому стані нижньої рамки немає */
+  border-bottom: none;
+}
+
+.cardHeader:hover {
+  background-color: #f9f9f9;
+}
+
+/* Коли картка відкрита, з'являється лінія між заголовком і контентом */
+.cardHeader.open {
   border-bottom: 1px solid var(--color-border);
 }
 
-.cardHeader h2 {
+.headerTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerTitleGroup h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.15rem;
+  color: #222222;
 }
 
 .cardIcon {
-  font-size: 1.5rem;
-  color: var(--color-primary);
+  font-size: 1.3rem;
+  color: #cfa85c;
 }
 
-/* ОНОВЛЕНО: Медіа-запит для мобільних */
-@media (max-width: 768px) {
+.chevron {
+  font-size: 1.8rem;
+  color: #aaaaaa;
+  transition: transform 0.3s ease;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.cardContent {
+  padding: 20px;
+}
+
+/* --- ПОВНІСТЮ МОБІЛЬНА ВЕРСІЯ --- */
+@media (max-width: 767px) {
   .pageContainer {
-    padding: 10px;
+    padding: 0;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
   }
-  .pageTitle {
-    font-size: 1.75rem;
+
+  .mobileLayout {
+    border-radius: 0;
+    background-color: #ffffff;
   }
-  .pageSubtitle {
-    font-size: 1rem;
-    margin-bottom: 30px;
+
+  .header {
+    border-radius: 0;
   }
-  .managersGrid {
-    grid-template-columns: 1fr; /* Одна колонка для карток */
-    gap: 24px;
+
+  .managersList {
+    padding: 0;
+    gap: 0; /* Прибираємо відступи між картками */
   }
+
   .managerCard {
-    padding: 16px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: none;
   }
-  .cardHeader h2 {
-    font-size: 1.25rem;
+
+  .managerCard:last-child {
+    border-bottom: none;
+  }
+
+  /* Перетворюємо заголовки на бежеві роздільники */
+  .cardHeader {
+    background-color: #e8e6df;
+    padding: 14px 20px;
+  }
+
+  .cardHeader.open {
+    border-bottom: 1px solid #dcdad3;
+  }
+
+  .cardHeader:hover {
+    background-color: #e8e6df;
+  }
+
+  :root[data-theme="dark"] .cardHeader {
+    background-color: #2a2a2a;
+    border-color: #444;
+  }
+
+  .headerTitleGroup h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4a4a4a;
+  }
+
+  :root[data-theme="dark"] .headerTitleGroup h2 {
+    color: #d1d1d1;
+  }
+
+  .cardContent {
+    padding: 16px 20px;
   }
 }

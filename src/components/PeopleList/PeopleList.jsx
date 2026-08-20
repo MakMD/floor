@@ -1,7 +1,7 @@
-// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/components/PeopleList/PeopleList.jsx
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaUser, FaPhone, FaSyncAlt } from "react-icons/fa";
+import { MdOutlineChevronRight } from "react-icons/md";
 import styles from "./PeopleList.module.css";
 
 const PeopleList = ({
@@ -9,11 +9,11 @@ const PeopleList = ({
   isEditing,
   onToggleStatus,
   onUpdatePersonName,
-  onUpdatePersonPhone, // Приймаємо нову функцію
+  onUpdatePersonPhone,
 }) => {
   const navigate = useNavigate();
   const [editedNames, setEditedNames] = useState({});
-  const [editedPhones, setEditedPhones] = useState({}); // Стан для телефонів
+  const [editedPhones, setEditedPhones] = useState({});
 
   useEffect(() => {
     const namesMap = {};
@@ -47,7 +47,6 @@ const PeopleList = ({
     }
   };
 
-  // Нова функція для збереження телефону
   const handlePhoneSave = (id) => {
     const originalPerson = people.find((p) => p.id === id);
     if (originalPerson && originalPerson.phone !== editedPhones[id].trim()) {
@@ -62,62 +61,89 @@ const PeopleList = ({
 
   return (
     <div className={styles.peopleListContainer}>
-      <ul className={styles.peopleList}>
+      <div className={styles.cardsList}>
         {people.length > 0 ? (
           people.map((person) => (
-            <li
+            <div
               key={person.id}
-              className={`${styles.personItem} ${
-                isEditing ? styles.editing : ""
-              }`}
+              className={`${styles.card} ${isEditing ? styles.editing : ""}`}
               onClick={() => handlePersonClick(person.id)}
             >
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    value={editedNames[person.id] || ""}
-                    className={styles.editInput}
-                    onChange={(e) =>
-                      handleNameChange(person.id, e.target.value)
-                    }
-                    onBlur={() => handleNameSave(person.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    placeholder="Name"
-                  />
-                  <input
-                    type="tel"
-                    value={editedPhones[person.id] || ""}
-                    className={styles.editInput}
-                    onChange={(e) =>
-                      handlePhoneChange(person.id, e.target.value)
-                    }
-                    onBlur={() => handlePhoneSave(person.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    placeholder="Phone number"
-                  />
-                </>
-              ) : (
-                <h3>{person.name}</h3>
+              <div className={styles.cardContent}>
+                {isEditing ? (
+                  <div className={styles.editForm}>
+                    <input
+                      type="text"
+                      value={editedNames[person.id] || ""}
+                      className={styles.editInput}
+                      onChange={(e) =>
+                        handleNameChange(person.id, e.target.value)
+                      }
+                      onBlur={() => handleNameSave(person.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      placeholder="Name"
+                    />
+                    <input
+                      type="tel"
+                      value={editedPhones[person.id] || ""}
+                      className={styles.editInput}
+                      onChange={(e) =>
+                        handlePhoneChange(person.id, e.target.value)
+                      }
+                      onBlur={() => handlePhoneSave(person.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      placeholder="Phone number"
+                    />
+                    <button
+                      className={styles.toggleStatusButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleStatus(person.id, person.status);
+                      }}
+                    >
+                      <FaSyncAlt />{" "}
+                      {person.status === "active"
+                        ? "Set Inactive"
+                        : "Set Active"}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className={styles.cardHeader}>
+                      <div className={styles.cardTitle}>
+                        <FaUser className={styles.iconGold} />
+                        {person.name}
+                      </div>
+                      <span
+                        className={`${styles.statusBadge} ${
+                          person.status === "active"
+                            ? styles.active
+                            : styles.inactive
+                        }`}
+                      >
+                        {person.status}
+                      </span>
+                    </div>
+                    {person.phone && (
+                      <div className={styles.cardSubtitle}>
+                        <FaPhone className={styles.iconSmall} />
+                        {person.phone}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+              {!isEditing && (
+                <MdOutlineChevronRight className={styles.chevronIcon} />
               )}
-
-              {isEditing && (
-                <button
-                  className={styles.toggleStatusButton}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleStatus(person.id, person.status);
-                  }}
-                >
-                  {person.status === "active" ? "To Inactive" : "To Active"}
-                </button>
-              )}
-            </li>
+            </div>
           ))
         ) : (
-          <li>No people available in this list</li>
+          <div className={styles.noItemsMessage}>
+            No people available in this list
+          </div>
         )}
-      </ul>
+      </div>
     </div>
   );
 };

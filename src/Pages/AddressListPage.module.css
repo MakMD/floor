@@ -1,268 +1,344 @@
+/* --- БАЗОВИЙ КОНТЕЙНЕР --- */
 .pageContainer {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  min-height: 100vh;
+  background-color: var(--color-background);
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
-/* ---- Header ---- */
+.mobileLayout {
+  width: 100%;
+  max-width: 1000px; /* Трохи звузив для кращого вигляду суцільного списку на десктопі */
+  background-color: #ffffff;
+  box-shadow: var(--shadow-md);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- HEADER --- */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  padding: 16px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--color-border);
+  gap: 12px;
   flex-wrap: wrap;
-  gap: 1rem;
 }
 
 .pageTitle {
-  font-size: 2rem;
+  font-size: 1.4rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #222222;
   margin: 0;
   flex-grow: 1;
-  text-align: center;
 }
 
-.controls {
+/* --- ТЕМНА ПАНЕЛЬ ФІЛЬТРІВ --- */
+.darkFilterPanel {
+  background-color: #2c2c2c;
+  padding: 16px 20px;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.searchContainer {
+  position: relative;
+  width: 100%;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaaaaa;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 14px 10px 40px;
+  border-radius: 4px;
+  border: 1px solid #cfa85c;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.searchInput:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(207, 168, 92, 0.4);
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 10px;
 }
 
-/* ---- Add Form ---- */
-.addFormSection {
-  background: var(--color-surface);
-  border-radius: var(--border-radius-lg);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: var(--shadow-md);
+.darkSelect {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background-color: #1a1a1a;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
-.addFormSection h3 {
-  margin-bottom: 1rem;
-  font-size: 1.3rem;
+/* --- ДОДАВАННЯ ПРОЕКТУ --- */
+.addFormSection {
+  background-color: #fcfcfc;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sectionHeaderForm {
+  background-color: #e8e6df;
+  color: #4a4a4a;
+  padding: 12px 20px;
+  margin: 0;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  border-bottom: 1px solid #dcdad3;
 }
 
 .addForm {
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 16px;
 }
 
 .formRow {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.2rem;
-  align-items: flex-end;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
 }
 
 .inputGroup {
   display: flex;
   flex-direction: column;
+  gap: 6px;
 }
 
 .inputGroup label {
   font-size: 0.85rem;
-  font-weight: 500;
-  margin-bottom: 0.3rem;
-  color: var(--color-text-secondary);
+  font-weight: 600;
+  color: #555555;
 }
 
-.inputGroup input,
-.inputGroup select {
-  width: 100%;
-  padding: 0.65rem 0.8rem;
-  border: 1px solid var(--color-border);
+.formInput {
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
-  font-size: 0.9rem;
-  background: var(--color-background);
-  color: var(--color-text-primary);
-  transition: 0.2s;
-  box-sizing: border-box;
-}
-
-.inputGroup input:focus,
-.inputGroup select:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
-  outline: none;
-}
-
-/* ---- List ---- */
-.listSection {
-  margin-bottom: 2rem;
-}
-
-.sectionTitle {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  margin-bottom: 1rem;
-  border-left: 4px solid var(--color-primary);
-  padding-left: 0.75rem;
-}
-
-.addressList {
-  display: grid;
-  gap: 1rem;
-}
-
-.addressItem {
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  padding: 1rem 1.25rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease-in-out;
-  cursor: pointer;
-}
-
-.addressItem:hover:not(.editing) {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
-}
-
-.addressItem.editing {
-  cursor: default;
-}
-
-.itemContent {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-grow: 1;
-}
-
-.typeIcon {
-  font-size: 1.6rem;
-  color: var(--color-primary);
-}
-
-.addressName {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.itemMeta {
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 4px;
-}
-
-/* ---- Status ---- */
-.statusIndicator {
-  padding: 0.35rem 0.9rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid transparent; /* Додаємо рамку для консистенції */
-}
-
-.statusInProgress {
-  background: #fff3cd;
-  color: #856404;
-  border-color: #ffeeba;
-}
-.statusReady {
-  background: #d4edda;
-  color: #155724;
-  border-color: #c3e6cb;
-}
-.statusNotFinished {
-  background: #f8d7da;
-  color: #721c24;
-  border-color: #f5c6cb;
-}
-
-/* ---- НОВІ СТИЛІ ДЛЯ ФОНУ КАРТОК ---- */
-.readyBackground {
-  background-color: #f0fff4; /* Дуже світло-зелений */
-}
-.inProcessBackground {
-  background-color: #fffbeb; /* Дуже світло-жовтий */
-}
-.notFinishedBackground {
-  background-color: #fff5f5; /* Дуже світло-червоний */
-}
-
-:root[data-theme="dark"] .readyBackground {
-  background-color: #1c2b22;
-}
-:root[data-theme="dark"] .inProcessBackground {
-  background-color: #2c2a1e;
-}
-:root[data-theme="dark"] .notFinishedBackground {
-  background-color: #2d1f21;
-}
-
-/* ---- Search ---- */
-.toolbar {
-  margin: 1.5rem 0;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.searchInput {
-  padding: 0.65rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  width: 260px;
-  font-size: 0.9rem;
-  transition: 0.2s;
-}
-
-.searchInput:focus {
-  border-color: var(--color-primary);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
+  background-color: #ffffff;
+  color: #222222;
+  font-size: 1rem;
 }
 
 .errorMessage {
-  color: var(--color-danger);
+  color: #b02a48;
   font-size: 0.8rem;
-  padding-left: 4px;
+}
+
+/* --- РОЗДІЛЬНИКИ ДНІВ (Точно як Календар) --- */
+.content {
+  background-color: #ffffff;
+}
+
+.listContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.dayGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionHeader {
+  background-color: #e8e6df;
+  color: #4a4a4a;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-top: 1px solid #dcdad3;
+  border-bottom: 1px solid #dcdad3;
+}
+:root[data-theme="dark"] .sectionHeader {
+  background-color: #2a2a2a;
+  color: #d1d1d1;
+  border-color: #444;
+}
+
+/* --- СІТКА КАРТОК (ПРИМУСОВО 1 КОЛОНКА СКРІЗЬ) --- */
+.cardsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.card:hover {
+  background-color: #f9f9f9;
+}
+
+.card.editing {
+  cursor: default;
+}
+
+.cardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 12px;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #222222;
+  line-height: 1.4;
+}
+
+.cardAddress {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #555555;
+  margin-top: 2px;
+}
+
+.pinIcon {
+  color: #b02a48;
+  margin-top: 2px;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.cardNotes {
+  font-size: 0.95rem;
+  color: #444444;
   margin-top: 4px;
+  line-height: 1.5;
+}
+
+.cardBottomRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* --- КНОПКА CONFIRM MATERIALS ТА БЕЙДЖ --- */
+.confirmBtn {
+  background-color: #90273c;
+  color: #ffffff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.confirmBtn:hover {
+  background-color: #7a2032;
+}
+
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  background-color: #e0e0e0;
+  color: #555555;
+}
+
+.statusBadge.Ready {
+  background-color: rgba(40, 167, 69, 0.15);
+  color: #28a745;
+}
+.statusBadge.InProcess {
+  background-color: rgba(255, 193, 7, 0.15);
+  color: #d39e00;
+}
+.statusBadge.NotFinished {
+  background-color: rgba(220, 53, 69, 0.15);
+  color: #dc3545;
+}
+
+.chevronIcon {
+  color: #aaaaaa;
+  font-size: 1.5rem;
 }
 
 .editInput {
   flex-grow: 1;
-  padding: 8px;
-  font-size: 1.1rem;
-  font-weight: 500;
-  border: 1px solid var(--color-border);
+  padding: 8px 12px;
+  font-size: 1rem;
+  border: 1px solid #e0e0e0;
   border-radius: 4px;
-  background-color: var(--color-background);
-  color: var(--color-text-primary);
+  background-color: #f5f5f5;
 }
 
-/* ---- Responsive ---- */
-@media (max-width: 768px) {
+/* --- ПОВНІСТЮ МОБІЛЬНА ВЕРСІЯ --- */
+@media (max-width: 767px) {
+  .pageContainer {
+    padding: 0;
+    /* Змушуємо блок ігнорувати відступи батьківського контейнера */
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+  }
+
+  .mobileLayout {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+
   .header {
     flex-direction: column;
-    text-align: center;
+    padding: 16px 12px; /* Зменшено бокові відступи */
   }
-  .controls {
-    justify-content: center;
-  }
-  .addressItem {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-  .searchInput {
+
+  .header button {
     width: 100%;
+  }
+
+  /* Зменшуємо бокові відступи всередині елементів для мобільного */
+  .darkFilterPanel {
+    padding: 16px 12px;
+  }
+
+  .sectionHeader {
+    padding: 10px 12px;
+  }
+
+  .card {
+    padding: 14px 12px;
   }
 }

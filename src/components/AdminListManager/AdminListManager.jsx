@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 import styles from "./AdminListManager.module.css";
-import commonStyles from "../../styles/common.module.css"; // ІМПОРТ
+import commonStyles from "../../styles/common.module.css";
 import { FaPlus, FaTrash } from "react-icons/fa";
 
 const AdminListManager = ({ tableName, itemName }) => {
@@ -43,7 +43,7 @@ const AdminListManager = ({ tableName, itemName }) => {
       toast.error(`Failed to add ${itemName}: ${error.message}`);
     } else {
       toast.success(
-        `${itemName.charAt(0).toUpperCase() + itemName.slice(1)} added!`
+        `${itemName.charAt(0).toUpperCase() + itemName.slice(1)} added!`,
       );
       setNewItemName("");
       fetchItems();
@@ -60,7 +60,7 @@ const AdminListManager = ({ tableName, itemName }) => {
       toast.error(`Failed to delete ${itemName}: ${error.message}`);
     } else {
       toast.success(
-        `${itemName.charAt(0).toUpperCase() + itemName.slice(1)} deleted.`
+        `${itemName.charAt(0).toUpperCase() + itemName.slice(1)} deleted.`,
       );
       fetchItems();
     }
@@ -73,31 +73,32 @@ const AdminListManager = ({ tableName, itemName }) => {
           type="text"
           value={newItemName}
           onChange={(e) => setNewItemName(e.target.value)}
-          placeholder={`New ${itemName} name...`}
+          placeholder={`Add new ${itemName}...`}
           className={styles.inputField}
         />
-        <button onClick={handleAddItem} className={commonStyles.buttonPrimary}>
-          {" "}
-          {/* ВИКОРИСТАННЯ */}
-          <FaPlus />
+        <button onClick={handleAddItem} className={styles.addButton}>
+          <FaPlus /> Add
         </button>
       </div>
 
       {loading ? (
-        <p>Loading...</p>
+        <p className={styles.loadingText}>Loading...</p>
       ) : (
         <ul className={styles.list}>
           {items.map((item) => (
             <li key={item.id} className={styles.listItem}>
-              <span>{item.name}</span>
+              <span className={styles.itemName}>{item.name}</span>
               <button
                 onClick={() => handleDeleteItem(item.id)}
-                className={commonStyles.buttonIcon} // ВИКОРИСТАННЯ
+                className={commonStyles.buttonIcon}
               >
                 <FaTrash />
               </button>
             </li>
           ))}
+          {items.length === 0 && (
+            <li className={styles.emptyState}>No items found.</li>
+          )}
         </ul>
       )}
     </div>
