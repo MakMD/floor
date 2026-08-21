@@ -7,7 +7,14 @@ import AddressHistory from "../components/AddressHistory/AddressHistory";
 import PersonDetailsModal from "../components/PersonDetailsModal/PersonDetailsModal";
 import styles from "./PersonTableDetailsPage.module.css";
 import commonStyles from "../styles/common.module.css";
-import { FaTrash, FaArrowLeft, FaEdit, FaCheck, FaPlus } from "react-icons/fa";
+import {
+  FaTrash,
+  FaArrowLeft,
+  FaEdit,
+  FaCheck,
+  FaPlus,
+  FaPrint,
+} from "react-icons/fa";
 
 const PersonTableDetailsPage = () => {
   const { personId, tableId } = useParams();
@@ -25,13 +32,6 @@ const PersonTableDetailsPage = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  const [totalWithGST, setTotalWithGST] = useState(null);
-  const [wcb, setWcb] = useState(null);
-  const [showGST, setShowGST] = useState(false);
-  const [showWCB, setShowWCB] = useState(false);
-  const [isWCBCalculated, setIsWCBCalculated] = useState(false);
-  const [isGSTCalculated, setIsGSTCalculated] = useState(false);
 
   const [selectedPersonForModal, setSelectedPersonForModal] = useState(null);
   const [modalFilterAddress, setModalFilterAddress] = useState("");
@@ -56,7 +56,11 @@ const PersonTableDetailsPage = () => {
     const fetchPageData = async () => {
       setLoading(true);
       const [personResult, tableResult, allPeopleResult] = await Promise.all([
-        supabase.from("people").select("id, name").eq("id", personId).single(),
+        supabase
+          .from("people")
+          .select("id, name, has_gst, has_wcb, has_holdback")
+          .eq("id", personId)
+          .single(),
         supabase
           .from("invoice_tables")
           .select("id, name")
@@ -88,6 +92,28 @@ const PersonTableDetailsPage = () => {
     const allAddresses = invoices.map((inv) => inv.address);
     return [...new Set(allAddresses)];
   }, [invoices]);
+
+  // АВТОМАТИЧНИЙ РОЗРАХУНОК СУМИ З УРАХУВАННЯМ НАЛАШТУВАНЬ ПРАЦІВНИКА
+  const totals = useMemo(() => {
+    const baseTotal = invoices.reduce(
+      (acc, inv) => acc + parseFloat(inv.total_income || 0),
+      0,
+    );
+    const holdbackAmount = person?.has_holdback ? baseTotal * 0.05 : 0;
+    const wcbAmount = person?.has_wcb ? baseTotal * 0.03 : 0;
+    const totalAfterDeductions = baseTotal - wcbAmount - holdbackAmount;
+    const gstAmount = person?.has_gst ? totalAfterDeductions * 0.05 : 0;
+    const finalTotal = totalAfterDeductions + gstAmount;
+
+    return {
+      baseTotal,
+      holdbackAmount,
+      wcbAmount,
+      totalAfterDeductions,
+      gstAmount,
+      finalTotal,
+    };
+  }, [invoices, person]);
 
   const handleInvoiceChange = (e, invoiceId, field) => {
     const updatedInvoices = invoices.map((inv) =>
@@ -167,28 +193,8 @@ const PersonTableDetailsPage = () => {
     setModalFilterAddress("");
   };
 
-  const totalIncome = useMemo(() => {
-    return invoices.reduce(
-      (acc, inv) => acc + parseFloat(inv.total_income || 0),
-      0,
-    );
-  }, [invoices]);
-
-  const calculateWCB = () => {
-    const newWCB = (totalIncome - (totalIncome / 100) * 3).toFixed(2);
-    setWcb(newWCB);
-    setShowWCB(true);
-    setIsWCBCalculated(true);
-    if (isGSTCalculated) {
-      setTotalWithGST((newWCB * 1.05).toFixed(2));
-    }
-  };
-
-  const calculateTotalWithGST = () => {
-    const baseIncome = isWCBCalculated ? wcb : totalIncome;
-    setTotalWithGST((baseIncome * 1.05).toFixed(2));
-    setShowGST(true);
-    setIsGSTCalculated(true);
+  const handlePrint = () => {
+    window.print();
   };
 
   if (loading || !person || !tableInfo) {
@@ -207,7 +213,8 @@ const PersonTableDetailsPage = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.mobileLayout}>
-        <div className={styles.header}>
+        {/* КНОПКИ УПРАВЛІННЯ (Ховаються при друку) */}
+        <div className={`${styles.header} ${styles.noPrint}`}>
           <button
             className={commonStyles.buttonSecondary}
             onClick={() => navigate(-1)}
@@ -215,25 +222,33 @@ const PersonTableDetailsPage = () => {
           >
             <FaArrowLeft /> Back
           </button>
-          <h1 className={styles.pageTitle}>
-            {person.name} - {tableInfo.name}
-          </h1>
-          <button
-            onClick={isEditing ? handleSaveChanges : () => setIsEditing(true)}
-            className={
-              isEditing
-                ? commonStyles.buttonSuccess
-                : commonStyles.buttonSecondary
-            }
-          >
-            {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Save" : "Edit"}
-          </button>
+
+          <div className={styles.headerButtons}>
+            <button
+              onClick={handlePrint}
+              className={commonStyles.buttonSecondary}
+            >
+              <FaPrint /> Print
+            </button>
+            <button
+              onClick={isEditing ? handleSaveChanges : () => setIsEditing(true)}
+              className={
+                isEditing
+                  ? commonStyles.buttonSuccess
+                  : commonStyles.buttonSecondary
+              }
+            >
+              {isEditing ? <FaCheck /> : <FaEdit />}{" "}
+              {isEditing ? "Save" : "Edit"}
+            </button>
+          </div>
         </div>
 
         <div className={styles.detailsGrid}>
-          {/* ЛІВА КОЛОНКА (Форма та Інвойси) */}
+          {/* ЛІВА КОЛОНКА */}
           <div className={styles.gridColumn}>
-            <div className={styles.detailCard}>
+            {/* ФОРМА ДОДАВАННЯ (Ховається при друку) */}
+            <div className={`${styles.detailCard} ${styles.noPrint}`}>
               <h3>Add New Invoice</h3>
               <div className={styles.cardContentWrapper}>
                 <div className={styles.addInvoiceForm}>
@@ -269,8 +284,14 @@ const PersonTableDetailsPage = () => {
               </div>
             </div>
 
-            <div className={styles.detailCard}>
-              <h3>Invoices List</h3>
+            {/* САМЕ ЦЯ ТАБЛИЦЯ ІДЕ НА ДРУК */}
+            <div className={`${styles.detailCard} ${styles.printableCard}`}>
+              <h3>
+                INVOICE: {person.name} <br />
+                <span style={{ fontSize: "0.85rem", fontWeight: "normal" }}>
+                  {tableInfo.name}
+                </span>
+              </h3>
               <div
                 className={styles.cardContentWrapper}
                 style={{ padding: "0" }}
@@ -283,8 +304,8 @@ const PersonTableDetailsPage = () => {
                         <th>Address</th>
                         <th>Store</th>
                         <th>Work Type</th>
-                        <th>Total</th>
-                        {isEditing && <th></th>}
+                        <th>Amount</th>
+                        {isEditing && <th className={styles.noPrint}></th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -317,13 +338,13 @@ const PersonTableDetailsPage = () => {
                             )}
                           </td>
                           <td data-label="Store">
-                            {invoice.stores?.name || "N/A"}
+                            {invoice.stores?.name || "-"}
                           </td>
                           <td data-label="Work Type">
                             {invoice.work_types?.work_type_templates?.name ||
-                              "N/A"}
+                              "-"}
                           </td>
-                          <td data-label="Total">
+                          <td data-label="Amount">
                             {isEditing ? (
                               <input
                                 type="number"
@@ -341,7 +362,7 @@ const PersonTableDetailsPage = () => {
                             )}
                           </td>
                           {isEditing && (
-                            <td data-label="Actions">
+                            <td data-label="Actions" className={styles.noPrint}>
                               <button
                                 className={commonStyles.buttonIcon}
                                 onClick={() => handleDeleteInvoice(invoice.id)}
@@ -353,62 +374,71 @@ const PersonTableDetailsPage = () => {
                         </tr>
                       ))}
                     </tbody>
+
+                    {/* АВТОМАТИЧНИЙ РОЗРАХУНОК У ПІДВАЛІ ТАБЛИЦІ */}
                     <tfoot>
                       <tr className={styles.totalRow}>
                         <td colSpan="4">
-                          <strong>TOTAL:</strong>
+                          <strong>SUBTOTAL:</strong>
                         </td>
                         <td>
-                          <strong>${totalIncome.toFixed(2)}</strong>
+                          <strong>${totals.baseTotal.toFixed(2)}</strong>
                         </td>
-                        {isEditing && <td></td>}
+                        {isEditing && <td className={styles.noPrint}></td>}
                       </tr>
-                      {showGST && (
+                      {person.has_holdback && (
                         <tr className={styles.totalRow}>
                           <td colSpan="4">
-                            <strong>Total with GST:</strong>
+                            <strong>Holdback Deduction (5%):</strong>
                           </td>
-                          <td>
-                            <strong>${totalWithGST}</strong>
+                          <td style={{ color: "#dc3545" }}>
+                            <strong>
+                              -${totals.holdbackAmount.toFixed(2)}
+                            </strong>
                           </td>
-                          {isEditing && <td></td>}
+                          {isEditing && <td className={styles.noPrint}></td>}
                         </tr>
                       )}
-                      {showWCB && (
+                      {person.has_wcb && (
                         <tr className={styles.totalRow}>
                           <td colSpan="4">
-                            <strong>Total - WCB:</strong>
+                            <strong>WCB Deduction (3%):</strong>
                           </td>
-                          <td>
-                            <strong>${wcb}</strong>
+                          <td style={{ color: "#dc3545" }}>
+                            <strong>-${totals.wcbAmount.toFixed(2)}</strong>
                           </td>
-                          {isEditing && <td></td>}
+                          {isEditing && <td className={styles.noPrint}></td>}
                         </tr>
                       )}
+                      {person.has_gst && (
+                        <tr className={styles.totalRow}>
+                          <td colSpan="4">
+                            <strong>GST (5%):</strong>
+                          </td>
+                          <td>
+                            <strong>+${totals.gstAmount.toFixed(2)}</strong>
+                          </td>
+                          {isEditing && <td className={styles.noPrint}></td>}
+                        </tr>
+                      )}
+                      <tr className={styles.finalTotalRow}>
+                        <td colSpan="4">
+                          <strong>FINAL PAYOUT:</strong>
+                        </td>
+                        <td>
+                          <strong>${totals.finalTotal.toFixed(2)}</strong>
+                        </td>
+                        {isEditing && <td className={styles.noPrint}></td>}
+                      </tr>
                     </tfoot>
                   </table>
-                </div>
-
-                <div className={styles.calculationButtons}>
-                  <button
-                    onClick={calculateTotalWithGST}
-                    className={commonStyles.buttonSecondary}
-                  >
-                    +GST (5%)
-                  </button>
-                  <button
-                    onClick={calculateWCB}
-                    className={commonStyles.buttonSecondary}
-                  >
-                    -WCB (3%)
-                  </button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ПРАВА КОЛОНКА (Історія) */}
-          <div className={styles.gridColumn}>
+          {/* ПРАВА КОЛОНКА - ІСТОРІЯ (Ховається при друку) */}
+          <div className={`${styles.gridColumn} ${styles.noPrint}`}>
             <div className={styles.detailCard}>
               <h3>Address History</h3>
               <div className={styles.cardContentWrapper}>

@@ -39,11 +39,84 @@
   text-align: center;
 }
 
+/* --- БЛОК НАЛАШТУВАНЬ ПРАЦІВНИКА (АДМІН) --- */
+.profileSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 20px;
+  background-color: #fcfcfc;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.profileBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profileBlock h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #2c2c2c;
+  font-weight: 700;
+  border-bottom: 2px solid #e8e6df;
+  padding-bottom: 8px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #444444;
+  font-size: 0.95rem;
+}
+
+.checkboxLabel input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #b02a48;
+}
+
+.docList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.docList a {
+  color: #b02a48;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.docList a:hover {
+  text-decoration: underline;
+}
+
+.emptyText {
+  color: #888888;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0;
+}
+
+/* --- ФОРМА ДОДАВАННЯ ПАПКИ --- */
 .addTableForm {
   display: flex;
   gap: 12px;
   padding: 16px 20px;
-  background-color: #fcfcfc;
+  background-color: #ffffff;
   border-bottom: 1px solid #e0e0e0;
 }
 
@@ -137,6 +210,10 @@
   }
   .header button {
     width: 100%;
+  }
+  .profileSection {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
   .addTableForm {
     flex-direction: column;

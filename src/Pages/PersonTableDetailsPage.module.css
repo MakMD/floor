@@ -10,7 +10,7 @@
 .mobileLayout {
   width: 100%;
   max-width: 1400px;
-  background-color: #f5f5f5; /* Фон для десктопа між картками */
+  background-color: #f5f5f5;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -26,6 +26,11 @@
   border-radius: 8px 8px 0 0;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.headerButtons {
+  display: flex;
+  gap: 8px;
 }
 
 .pageTitle {
@@ -142,7 +147,7 @@
 .totalRow td {
   font-weight: 700;
   background-color: #fcfcfc;
-  border-top: 2px solid var(--color-border);
+  border-top: 1px solid var(--color-border);
   font-size: 1.05rem;
 }
 
@@ -151,12 +156,11 @@
   color: #555555;
 }
 
-.calculationButtons {
-  margin-top: 10px;
-  padding: 0 20px 20px 20px;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
+.finalTotalRow td {
+  background-color: #f5f5f5;
+  border-top: 2px solid #222;
+  font-size: 1.2rem;
+  color: #222;
 }
 
 @media (max-width: 767px) {
@@ -166,30 +170,28 @@
     margin-left: calc(-50vw + 50%);
     margin-right: calc(-50vw + 50%);
   }
-
   .mobileLayout {
     border-radius: 0;
   }
-
   .header {
     border-radius: 0;
     flex-direction: column;
   }
-
   .header button {
     width: 100%;
   }
-
+  .headerButtons {
+    width: 100%;
+    flex-direction: column;
+  }
   .detailsGrid {
     grid-template-columns: 1fr;
     padding: 0;
     gap: 0;
   }
-
   .gridColumn {
     gap: 0;
   }
-
   .detailCard {
     border-radius: 0;
     border-left: none;
@@ -197,26 +199,20 @@
     border-top: none;
     box-shadow: none;
   }
-
   .addInvoiceForm {
     grid-template-columns: 1fr;
   }
-
   .invoiceTable thead {
     display: none;
   }
-
-  /* СТИЛІЗАЦІЯ МОБІЛЬНОЇ ТАБЛИЦІ ПІД ПЛАСКІ КАРТКИ */
   .invoiceTable tr {
     display: block;
     border-bottom: 1px solid var(--color-border);
     padding: 16px 0;
   }
-
   .invoiceTable tbody tr:last-child {
     border-bottom: none;
   }
-
   .invoiceTable td {
     display: flex;
     justify-content: space-between;
@@ -226,7 +222,6 @@
     border-bottom: none;
     white-space: normal;
   }
-
   .invoiceTable td::before {
     content: attr(data-label);
     font-weight: 600;
@@ -235,28 +230,109 @@
     margin-right: 10px;
     color: var(--color-text-secondary);
   }
-
   .invoiceTable tfoot {
     display: block;
     background-color: #f9f9f9;
     padding: 10px 0;
   }
-
-  .invoiceTable tfoot .totalRow td {
+  .invoiceTable tfoot .totalRow td,
+  .invoiceTable tfoot .finalTotalRow td {
     display: flex;
     justify-content: space-between;
     padding: 10px 20px;
   }
-
-  .invoiceTable tfoot .totalRow td:first-child::before {
-    content: "TOTAL";
-  }
-
   .invoiceTable input {
     text-align: right;
   }
+}
 
-  .calculationButtons {
-    justify-content: center;
+/* =========================================
+   СТИЛІ ДЛЯ ДРУКУ (PRINT MEDIA) - ЛИШЕ ТАБЛИЦЯ
+   ========================================= */
+@media print {
+  @page {
+    margin: 1cm;
+    size: portrait;
+  }
+
+  /* 1. Приховуємо ГЛОБАЛЬНЕ верхнє меню сайту (Flooring Boss) */
+  header,
+  nav,
+  aside,
+  footer {
+    display: none !important;
+  }
+
+  /* 2. Приховуємо всі елементи, яким ми свідомо задали клас noPrint (кнопки, форму додавання, історію) */
+  .noPrint {
+    display: none !important;
+  }
+
+  /* 3. Знімаємо всі відступи, сітки та фони з батьківських контейнерів, 
+        щоб таблиця розтягнулася на весь аркуш формату А4 і не зрізалася */
+  body,
+  html,
+  #root,
+  .pageContainer,
+  .mobileLayout,
+  .detailsGrid,
+  .gridColumn {
+    background-color: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: block !important; /* Вимикаємо Flex/Grid, щоб не ламалася верстка на папері */
+  }
+
+  /* 4. Налаштовуємо саму картку з таблицею, щоб вона виглядала як документ */
+  .printableCard {
+    display: block !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Заголовок інвойсу на папері */
+  .printableCard h3 {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-bottom: 2px solid #000000 !important;
+    font-size: 16pt !important;
+    padding: 0 0 10px 0 !important;
+    margin-bottom: 20px !important;
+  }
+
+  /* 5. Ідеальні рамки для таблиці на папері */
+  .invoiceTable {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .invoiceTable th,
+  .invoiceTable td {
+    border: 1px solid #cccccc !important;
+    padding: 10px 12px !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  .invoiceTable th {
+    background-color: #f5f5f5 !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .totalRow td,
+  .finalTotalRow td {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt !important;
+    border-top: 2px solid #000000 !important;
   }
 }

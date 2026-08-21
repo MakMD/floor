@@ -7,33 +7,27 @@ import {
   FaEdit,
   FaCheck,
   FaFolder,
+  FaUserCog,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
 import { supabase } from "../supabaseClient";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import EmptyState from "../components/EmptyState/EmptyState";
+import WorkerProfileModal from "../components/WorkerProfileModal/WorkerProfileModal"; // НОВИЙ ІМПОРТ
 import styles from "./PersonPage.module.css";
 import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
 
 const parseTableNameToDate = (name) => {
   if (!name) return new Date(0);
-
   const numericMatch = name.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-  if (numericMatch) {
-    const [, day, month, year] = numericMatch;
-    return new Date(year, month - 1, day);
-  }
-
+  if (numericMatch)
+    return new Date(numericMatch[3], numericMatch[2] - 1, numericMatch[1]);
   const textMatch = name.match(/^([A-Za-z]+)\s(\d{1,2})-(?:.*)\s(\d{4})$/);
   if (textMatch) {
-    const [, monthStr, dayStr, yearStr] = textMatch;
-    const date = new Date(`${monthStr} ${dayStr}, ${yearStr}`);
-    if (!isNaN(date.getTime())) {
-      return date;
-    }
+    const date = new Date(`${textMatch[1]} ${textMatch[2]}, ${textMatch[3]}`);
+    if (!isNaN(date.getTime())) return date;
   }
-
   return new Date(0);
 };
 
@@ -41,6 +35,10 @@ const PersonPage = () => {
   const { personId } = useParams();
   const [person, setPerson] = useState(null);
   const [tables, setTables] = useState([]);
+
+  // Стейт для модалки профілю
+  const [showProfile, setShowProfile] = useState(false);
+
   const [newTableName, setNewTableName] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -63,14 +61,12 @@ const PersonPage = () => {
     }
     setPerson(personData);
 
-    const { data: tablesData, error: tablesError } = await supabase
+    const { data: tablesData } = await supabase
       .from("invoice_tables")
       .select(`id, name, invoices ( count )`)
       .eq("person_id", personId);
 
-    if (tablesError) {
-      toast.error("Could not fetch person's tables.");
-    } else {
+    if (tablesData) {
       let formattedTables = tablesData.map((t) => ({
         id: t.id,
         name: t.name,
@@ -80,13 +76,9 @@ const PersonPage = () => {
       formattedTables.sort((a, b) => {
         const dateA = parseTableNameToDate(a.name);
         const dateB = parseTableNameToDate(b.name);
-
-        if (dateA.getTime() > 0 && dateB.getTime() > 0) {
-          return dateB - dateA;
-        }
+        if (dateA.getTime() > 0 && dateB.getTime() > 0) return dateB - dateA;
         return b.name.localeCompare(a.name);
       });
-
       setTables(formattedTables);
     }
     setLoading(false);
@@ -98,14 +90,12 @@ const PersonPage = () => {
 
   const handleAddTable = async () => {
     if (!newTableName.trim()) return;
-
     const { error } = await supabase
       .from("invoice_tables")
       .insert({ name: newTableName.trim(), person_id: personId });
 
-    if (error) {
-      toast.error("Failed to add new table.");
-    } else {
+    if (error) toast.error("Failed to add new table.");
+    else {
       toast.success("Table added successfully!");
       setNewTableName("");
       fetchPersonData();
@@ -119,15 +109,12 @@ const PersonPage = () => {
       )
     )
       return;
-
     const { error } = await supabase
       .from("invoice_tables")
       .delete()
       .eq("id", tableId);
-
-    if (error) {
-      toast.error("Failed to delete table.");
-    } else {
+    if (error) toast.error("Failed to delete table.");
+    else {
       toast.success("Table deleted successfully!");
       fetchPersonData();
     }
@@ -147,16 +134,26 @@ const PersonPage = () => {
           <h1 className={styles.pageTitle}>
             {person ? `${person.name}'s Tables` : "Loading..."}
           </h1>
-          <button
-            className={
-              isEditing
-                ? commonStyles.buttonSuccess
-                : commonStyles.buttonSecondary
-            }
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            {isEditing ? <FaCheck /> : <FaEdit />} {isEditing ? "Done" : "Edit"}
-          </button>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              className={commonStyles.buttonSecondary}
+              onClick={() => setShowProfile(true)}
+              disabled={!person}
+            >
+              <FaUserCog /> Profile
+            </button>
+            <button
+              className={
+                isEditing
+                  ? commonStyles.buttonSuccess
+                  : commonStyles.buttonSecondary
+              }
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              {isEditing ? <FaCheck /> : <FaEdit />}{" "}
+              {isEditing ? "Done" : "Edit"}
+            </button>
+          </div>
         </div>
 
         <div className={styles.addTableForm}>
@@ -202,7 +199,6 @@ const PersonPage = () => {
                       Invoices included: {table.invoiceCount}
                     </div>
                   </div>
-
                   {isEditing ? (
                     <button
                       onClick={() => handleDeleteTable(table.id)}
@@ -221,6 +217,15 @@ const PersonPage = () => {
           )}
         </div>
       </div>
+
+      {/* НОВЕ МОДАЛЬНЕ ВІКНО ПРОФІЛЮ */}
+      {showProfile && person && (
+        <WorkerProfileModal
+          personId={person.id}
+          personName={person.name}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
     </div>
   );
 };

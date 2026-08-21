@@ -27,7 +27,7 @@
   z-index: 50;
   display: flex;
   flex-direction: column;
-  padding: 16px 20px; /* Десктопний відступ */
+  padding: 16px 20px;
   background-color: #2c2c2c;
   gap: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
@@ -41,15 +41,14 @@
   gap: 12px;
 }
 
-/* ГРУПА З УСІМА КНОПКАМИ (ОБ'ЄДНАНА) */
+/* ГРУПА З УСІМА КНОПКАМИ */
 .navGroup {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap; /* Дозволяє кнопкам переноситися на вузьких екранах */
+  flex-wrap: wrap;
 }
 
-/* Золотисті кнопки */
 .iconBtn {
   background: #2c2c2c;
   border: 1px solid #cfa85c;
@@ -113,7 +112,7 @@
   height: 6px;
   border-radius: 50%;
   position: absolute;
-  bottom: 2px; /* Розташовуємо точно під цифрою */
+  bottom: 2px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -130,7 +129,6 @@
 /* =========================================
    ГЛОБАЛЬНІ ПЕРЕВИЗНАЧЕННЯ ДЛЯ REACT-DATEPICKER
    ========================================= */
-
 :global(.react-datepicker) {
   font-family: inherit !important;
   font-size: 1.05rem !important;
@@ -160,7 +158,6 @@
   margin: 0.2rem !important;
 }
 
-/* Важливо: дозволяємо крапкам виходити за межі тексту */
 :global(.react-datepicker__day) {
   position: relative !important;
   overflow: visible !important;
@@ -185,7 +182,7 @@
   outline: none !important;
 }
 
-/* --- ПОШУКОВИЙ РЯДОК --- */
+/* --- ПОШУК ТА ФІЛЬТРИ --- */
 .searchContainer {
   position: relative;
   width: 100%;
@@ -220,6 +217,31 @@
   box-shadow: 0 0 0 2px rgba(207, 168, 92, 0.4);
 }
 
+.filtersContainer {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.filterSelect {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #444444;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: #cfa85c;
+}
+
 /* --- КОНТЕНТ ТА РОЗДІЛЬНИКИ --- */
 .content {
   background-color: #ffffff;
@@ -244,11 +266,10 @@
   flex-direction: column;
 }
 
-/* Сірий роздільник */
 .sectionHeader {
   background-color: #e8e6df;
   color: #4a4a4a;
-  padding: 12px 20px; /* Десктопний відступ */
+  padding: 12px 20px;
   font-size: 0.95rem;
   font-weight: 600;
   border-top: 1px solid #dcdad3;
@@ -268,12 +289,11 @@
   gap: 0;
 }
 
-/* --- СТИЛІ КАРТКИ --- */
 .card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px; /* Десктопний відступ */
+  padding: 16px 20px;
   background-color: #ffffff;
   border-bottom: 1px solid #e0e0e0;
   cursor: pointer;
@@ -326,7 +346,6 @@
   line-height: 1.5;
 }
 
-/* --- КНОПКА CONFIRM MATERIALS --- */
 .confirmBtn {
   margin-top: 6px;
   background-color: #90273c;
@@ -381,7 +400,6 @@
 @media (max-width: 767px) {
   .calendarContainer {
     padding: 0;
-    /* Змушуємо блок ігнорувати відступи батьківського контейнера */
     width: 100vw;
     margin-left: calc(-50vw + 50%);
     margin-right: calc(-50vw + 50%);
@@ -393,7 +411,6 @@
     box-shadow: none;
   }
 
-  /* ЗМЕНШЕНО ВІДСТУПИ ДО 10px */
   .navbar {
     top: 60px;
     padding: 16px 12px;
@@ -410,5 +427,9 @@
   .loadingText,
   .noEvents {
     padding: 30px 10px;
+  }
+
+  .filterSelect {
+    flex: 1 1 calc(50% - 5px); /* На мобільних по 2 селектора в ряд */
   }
 }

@@ -12,8 +12,8 @@ import {
   FaArrowLeft,
   FaMapMarkerAlt,
   FaCalendarAlt,
-  FaTools,
 } from "react-icons/fa";
+import { MdOutlineChevronRight } from "react-icons/md";
 import styles from "./WorkerPortal.module.css";
 
 const WorkerPortal = () => {
@@ -22,10 +22,17 @@ const WorkerPortal = () => {
   const [loading, setLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Стейт для роботи (об'єкти)
   const [myProjects, setMyProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
 
-  // Додано поле workerStatus у форму звіту
+  // Стейт для виплат (таблиці/папки та інвойси)
+  const [myTables, setMyTables] = useState([]);
+  const [loadingTables, setLoadingTables] = useState(false);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [tableInvoices, setTableInvoices] = useState([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+
   const [formData, setFormData] = useState({
     workerStatus: "Ready",
     notes: "",
@@ -84,14 +91,14 @@ const WorkerPortal = () => {
     if (isInitialized) {
       if (activeTab === "work") fetchMyProjects();
       if (activeTab === "profile") fetchWorkerDocuments();
+      if (activeTab === "invoices" && !selectedTable) fetchMyTables();
     }
-  }, [activeTab, isInitialized]);
+  }, [activeTab, isInitialized, selectedTable]);
 
   const fetchMyProjects = async () => {
     if (!user) return;
     setLoading(true);
     try {
-      // 1. Знаходимо внутрішній ID працівника
       const { data: personRecords, error: personError } = await supabase
         .from("people")
         .select("id")
@@ -109,7 +116,6 @@ const WorkerPortal = () => {
       const workerId = personRecords[0].id;
       let allAddressIds = [];
 
-      // 2. Збираємо ID об'єктів з таблиці work_types
       const { data: wtData, error: wtError } = await supabase
         .from("work_types")
         .select("address_id")
@@ -122,7 +128,6 @@ const WorkerPortal = () => {
         ];
       }
 
-      // 3. Збираємо ID об'єктів з прямих призначень у таблиці addresses
       const { data: addrData, error: addrError } = await supabase
         .from("addresses")
         .select("id")
@@ -153,6 +158,66 @@ const WorkerPortal = () => {
       toast.error("Не вдалося завантажити список об'єктів.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ОНОВЛЕНО: Тепер беремо папки ОДРАЗУ з їхніми інвойсами для красивого прев'ю
+  const fetchMyTables = async () => {
+    if (!user) return;
+    setLoadingTables(true);
+    try {
+      const { data: personRecords, error: personError } = await supabase
+        .from("people")
+        .select("id")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      if (personError) throw personError;
+      if (!personRecords || personRecords.length === 0) {
+        setMyTables([]);
+        setLoadingTables(false);
+        return;
+      }
+
+      const workerId = personRecords[0].id;
+
+      const { data, error } = await supabase
+        .from("invoice_tables")
+        .select(
+          `
+          *,
+          invoices (address, total_income, total)
+        `,
+        )
+        .eq("person_id", workerId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setMyTables(data || []);
+    } catch (error) {
+      console.error("Помилка завантаження папок:", error.message);
+      toast.error("Не вдалося завантажити папки виплат.");
+    } finally {
+      setLoadingTables(false);
+    }
+  };
+
+  const fetchInvoicesForTable = async (tableId) => {
+    setLoadingInvoices(true);
+    try {
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("*")
+        .eq("invoice_table_id", tableId)
+        .order("date", { ascending: true });
+
+      if (error) throw error;
+      setTableInvoices(data || []);
+    } catch (error) {
+      console.error("Помилка завантаження інвойсів:", error.message);
+      toast.error("Не вдалося завантажити інвойси.");
+    } finally {
+      setLoadingInvoices(false);
     }
   };
 
@@ -193,7 +258,6 @@ const WorkerPortal = () => {
     if (!selectedProject) return;
     setLoading(true);
     try {
-      // Додаємо статус обраний працівником у текст нотаток, щоб адмін його бачив
       const finalNotes = `[Статус від працівника: ${formData.workerStatus}]\n${formData.notes ? formData.notes : "Без додаткових коментарів."}`;
 
       const { error } = await supabase.from("daily_reports").insert([
@@ -224,6 +288,27 @@ const WorkerPortal = () => {
     }
   };
 
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case "work":
+        return selectedProject ? "Деталі об'єкта" : "Мої об'єкти";
+      case "profile":
+        return "Мій профіль";
+      case "invoices":
+        return selectedTable ? selectedTable.name : "Папки виплат";
+      case "notifications":
+        return "Сповіщення";
+      default:
+        return "Flooring Boss";
+    }
+  };
+
+  // Загальна сума для відкритої папки
+  const folderTotal = tableInvoices.reduce((sum, inv) => {
+    const val = parseFloat(inv.total_income || inv.total || 0);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
+
   if (authLoading || !role) {
     return (
       <div className={styles.loadingScreen}>Отримання прав доступу...</div>
@@ -243,12 +328,15 @@ const WorkerPortal = () => {
   return (
     <div className={styles.portalWrapper}>
       <div className={styles.portalContainer}>
+        <div className={styles.topHeader}>
+          <h1 className={styles.pageTitle}>{getPageTitle()}</h1>
+        </div>
+
         <div className={styles.contentArea}>
           {activeTab === "work" && (
             <div className={styles.workTab}>
               {!selectedProject ? (
                 <>
-                  <h2 className={styles.pageTitle}>Мої об'єкти</h2>
                   {loading ? (
                     <p className={styles.infoText}>Завантаження...</p>
                   ) : myProjects.length === 0 ? (
@@ -263,32 +351,24 @@ const WorkerPortal = () => {
                           className={styles.projectCard}
                           onClick={() => setSelectedProject(proj)}
                         >
-                          <div className={styles.cardHeader}>
-                            <span className={styles.cardNumber}>
-                              WO #{proj.work_order_number || "N/A"}
-                            </span>
+                          <div className={styles.cardTitle}>
+                            WO #{proj.work_order_number || "N/A"} -{" "}
+                            {proj.builders?.name || "Unknown Builder"}
+                          </div>
+                          <div className={styles.cardAddress}>
+                            <FaMapMarkerAlt className={styles.pinIcon} />
+                            <span>{proj.address}</span>
+                          </div>
+                          <div className={styles.cardBottomRow}>
                             <span
                               className={`${styles.statusBadge} ${styles[proj.status?.replace(/\s+/g, "")] || ""}`}
                             >
                               {proj.status || "Assigned"}
                             </span>
                           </div>
-                          <div className={styles.cardAddress}>
-                            <FaMapMarkerAlt className={styles.iconPin} />
-                            <span>{proj.address}</span>
-                          </div>
-                          <div className={styles.cardFooter}>
-                            <span className={styles.builderName}>
-                              <FaTools className={styles.iconSmall} />{" "}
-                              {proj.builders?.name || "Unknown"}
-                            </span>
-                            {proj.date && (
-                              <span className={styles.dateText}>
-                                <FaCalendarAlt className={styles.iconSmall} />{" "}
-                                {proj.date}
-                              </span>
-                            )}
-                          </div>
+                          <MdOutlineChevronRight
+                            className={styles.chevronIcon}
+                          />
                         </div>
                       ))}
                     </div>
@@ -312,7 +392,6 @@ const WorkerPortal = () => {
                     </p>
                   </div>
 
-                  {/* Форма відправки звіту тепер містить вибір статусу */}
                   <form
                     onSubmit={handleWorkSubmit}
                     className={styles.reportForm}
@@ -352,7 +431,6 @@ const WorkerPortal = () => {
                         }
                         placeholder="Опишіть виконану роботу або проблеми..."
                         className={styles.textarea}
-                        rows="3"
                       />
                     </div>
 
@@ -393,7 +471,6 @@ const WorkerPortal = () => {
 
           {activeTab === "profile" && (
             <div className={styles.profileTab}>
-              <h2 className={styles.pageTitle}>Мій профіль</h2>
               <div className={styles.profileInfo}>
                 <p>
                   <strong>Ім'я:</strong> {profile.first_name}{" "}
@@ -406,7 +483,6 @@ const WorkerPortal = () => {
                     : "На перевірці"}
                 </p>
               </div>
-              <hr className={styles.divider} />
               <h3 className={styles.subTitle}>Мої документи</h3>
               <PhotoUploader
                 label="Завантажити документ (ID, Сертифікати)"
@@ -431,14 +507,169 @@ const WorkerPortal = () => {
             </div>
           )}
 
+          {/* ВКЛАДКА ІНВОЙСІВ */}
           {activeTab === "invoices" && (
-            <div className={styles.placeholderTab}>
-              <FaFileInvoiceDollar
-                size={40}
-                className={styles.placeholderIcon}
-              />
-              <h2>Виплати</h2>
-              <p>Розділ у розробці.</p>
+            <div className={styles.invoicesTab}>
+              {!selectedTable ? (
+                <>
+                  {loadingTables ? (
+                    <p className={styles.infoText}>Завантаження папок...</p>
+                  ) : myTables.length === 0 ? (
+                    <div className={styles.placeholderTab}>
+                      <FaFileInvoiceDollar
+                        size={40}
+                        className={styles.placeholderIcon}
+                      />
+                      <p>У вас поки немає папок з виплатами.</p>
+                    </div>
+                  ) : (
+                    <div className={styles.projectList}>
+                      {myTables.map((table) => {
+                        const invCount = table.invoices?.length || 0;
+                        const addressesText =
+                          table.invoices
+                            ?.map((i) => i.address)
+                            .filter(Boolean)
+                            .join(" • ") || "Немає об'єктів";
+                        const totalSum =
+                          table.invoices?.reduce(
+                            (sum, inv) =>
+                              sum +
+                              parseFloat(inv.total_income || inv.total || 0),
+                            0,
+                          ) || 0;
+
+                        return (
+                          <div
+                            key={table.id}
+                            className={styles.folderCard}
+                            onClick={() => {
+                              setSelectedTable(table);
+                              fetchInvoicesForTable(table.id);
+                            }}
+                          >
+                            <div className={styles.folderContent}>
+                              <div className={styles.folderTitleRow}>
+                                <span style={{ fontSize: "1.4rem" }}>📁</span>
+                                <span className={styles.folderName}>
+                                  {table.name}
+                                </span>
+                              </div>
+                              {/* Виводимо адреси прямо на папці */}
+                              <div className={styles.folderAddresses}>
+                                <FaMapMarkerAlt
+                                  style={{
+                                    color: "#b02a48",
+                                    display: "inline",
+                                    marginRight: "4px",
+                                  }}
+                                />
+                                {addressesText}
+                              </div>
+                              <div className={styles.folderTotalPreview}>
+                                Об'єктів: {invCount} &nbsp;|&nbsp; Всього: $
+                                {totalSum.toFixed(2)}
+                              </div>
+                            </div>
+                            <MdOutlineChevronRight
+                              className={styles.chevronIcon}
+                              style={{ position: "static", transform: "none" }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className={styles.invoicesContainer}>
+                  <button
+                    onClick={() => setSelectedTable(null)}
+                    className={styles.backButton}
+                  >
+                    <FaArrowLeft /> Назад до папок
+                  </button>
+
+                  <div className={styles.detailHeader}>
+                    <h2 className={styles.detailTitle}>{selectedTable.name}</h2>
+                    <p className={styles.detailSubtitle}>
+                      Деталізація ваших виплат
+                    </p>
+                  </div>
+
+                  {loadingInvoices ? (
+                    <p className={styles.infoText}>Завантаження об'єктів...</p>
+                  ) : tableInvoices.length === 0 ? (
+                    <p className={styles.infoText}>Ця папка наразі порожня.</p>
+                  ) : (
+                    <div className={styles.invoiceList}>
+                      {tableInvoices.map((inv) => (
+                        <div key={inv.id} className={styles.invoiceCard}>
+                          {/* Рядок 1: Адреса та Загальна сума */}
+                          <div className={styles.invoiceMainRow}>
+                            <span className={styles.invoiceAddress}>
+                              {inv.address || "Адреса не вказана"}
+                            </span>
+                            <span className={styles.invoiceAmount}>
+                              $
+                              {parseFloat(
+                                inv.total_income || inv.total || 0,
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+
+                          {/* Рядок 2: Дата та Квадратура (якщо є) */}
+                          <div className={styles.invoiceSubRow}>
+                            {inv.date && (
+                              <span
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                }}
+                              >
+                                <FaCalendarAlt style={{ opacity: 0.6 }} />{" "}
+                                {inv.date}
+                              </span>
+                            )}
+
+                            {inv["sf/stairs"] && inv.price && (
+                              <span className={styles.invoiceDetailBadge}>
+                                {inv["sf/stairs"]} × $
+                                {parseFloat(inv.price).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Рядок 3: GST (якщо є) */}
+                          {inv.GSTCollected || inv.totalWithGst ? (
+                            <div className={styles.invoiceGstRow}>
+                              <span>
+                                GST: $
+                                {parseFloat(inv.GSTCollected || 0).toFixed(2)}
+                              </span>
+                              <span style={{ fontWeight: 600 }}>
+                                Total + GST: $
+                                {parseFloat(inv.totalWithGst || 0).toFixed(2)}
+                              </span>
+                            </div>
+                          ) : null}
+                        </div>
+                      ))}
+
+                      {/* Фіксована панель Загальної суми знизу */}
+                      <div className={styles.folderTotalCard}>
+                        <span className={styles.folderTotalLabel}>
+                          Всього за період:
+                        </span>
+                        <span className={styles.folderTotalAmount}>
+                          ${folderTotal.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -471,7 +702,10 @@ const WorkerPortal = () => {
           </button>
           <button
             className={`${styles.navItem} ${activeTab === "invoices" ? styles.activeNav : ""}`}
-            onClick={() => setActiveTab("invoices")}
+            onClick={() => {
+              setActiveTab("invoices");
+              setSelectedTable(null);
+            }}
           >
             <FaFileInvoiceDollar size={20} />
             <span>Виплати</span>

@@ -62,7 +62,12 @@ const CalendarPage = () => {
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Стани для фільтрації
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBuilder, setSelectedBuilder] = useState("All");
+  const [selectedStore, setSelectedStore] = useState("All");
+  const [selectedStatus, setSelectedStatus] = useState("All");
 
   // Стан для індикаторів у випадаючому календарі
   const [calendarMonth, setCalendarMonth] = useState(selectedDate);
@@ -190,18 +195,43 @@ const CalendarPage = () => {
     toast.success(`Materials confirmed for Job #${id}`);
   };
 
-  // --- ФІЛЬТРАЦІЯ ПОДІЙ ЗА ПОШУКОМ ---
+  // --- ДИНАМІЧНІ СПИСКИ ДЛЯ СЕЛЕКТОРІВ ---
+  const uniqueBuilders = [
+    "All",
+    ...new Set(events.map((e) => e.builders?.name).filter(Boolean)),
+  ].sort();
+  const uniqueStores = [
+    "All",
+    ...new Set(events.map((e) => e.stores?.name).filter(Boolean)),
+  ].sort();
+  const uniqueStatuses = [
+    "All",
+    ...new Set(events.map((e) => e.status).filter(Boolean)),
+  ].sort();
+
+  // --- ФІЛЬТРАЦІЯ ПОДІЙ ---
   const filteredEvents = events.filter((event) => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
+    // 1. Пошук по тексту
+    const query = searchQuery.toLowerCase().trim();
     const address = (event.address || "").toLowerCase();
     const builder = (event.builders?.name || "").toLowerCase();
-    // Виправлено краш: перетворюємо число на рядок перед toLowerCase()
     const wo = String(event.work_order_number || "").toLowerCase();
 
-    return (
-      address.includes(query) || builder.includes(query) || wo.includes(query)
-    );
+    const matchesSearch =
+      !query ||
+      address.includes(query) ||
+      builder.includes(query) ||
+      wo.includes(query);
+
+    // 2. Селектори
+    const matchesBuilder =
+      selectedBuilder === "All" || event.builders?.name === selectedBuilder;
+    const matchesStore =
+      selectedStore === "All" || event.stores?.name === selectedStore;
+    const matchesStatus =
+      selectedStatus === "All" || event.status === selectedStatus;
+
+    return matchesSearch && matchesBuilder && matchesStore && matchesStatus;
   });
 
   const groupedEvents = filteredEvents.reduce((acc, event) => {
@@ -265,7 +295,7 @@ const CalendarPage = () => {
                 <FaSyncAlt size={14} />
               </button>
 
-              {/* ПЕРЕМИКАЧІ ВИГЛЯДУ ПЕРЕНЕСЕНО СЮДИ */}
+              {/* ПЕРЕМИКАЧІ ВИГЛЯДУ */}
               <button
                 onClick={() => setViewMode("day")}
                 className={`${styles.iconBtn} ${viewMode === "day" ? styles.activeViewBtn : ""}`}
@@ -294,6 +324,45 @@ const CalendarPage = () => {
               className={styles.searchInput}
             />
           </div>
+
+          {/* СЕЛЕКТОРИ ФІЛЬТРІВ */}
+          <div className={styles.filtersContainer}>
+            <select
+              value={selectedBuilder}
+              onChange={(e) => setSelectedBuilder(e.target.value)}
+              className={styles.filterSelect}
+            >
+              {uniqueBuilders.map((b) => (
+                <option key={b} value={b}>
+                  {b === "All" ? "All Builders" : b}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedStore}
+              onChange={(e) => setSelectedStore(e.target.value)}
+              className={styles.filterSelect}
+            >
+              {uniqueStores.map((s) => (
+                <option key={s} value={s}>
+                  {s === "All" ? "All Stores" : s}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className={styles.filterSelect}
+            >
+              {uniqueStatuses.map((s) => (
+                <option key={s} value={s}>
+                  {s === "All" ? "All Statuses" : s}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className={styles.content}>
@@ -301,8 +370,11 @@ const CalendarPage = () => {
             <p className={styles.loadingText}>Loading schedule...</p>
           ) : datesToRender.length === 0 ? (
             <div className={styles.noEvents}>
-              {searchQuery
-                ? "Нічого не знайдено за вашим запитом."
+              {searchQuery ||
+              selectedBuilder !== "All" ||
+              selectedStore !== "All" ||
+              selectedStatus !== "All"
+                ? "Нічого не знайдено за вашими фільтрами."
                 : "No projects for this period."}
             </div>
           ) : (

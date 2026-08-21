@@ -25,6 +25,7 @@ import * as Yup from "yup";
 
 const AddProjectSchema = Yup.object().shape({
   project_type: Yup.string().required("Project type is required"),
+  work_order_number: Yup.string().nullable(),
   address: Yup.string()
     .trim()
     .min(3, "Address must be at least 3 characters")
@@ -69,6 +70,8 @@ const AddressListPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedAddresses, setEditedAddresses] = useState({});
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+
+  const [isScanning, setIsScanning] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500);
@@ -221,6 +224,7 @@ const AddressListPage = () => {
 
   const handleAddAddress = async (values, { setSubmitting, resetForm }) => {
     const newAddressObject = {
+      work_order_number: values.work_order_number?.trim() || null,
       address: values.address.trim(),
       date: values.date,
       total_amount: values.total_amount
@@ -273,6 +277,99 @@ const AddressListPage = () => {
     }
   };
 
+  // --- РОЗУМНИЙ ПАРСЕР ТЕКСТУ ---
+  const normalizeText = (text) => {
+    if (!text) return "";
+    return text
+      .toLowerCase()
+      .replace(/the\s|ltd\.?|inc\.?|corp\.?|canada/g, "") // Прибираємо часті слова
+      .replace(/[^a-z0-9]/g, ""); // Залишаємо тільки букви та цифри
+  };
+
+  const isMatch = (dbName, aiName) => {
+    const cleanDb = normalizeText(dbName);
+    const cleanAi = normalizeText(aiName);
+    if (!cleanDb || !cleanAi) return false;
+
+    // 1. Стандартне включення
+    if (cleanDb.includes(cleanAi) || cleanAi.includes(cleanDb)) return true;
+
+    // 2. Специфічні кейси для вашої бази (Touchstone vs Touchtone, Floor Show vs Show Floor)
+    if (
+      (cleanDb.includes("touchstone") && cleanAi.includes("touchtone")) ||
+      (cleanAi.includes("touchstone") && cleanDb.includes("touchtone"))
+    ) {
+      return true;
+    }
+    if (
+      (cleanDb.includes("showfloor") && cleanAi.includes("floorshow")) ||
+      (cleanAi.includes("showfloor") && cleanDb.includes("floorshow"))
+    ) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const handleScanDocument = async (event, setFieldValue) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    const toastId = toast.loading("Scanning document...");
+
+    try {
+      const base64Image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = (error) => reject(error);
+      });
+
+      const { data, error } = await supabase.functions.invoke(
+        "scan-work-order",
+        {
+          body: { imageBase64: base64Image },
+        },
+      );
+
+      if (error) throw new Error(error.message || "Помилка зв'язку з сервером");
+      if (data && data.error) throw new Error(data.error);
+
+      // Заповнюємо базові поля
+      if (data.work_order_number)
+        setFieldValue("work_order_number", data.work_order_number);
+      if (data.type) setFieldValue("project_type", data.type);
+      if (data.address) setFieldValue("address", data.address);
+      if (data.date) setFieldValue("date", data.date);
+      if (data.total_amount) setFieldValue("total_amount", data.total_amount);
+
+      // Знаходимо Білдера
+      if (data.builder_name && builders) {
+        const matchedBuilder = builders.find((b) =>
+          isMatch(b.name, data.builder_name),
+        );
+        if (matchedBuilder) setFieldValue("builder_id", matchedBuilder.id);
+      }
+
+      // Знаходимо Магазин
+      if (data.store_name && stores) {
+        const matchedStore = stores.find((s) =>
+          isMatch(s.name, data.store_name),
+        );
+        if (matchedStore) setFieldValue("store_id", matchedStore.id);
+      }
+
+      toast.success("Document scanned successfully!", { id: toastId });
+    } catch (error) {
+      console.error("Full Scanning error:", error);
+      toast.error(`Scan failed: ${error.message}`, { id: toastId });
+    } finally {
+      setIsScanning(false);
+      event.target.value = null;
+    }
+  };
+
   const renderAddressList = (list) => (
     <div className={styles.cardsList}>
       {list.map((item) => (
@@ -321,7 +418,7 @@ const AddressListPage = () => {
             ) : (
               <>
                 <div className={styles.cardTitle}>
-                  {item.project_type === "Service" ? "Service: " : "Job Id: "}
+                  {item.project_type === "Service" ? "Service: " : "WO #"}
                   {item.work_order_number || "N/A"} -{" "}
                   {item.builders?.name || "Unknown Builder"}
                   {item.project_type === "Service" && item.service_time
@@ -480,6 +577,7 @@ const AddressListPage = () => {
             <Formik
               initialValues={{
                 project_type: "Address",
+                work_order_number: "",
                 store_id: "",
                 builder_id: "",
                 address: "",
@@ -490,7 +588,7 @@ const AddressListPage = () => {
               validationSchema={AddProjectSchema}
               onSubmit={handleAddAddress}
             >
-              {({ isSubmitting, values }) => (
+              {({ isSubmitting, values, setFieldValue }) => (
                 <Form className={styles.addForm}>
                   <div className={styles.formRow}>
                     <div className={styles.inputGroup}>
@@ -503,6 +601,15 @@ const AddressListPage = () => {
                         <option value="Address">Address</option>
                         <option value="Service">Service</option>
                       </Field>
+                    </div>
+                    <div className={styles.inputGroup}>
+                      <label>WO Number</label>
+                      <Field
+                        type="text"
+                        name="work_order_number"
+                        placeholder="e.g. 47174-1"
+                        className={styles.formInput}
+                      />
                     </div>
                     <div className={styles.inputGroup}>
                       <label>Builder</label>
@@ -568,7 +675,6 @@ const AddressListPage = () => {
                         />
                       </div>
                     )}
-                    {/* ПОВЕРНЕНО ПОЛЕ TOTAL AMOUNT */}
                     <div className={styles.inputGroup}>
                       <label>Total Amount</label>
                       <Field
@@ -579,14 +685,57 @@ const AddressListPage = () => {
                       />
                     </div>
                   </div>
-                  <button
-                    type="submit"
-                    className={commonStyles.buttonPrimary}
-                    disabled={isSubmitting}
-                    style={{ marginTop: "10px", width: "100%" }}
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      marginTop: "16px",
+                      width: "100%",
+                    }}
                   >
-                    <FaPlus /> Add Project
-                  </button>
+                    <input
+                      type="file"
+                      id="cameraInput"
+                      accept="image/*"
+                      capture="environment"
+                      style={{ display: "none" }}
+                      onChange={(e) => handleScanDocument(e, setFieldValue)}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document.getElementById("cameraInput").click()
+                      }
+                      className={commonStyles.buttonSecondary}
+                      disabled={isScanning || isSubmitting}
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      {isScanning ? "Scanning..." : "📷 Scan"}
+                    </button>
+
+                    <button
+                      type="submit"
+                      className={commonStyles.buttonPrimary}
+                      disabled={isSubmitting || isScanning}
+                      style={{
+                        flex: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <FaPlus /> Add Project
+                    </button>
+                  </div>
                 </Form>
               )}
             </Formik>
