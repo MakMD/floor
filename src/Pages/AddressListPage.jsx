@@ -11,7 +11,6 @@ import {
   FaCheck,
   FaTrash,
   FaMapMarkerAlt,
-  FaTools,
   FaSearch,
   FaTimes,
 } from "react-icons/fa";
@@ -223,6 +222,7 @@ const AddressListPage = () => {
   }, [addresses]);
 
   const handleAddAddress = async (values, { setSubmitting, resetForm }) => {
+    // 1. Створюємо сам Проект
     const newAddressObject = {
       work_order_number: values.work_order_number?.trim() || null,
       address: values.address.trim(),
@@ -235,17 +235,103 @@ const AddressListPage = () => {
       status: "In Process",
       project_type: values.project_type,
       service_time: values.project_type === "Service" ? values.time : null,
+      original_photo_url: values.original_photo_url || null,
+      ai_translation: values.ai_translation || null,
     };
-    const { error } = await supabase
+
+    const { data: newAddressData, error: addressError } = await supabase
       .from("addresses")
-      .insert([newAddressObject]);
-    if (error) toast.error(`Error adding address: ${error.message}`);
-    else {
-      toast.success("Project added successfully!");
-      resetForm();
-      setIsAddFormOpen(false);
-      refetch();
+      .insert([newAddressObject])
+      .select()
+      .single();
+
+    if (addressError) {
+      toast.error(`Error adding address: ${addressError.message}`);
+      setSubmitting(false);
+      return;
     }
+
+    // 2. Додаємо роботи (Work Types), якщо ШІ їх знайшов
+    if (values.pending_work_types && values.pending_work_types.length > 0) {
+      let addedCount = 0;
+
+      for (const wt of values.pending_work_types) {
+        let templateId = null;
+
+        const rawName =
+          wt.name ||
+          wt.product_name ||
+          wt.description ||
+          wt.item ||
+          "Unknown Work";
+        const cleanName = rawName.trim();
+
+        // Перевіряємо чи є вже така робота в базі
+        const { data: existingTpl } = await supabase
+          .from("work_type_templates")
+          .select("id")
+          .ilike("name", cleanName)
+          .maybeSingle();
+
+        if (existingTpl) {
+          templateId = existingTpl.id;
+        } else {
+          // Якщо немає - СТВОРЮЄМО НОВУ
+          const { data: newTpl, error: newTplError } = await supabase
+            .from("work_type_templates")
+            .insert([{ name: cleanName }])
+            .select()
+            .single();
+
+          if (newTplError) {
+            console.error("DB Error creating template:", newTplError);
+            toast.error(`❌ Couldn't create work type "${cleanName}".`);
+          } else if (newTpl) {
+            templateId = newTpl.id;
+          }
+        }
+
+        // Прив'язуємо роботу до проекту (використовуємо правильні назви колонок)
+        if (templateId) {
+          const rawAmt =
+            wt.amount !== undefined
+              ? wt.amount
+              : wt.price || wt.sq_ft || wt.total;
+          let parsedAmt = null;
+
+          if (rawAmt !== undefined && rawAmt !== null) {
+            const cleaned = String(rawAmt).replace(/[^0-9.-]+/g, "");
+            if (cleaned !== "") parsedAmt = parseFloat(cleaned);
+          }
+
+          const { error: wtError } = await supabase.from("work_types").insert([
+            {
+              address_id: newAddressData.id,
+              work_type_template_id: templateId,
+              payment_amount: parsedAmt, // Виправлено з 'amount'
+              person_id: null, // Виправлено з 'worker_id'
+            },
+          ]);
+
+          if (wtError) {
+            console.error("DB Error linking work type:", wtError);
+            toast.error(`❌ Couldn't link "${cleanName}" to project.`);
+          } else {
+            addedCount++;
+          }
+        }
+      }
+
+      if (addedCount > 0) {
+        toast.success(`✅ Successfully attached ${addedCount} work items!`);
+      }
+    } else {
+      toast.success("Project created successfully!");
+    }
+
+    resetForm();
+    setIsAddFormOpen(false);
+    refetch();
     setSubmitting(false);
   };
 
@@ -277,37 +363,29 @@ const AddressListPage = () => {
     }
   };
 
-  // --- РОЗУМНИЙ ПАРСЕР ТЕКСТУ ---
   const normalizeText = (text) => {
     if (!text) return "";
     return text
       .toLowerCase()
-      .replace(/the\s|ltd\.?|inc\.?|corp\.?|canada/g, "") // Прибираємо часті слова
-      .replace(/[^a-z0-9]/g, ""); // Залишаємо тільки букви та цифри
+      .replace(/the\s|ltd\.?|inc\.?|corp\.?|canada/g, "")
+      .replace(/[^a-z0-9]/g, "");
   };
 
   const isMatch = (dbName, aiName) => {
     const cleanDb = normalizeText(dbName);
     const cleanAi = normalizeText(aiName);
     if (!cleanDb || !cleanAi) return false;
-
-    // 1. Стандартне включення
     if (cleanDb.includes(cleanAi) || cleanAi.includes(cleanDb)) return true;
-
-    // 2. Специфічні кейси для вашої бази (Touchstone vs Touchtone, Floor Show vs Show Floor)
     if (
       (cleanDb.includes("touchstone") && cleanAi.includes("touchtone")) ||
       (cleanAi.includes("touchstone") && cleanDb.includes("touchtone"))
-    ) {
+    )
       return true;
-    }
     if (
       (cleanDb.includes("showfloor") && cleanAi.includes("floorshow")) ||
       (cleanAi.includes("showfloor") && cleanDb.includes("floorshow"))
-    ) {
+    )
       return true;
-    }
-
     return false;
   };
 
@@ -316,9 +394,29 @@ const AddressListPage = () => {
     if (!file) return;
 
     setIsScanning(true);
-    const toastId = toast.loading("Scanning document...");
+    const toastId = toast.loading("Uploading and analyzing document...");
 
     try {
+      // 1. Завантаження фото
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("original-photos")
+        .upload(fileName, file);
+
+      if (uploadError)
+        throw new Error(
+          "Failed to upload original photo: " + uploadError.message,
+        );
+
+      const { data: publicUrlData } = supabase.storage
+        .from("original-photos")
+        .getPublicUrl(fileName);
+
+      setFieldValue("original_photo_url", publicUrlData.publicUrl);
+
+      // 2. Читання файлу для ШІ
       const base64Image = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -326,17 +424,16 @@ const AddressListPage = () => {
         reader.onerror = (error) => reject(error);
       });
 
+      // 3. Відправка до ШІ
       const { data, error } = await supabase.functions.invoke(
         "scan-work-order",
-        {
-          body: { imageBase64: base64Image },
-        },
+        { body: { imageBase64: base64Image } },
       );
 
       if (error) throw new Error(error.message || "Помилка зв'язку з сервером");
       if (data && data.error) throw new Error(data.error);
 
-      // Заповнюємо базові поля
+      // 4. Заповнення полів
       if (data.work_order_number)
         setFieldValue("work_order_number", data.work_order_number);
       if (data.type) setFieldValue("project_type", data.type);
@@ -344,7 +441,28 @@ const AddressListPage = () => {
       if (data.date) setFieldValue("date", data.date);
       if (data.total_amount) setFieldValue("total_amount", data.total_amount);
 
-      // Знаходимо Білдера
+      const translationText =
+        data.ai_translation || data.instructions || data.notes || "";
+      if (translationText) setFieldValue("ai_translation", translationText);
+
+      let extractedWorks = [];
+      if (data.work_types && Array.isArray(data.work_types)) {
+        extractedWorks = data.work_types;
+      } else if (data.work_orders && Array.isArray(data.work_orders)) {
+        extractedWorks = data.work_orders;
+      } else if (data.items && Array.isArray(data.items)) {
+        extractedWorks = data.items;
+      }
+
+      if (extractedWorks.length > 0) {
+        setFieldValue("pending_work_types", extractedWorks);
+        toast.success(`Found ${extractedWorks.length} work items!`, {
+          id: toastId,
+        });
+      } else {
+        toast.success("Document analyzed successfully!", { id: toastId });
+      }
+
       if (data.builder_name && builders) {
         const matchedBuilder = builders.find((b) =>
           isMatch(b.name, data.builder_name),
@@ -352,15 +470,12 @@ const AddressListPage = () => {
         if (matchedBuilder) setFieldValue("builder_id", matchedBuilder.id);
       }
 
-      // Знаходимо Магазин
       if (data.store_name && stores) {
         const matchedStore = stores.find((s) =>
           isMatch(s.name, data.store_name),
         );
         if (matchedStore) setFieldValue("store_id", matchedStore.id);
       }
-
-      toast.success("Document scanned successfully!", { id: toastId });
     } catch (error) {
       console.error("Full Scanning error:", error);
       toast.error(`Scan failed: ${error.message}`, { id: toastId });
@@ -584,6 +699,9 @@ const AddressListPage = () => {
                 date: "",
                 time: "",
                 total_amount: "",
+                ai_translation: "",
+                original_photo_url: "",
+                pending_work_types: [],
               }}
               validationSchema={AddProjectSchema}
               onSubmit={handleAddAddress}
@@ -687,6 +805,34 @@ const AddressListPage = () => {
                   </div>
 
                   <div
+                    className={styles.inputGroup}
+                    style={{ marginTop: "8px" }}
+                  >
+                    <label>AI Instructions / Notes</label>
+                    <Field
+                      as="textarea"
+                      name="ai_translation"
+                      placeholder="AI will put translation and instructions here..."
+                      className={styles.formInput}
+                      style={{ minHeight: "80px", resize: "vertical" }}
+                    />
+                  </div>
+
+                  {values.original_photo_url && (
+                    <div
+                      className={styles.inputGroup}
+                      style={{ marginTop: "8px" }}
+                    >
+                      <label>Original Document</label>
+                      <img
+                        src={values.original_photo_url}
+                        alt="Scanned Document"
+                        className={styles.previewImageDoc}
+                      />
+                    </div>
+                  )}
+
+                  <div
                     style={{
                       display: "flex",
                       gap: "12px",
@@ -697,8 +843,7 @@ const AddressListPage = () => {
                     <input
                       type="file"
                       id="cameraInput"
-                      accept="image/*"
-                      capture="environment"
+                      accept="image/*, application/pdf"
                       style={{ display: "none" }}
                       onChange={(e) => handleScanDocument(e, setFieldValue)}
                     />

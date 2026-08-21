@@ -40,7 +40,9 @@ const PersonTableDetailsPage = () => {
     if (!tableId) return;
     const { data, error } = await supabase
       .from("invoices")
-      .select("*, stores(name), work_types(id, work_type_templates(name))")
+      .select(
+        "*, stores(name), builders(name), work_types(id, work_type_templates(name))",
+      )
       .eq("invoice_table_id", tableId)
       .order("date", { ascending: false });
 
@@ -93,7 +95,6 @@ const PersonTableDetailsPage = () => {
     return [...new Set(allAddresses)];
   }, [invoices]);
 
-  // АВТОМАТИЧНИЙ РОЗРАХУНОК СУМИ З УРАХУВАННЯМ НАЛАШТУВАНЬ ПРАЦІВНИКА
   const totals = useMemo(() => {
     const baseTotal = invoices.reduce(
       (acc, inv) => acc + parseFloat(inv.total_income || 0),
@@ -213,7 +214,6 @@ const PersonTableDetailsPage = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.mobileLayout}>
-        {/* КНОПКИ УПРАВЛІННЯ (Ховаються при друку) */}
         <div className={`${styles.header} ${styles.noPrint}`}>
           <button
             className={commonStyles.buttonSecondary}
@@ -245,9 +245,7 @@ const PersonTableDetailsPage = () => {
         </div>
 
         <div className={styles.detailsGrid}>
-          {/* ЛІВА КОЛОНКА */}
           <div className={styles.gridColumn}>
-            {/* ФОРМА ДОДАВАННЯ (Ховається при друку) */}
             <div className={`${styles.detailCard} ${styles.noPrint}`}>
               <h3>Add New Invoice</h3>
               <div className={styles.cardContentWrapper}>
@@ -284,14 +282,20 @@ const PersonTableDetailsPage = () => {
               </div>
             </div>
 
-            {/* САМЕ ЦЯ ТАБЛИЦЯ ІДЕ НА ДРУК */}
             <div className={`${styles.detailCard} ${styles.printableCard}`}>
-              <h3>
+              {/* ЗАГОЛОВОК ДЛЯ ЕКРАНА */}
+              <h3 className={styles.screenTitle}>
                 INVOICE: {person.name} <br />
                 <span style={{ fontSize: "0.85rem", fontWeight: "normal" }}>
                   {tableInfo.name}
                 </span>
               </h3>
+
+              {/* ЗАГОЛОВОК ДЛЯ ПАПЕРУ */}
+              <h3 className={styles.printTitle}>
+                {person.name} — {tableInfo.name}
+              </h3>
+
               <div
                 className={styles.cardContentWrapper}
                 style={{ padding: "0" }}
@@ -302,7 +306,8 @@ const PersonTableDetailsPage = () => {
                       <tr>
                         <th>Date</th>
                         <th>Address</th>
-                        <th>Store</th>
+                        <th className={styles.hideOnPrint}>Builder</th>
+                        <th className={styles.hideOnPrint}>Store</th>
                         <th>Work Type</th>
                         <th>Amount</th>
                         {isEditing && <th className={styles.noPrint}></th>}
@@ -337,7 +342,13 @@ const PersonTableDetailsPage = () => {
                               invoice.address
                             )}
                           </td>
-                          <td data-label="Store">
+                          <td
+                            data-label="Builder"
+                            className={styles.hideOnPrint}
+                          >
+                            {invoice.builders?.name || ""}
+                          </td>
+                          <td data-label="Store" className={styles.hideOnPrint}>
                             {invoice.stores?.name || "-"}
                           </td>
                           <td data-label="Work Type">
@@ -375,60 +386,158 @@ const PersonTableDetailsPage = () => {
                       ))}
                     </tbody>
 
-                    {/* АВТОМАТИЧНИЙ РОЗРАХУНОК У ПІДВАЛІ ТАБЛИЦІ */}
-                    <tfoot>
+                    {/* ПІДСУМОК 1: ДЛЯ ЕКРАНА (показується тільки на сайті) */}
+                    <tfoot className={styles.screenOnlyTfoot}>
                       <tr className={styles.totalRow}>
-                        <td colSpan="4">
-                          <strong>SUBTOTAL:</strong>
+                        <td colSpan="3" className={styles.emptyCell}></td>
+                        <td
+                          className={`${styles.hideOnPrint} ${styles.emptyCell}`}
+                        ></td>
+                        <td className={styles.totalLabel}>SUBTOTAL:</td>
+                        <td className={styles.totalValue}>
+                          ${totals.baseTotal.toFixed(2)}
                         </td>
-                        <td>
-                          <strong>${totals.baseTotal.toFixed(2)}</strong>
-                        </td>
-                        {isEditing && <td className={styles.noPrint}></td>}
+                        {isEditing && (
+                          <td
+                            className={`${styles.noPrint} ${styles.emptyCell}`}
+                          ></td>
+                        )}
                       </tr>
                       {person.has_holdback && (
                         <tr className={styles.totalRow}>
-                          <td colSpan="4">
-                            <strong>Holdback Deduction (5%):</strong>
+                          <td colSpan="3" className={styles.emptyCell}></td>
+                          <td
+                            className={`${styles.hideOnPrint} ${styles.emptyCell}`}
+                          ></td>
+                          <td className={styles.totalLabel}>
+                            Holdback Deduction (5%):
                           </td>
-                          <td style={{ color: "#dc3545" }}>
-                            <strong>
-                              -${totals.holdbackAmount.toFixed(2)}
-                            </strong>
+                          <td
+                            className={styles.totalValue}
+                            style={{ color: "#dc3545" }}
+                          >
+                            -${totals.holdbackAmount.toFixed(2)}
                           </td>
-                          {isEditing && <td className={styles.noPrint}></td>}
+                          {isEditing && (
+                            <td
+                              className={`${styles.noPrint} ${styles.emptyCell}`}
+                            ></td>
+                          )}
                         </tr>
                       )}
                       {person.has_wcb && (
                         <tr className={styles.totalRow}>
-                          <td colSpan="4">
-                            <strong>WCB Deduction (3%):</strong>
+                          <td colSpan="3" className={styles.emptyCell}></td>
+                          <td
+                            className={`${styles.hideOnPrint} ${styles.emptyCell}`}
+                          ></td>
+                          <td className={styles.totalLabel}>
+                            WCB Deduction (3%):
                           </td>
-                          <td style={{ color: "#dc3545" }}>
-                            <strong>-${totals.wcbAmount.toFixed(2)}</strong>
+                          <td
+                            className={styles.totalValue}
+                            style={{ color: "#dc3545" }}
+                          >
+                            -${totals.wcbAmount.toFixed(2)}
                           </td>
-                          {isEditing && <td className={styles.noPrint}></td>}
+                          {isEditing && (
+                            <td
+                              className={`${styles.noPrint} ${styles.emptyCell}`}
+                            ></td>
+                          )}
                         </tr>
                       )}
                       {person.has_gst && (
                         <tr className={styles.totalRow}>
-                          <td colSpan="4">
-                            <strong>GST (5%):</strong>
+                          <td colSpan="3" className={styles.emptyCell}></td>
+                          <td
+                            className={`${styles.hideOnPrint} ${styles.emptyCell}`}
+                          ></td>
+                          <td className={styles.totalLabel}>GST (5%):</td>
+                          <td className={styles.totalValue}>
+                            +${totals.gstAmount.toFixed(2)}
                           </td>
-                          <td>
-                            <strong>+${totals.gstAmount.toFixed(2)}</strong>
-                          </td>
-                          {isEditing && <td className={styles.noPrint}></td>}
+                          {isEditing && (
+                            <td
+                              className={`${styles.noPrint} ${styles.emptyCell}`}
+                            ></td>
+                          )}
                         </tr>
                       )}
                       <tr className={styles.finalTotalRow}>
-                        <td colSpan="4">
-                          <strong>FINAL PAYOUT:</strong>
+                        <td colSpan="3" className={styles.emptyCell}></td>
+                        <td
+                          className={`${styles.hideOnPrint} ${styles.emptyCell}`}
+                        ></td>
+                        <td className={styles.totalLabel}>FINAL PAYOUT:</td>
+                        <td className={styles.totalValue}>
+                          ${totals.finalTotal.toFixed(2)}
                         </td>
-                        <td>
-                          <strong>${totals.finalTotal.toFixed(2)}</strong>
+                        {isEditing && (
+                          <td
+                            className={`${styles.noPrint} ${styles.emptyCell}`}
+                          ></td>
+                        )}
+                      </tr>
+                    </tfoot>
+
+                    {/* ПІДСУМОК 2: ДЛЯ ДРУКУ (показується тільки на папері) 
+                        Тут тільки 4 колонки: Дата, Адреса, Робота, Сума. 
+                        Тому ми робимо colSpan="3" для тексту і залишаємо 1 колонку для суми */}
+                    <tfoot className={styles.printOnlyTfoot}>
+                      <tr>
+                        <td colSpan="3" className={styles.totalLabel}>
+                          TOTAL:
                         </td>
-                        {isEditing && <td className={styles.noPrint}></td>}
+                        <td className={styles.totalValue}>
+                          ${totals.baseTotal.toFixed(2)}
+                        </td>
+                      </tr>
+                      {person.has_holdback && (
+                        <tr>
+                          <td colSpan="3" className={styles.totalLabel}>
+                            Holdback 5%:
+                          </td>
+                          <td className={styles.totalValue}>
+                            -${totals.holdbackAmount.toFixed(2)}
+                          </td>
+                        </tr>
+                      )}
+                      {person.has_wcb && (
+                        <tr>
+                          <td colSpan="3" className={styles.totalLabel}>
+                            WCB 3%:
+                          </td>
+                          <td className={styles.totalValue}>
+                            -${totals.wcbAmount.toFixed(2)}
+                          </td>
+                        </tr>
+                      )}
+                      {person.has_gst && (
+                        <tr>
+                          <td colSpan="3" className={styles.totalLabel}>
+                            GST 5%:
+                          </td>
+                          <td className={styles.totalValue}>
+                            ${totals.gstAmount.toFixed(2)}
+                          </td>
+                        </tr>
+                      )}
+                      <tr>
+                        <td colSpan="3" className={styles.totalLabel}>
+                          {person.has_gst ||
+                          person.has_holdback ||
+                          person.has_wcb
+                            ? "TOTAL PAYOUT:"
+                            : ""}
+                        </td>
+                        <td className={styles.totalValue}>
+                          {person.has_gst ||
+                          person.has_holdback ||
+                          person.has_wcb
+                            ? `$${totals.finalTotal.toFixed(2)}`
+                            : ""}
+                        </td>
                       </tr>
                     </tfoot>
                   </table>
@@ -437,7 +546,6 @@ const PersonTableDetailsPage = () => {
             </div>
           </div>
 
-          {/* ПРАВА КОЛОНКА - ІСТОРІЯ (Ховається при друку) */}
           <div className={`${styles.gridColumn} ${styles.noPrint}`}>
             <div className={styles.detailCard}>
               <h3>Address History</h3>

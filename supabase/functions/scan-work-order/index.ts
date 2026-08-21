@@ -42,15 +42,22 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Extract data from this document. If a field is missing, return an empty string. JSON structure required: 
+                text: `Extract data from this document. If a field is missing, return an empty string or null. JSON structure required: 
                 { 
                   "type": "Return 'Address' for standard installs, or 'Service' if it's a repair/service ticket", 
                   "work_order_number": "Extract the Order Number or Job Number (e.g., CG600770, 47174-1)",
-                  "builder_name": "Extract the builder/client name from 'Reference' or 'Sold To'. Ignore contact person names (e.g., if 'VICTORY HOMES LTD./ SANDY MANN', return ONLY 'VICTORY HOMES LTD')", 
-                  "store_name": "Identify the store issuing the ticket (usually 'THE FLOOR SHOW' or 'TOUCHTONE CANADA LTD.')", 
+                  "builder_name": "Extract the builder/client name from 'Reference' or 'Sold To'. Ignore contact person names.", 
+                  "store_name": "Identify the store issuing the ticket (usually 'THE FLOOR SHOW' or 'TOUCHSTONE CANADA LTD.')", 
                   "address": "Full job site address from 'Ship To' or 'Install At'", 
-                  "date": "Extract the date. Format strictly as YYYY-MM-DD. Since current year is 2026, ensure the year is 2026 (e.g., 08/15/26 becomes 2026-08-15).", 
-                  "total_amount": "Total labor amount at the bottom (number only, no currency symbol)" 
+                  "date": "Extract the date. Format strictly as YYYY-MM-DD. Since current year is 2026, ensure the year is 2026.", 
+                  "total_amount": "Total labor amount at the bottom (number only, no currency symbol)",
+                  "ai_translation": "Extract any special instructions, 'NOTE', 'IMPORTANT NOTE', or descriptions of the work from the document. Translate them clearly into Ukrainian. Structure the text nicely.",
+                  "work_types": [
+                    {
+                      "name": "Extract the exact text under 'PC Style/Item', 'Description', or 'Item' (e.g., 'LVP CLICK INSTALL', 'STAIRS', 'INSTALL STEPS')",
+                      "amount": "Extract the total price or extended price for this specific line item (number only). If not found, return 0."
+                    }
+                  ]
                 }`,
               },
               {

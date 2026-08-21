@@ -102,6 +102,7 @@ const AddressDetailsPage = () => {
     status: "",
     builder_id: "",
     store_id: "",
+    ai_translation: "", // Додано для збереження змін в тексті ШІ
   });
 
   const [workOrders, setWorkOrders] = useState([]);
@@ -128,6 +129,7 @@ const AddressDetailsPage = () => {
   const fetchData = useCallback(async () => {
     if (!addressId) return;
 
+    // В Supabase select("*") вже дістає поля original_photo_url та ai_translation
     const { data: addrData, error: addrError } = await supabase
       .from("addresses")
       .select("*, builders(name), stores(name)")
@@ -149,6 +151,7 @@ const AddressDetailsPage = () => {
       status: addrData.status || "In Process",
       builder_id: addrData.builder_id || "",
       store_id: addrData.store_id || "",
+      ai_translation: addrData.ai_translation || "", // Передаємо дані від ШІ у стейт редагування
     });
 
     const { data: woList, error: woError } = await supabase
@@ -241,6 +244,7 @@ const AddressDetailsPage = () => {
       status: editedData.status,
       builder_id: editedData.builder_id || null,
       store_id: editedData.store_id || null,
+      ai_translation: editedData.ai_translation, // Зберігаємо відредагований текст
     };
     const updated = await updateAddress(updates);
     if (updated) {
@@ -503,6 +507,11 @@ const AddressDetailsPage = () => {
     }
   };
 
+  // Перевірка чи файл є картинкою або PDF
+  const isImage = (url) =>
+    url && url.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null;
+  const isPdf = (url) => url && url.match(/\.(pdf)$/i) != null;
+
   if (!addressData) return <p>Loading...</p>;
 
   const getStatusStyle = (status) => {
@@ -531,7 +540,7 @@ const AddressDetailsPage = () => {
             </button>
             <img
               src={selectedImage}
-              alt="Fullscreen report photo"
+              alt="Fullscreen view"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -675,7 +684,77 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* 2. MATERIALS */}
+            {/* НОВИЙ БЛОК 2: AI TRANSLATION & ORIGINAL DOCUMENT */}
+            {(addressData.original_photo_url ||
+              addressData.ai_translation ||
+              isEditing) && (
+              <div className={styles.detailCard}>
+                <h3>Scanned Document & AI Notes</h3>
+                <div className={styles.cardContentWrapper}>
+                  {/* Photo / PDF */}
+                  {addressData.original_photo_url && (
+                    <div
+                      className={styles.detailItem}
+                      style={{ gridTemplateColumns: "1fr", gap: "8px" }}
+                    >
+                      <label>Original Document</label>
+                      {isImage(addressData.original_photo_url) ? (
+                        <img
+                          src={addressData.original_photo_url}
+                          alt="Scanned Document"
+                          className={styles.originalPhoto}
+                          onClick={() =>
+                            setSelectedImage(addressData.original_photo_url)
+                          }
+                        />
+                      ) : (
+                        <a
+                          href={addressData.original_photo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.pdfLinkBox}
+                        >
+                          <FaFilePdf size={30} color="#dc3545" />
+                          <span>View PDF Document</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Text Notes */}
+                  <div
+                    className={styles.detailItem}
+                    style={{ gridTemplateColumns: "1fr", gap: "8px" }}
+                  >
+                    <label>AI Instructions / Translation</label>
+                    {isEditing ? (
+                      <textarea
+                        name="ai_translation"
+                        value={editedData.ai_translation}
+                        onChange={handleInputChange}
+                        className={styles.editInput}
+                        style={{ minHeight: "120px", resize: "vertical" }}
+                        placeholder="AI translation will appear here..."
+                      />
+                    ) : (
+                      <div className={styles.aiNotesBox}>
+                        {addressData.ai_translation ? (
+                          <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>
+                            {addressData.ai_translation}
+                          </p>
+                        ) : (
+                          <span className={styles.noItemsMessage}>
+                            No AI instructions available.
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. MATERIALS */}
             <div className={styles.detailCard}>
               <h3>Materials</h3>
               <div className={styles.cardContentWrapper}>
@@ -683,7 +762,7 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* 3. WORK TYPES & PAYMENTS (Перенесено сюди за вашою стрілкою) */}
+            {/* 4. WORK TYPES & PAYMENTS */}
             <div className={styles.detailCard}>
               <h3>Work Types & Payments</h3>
               <div className={styles.cardContentWrapper}>
@@ -694,7 +773,7 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* 4. WORK ORDERS */}
+            {/* 5. WORK ORDERS */}
             <div className={styles.detailCard}>
               <div className={styles.cardHeader}>
                 <h3>Work Orders</h3>

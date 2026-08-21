@@ -144,23 +144,39 @@
   min-width: 120px;
 }
 
+/* Екранний підсумок */
 .totalRow td {
-  font-weight: 700;
   background-color: #fcfcfc;
   border-top: 1px solid var(--color-border);
   font-size: 1.05rem;
-}
-
-.totalRow td:first-child {
-  text-align: right;
-  color: #555555;
 }
 
 .finalTotalRow td {
   background-color: #f5f5f5;
   border-top: 2px solid #222;
   font-size: 1.2rem;
-  color: #222;
+}
+
+.totalLabel {
+  text-align: right !important;
+  font-weight: 700;
+  color: #555555;
+}
+
+.totalValue {
+  font-weight: 700;
+  color: #222222;
+}
+
+.finalTotalRow .totalLabel,
+.finalTotalRow .totalValue {
+  color: #222222;
+}
+
+/* Спеціальні класи для керування друком */
+.printTitle,
+.printOnlyTfoot {
+  display: none;
 }
 
 @media (max-width: 767px) {
@@ -205,7 +221,7 @@
   .invoiceTable thead {
     display: none;
   }
-  .invoiceTable tr {
+  .invoiceTable tbody tr {
     display: block;
     border-bottom: 1px solid var(--color-border);
     padding: 16px 0;
@@ -213,7 +229,7 @@
   .invoiceTable tbody tr:last-child {
     border-bottom: none;
   }
-  .invoiceTable td {
+  .invoiceTable tbody td {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -222,7 +238,7 @@
     border-bottom: none;
     white-space: normal;
   }
-  .invoiceTable td::before {
+  .invoiceTable tbody td::before {
     content: attr(data-label);
     font-weight: 600;
     font-size: 0.85rem;
@@ -230,53 +246,56 @@
     margin-right: 10px;
     color: var(--color-text-secondary);
   }
-  .invoiceTable tfoot {
+
+  .emptyCell {
+    display: none !important;
+  }
+  .screenOnlyTfoot {
     display: block;
     background-color: #f9f9f9;
     padding: 10px 0;
   }
-  .invoiceTable tfoot .totalRow td,
-  .invoiceTable tfoot .finalTotalRow td {
+  .screenOnlyTfoot tr {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 10px 20px;
+    border-bottom: 1px solid var(--color-border);
   }
-  .invoiceTable input {
-    text-align: right;
+  .screenOnlyTfoot tr:last-child {
+    border-bottom: none;
+  }
+  .screenOnlyTfoot td {
+    border: none !important;
+    padding: 0 !important;
+    display: block;
+    background-color: transparent !important;
+  }
+  .screenOnlyTfoot .totalLabel {
+    flex: 1;
+    text-align: left !important;
+  }
+  .screenOnlyTfoot .totalValue {
+    text-align: right !important;
   }
 }
 
 /* =========================================
-   СТИЛІ ДЛЯ ДРУКУ (PRINT MEDIA) - ЛИШЕ ТАБЛИЦЯ
+   СТИЛІ ДЛЯ ДРУКУ (МАКСИМАЛЬНО ЧИСТИЙ МАКЕТ)
    ========================================= */
 @media print {
   @page {
-    margin: 1cm;
+    margin: 1.5cm;
     size: portrait;
   }
 
-  /* 1. Приховуємо ГЛОБАЛЬНЕ верхнє меню сайту (Flooring Boss) */
-  header,
-  nav,
-  aside,
-  footer {
-    display: none !important;
-  }
-
-  /* 2. Приховуємо всі елементи, яким ми свідомо задали клас noPrint (кнопки, форму додавання, історію) */
-  .noPrint {
-    display: none !important;
-  }
-
-  /* 3. Знімаємо всі відступи, сітки та фони з батьківських контейнерів, 
-        щоб таблиця розтягнулася на весь аркуш формату А4 і не зрізалася */
+  /* 1. Скидання фонів та базової структури */
   body,
   html,
   #root,
   .pageContainer,
   .mobileLayout,
-  .detailsGrid,
-  .gridColumn {
+  .detailsGrid {
     background-color: #ffffff !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -284,10 +303,9 @@
     height: auto !important;
     box-shadow: none !important;
     border: none !important;
-    display: block !important; /* Вимикаємо Flex/Grid, щоб не ламалася верстка на папері */
+    display: block !important;
   }
 
-  /* 4. Налаштовуємо саму картку з таблицею, щоб вона виглядала як документ */
   .printableCard {
     display: block !important;
     width: 100% !important;
@@ -297,42 +315,101 @@
     padding: 0 !important;
   }
 
-  /* Заголовок інвойсу на папері */
-  .printableCard h3 {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border-bottom: 2px solid #000000 !important;
-    font-size: 16pt !important;
-    padding: 0 0 10px 0 !important;
-    margin-bottom: 20px !important;
+  .cardContentWrapper {
+    padding: 0 !important;
   }
 
-  /* 5. Ідеальні рамки для таблиці на папері */
+  /* 2. Заголовок для паперу */
+  .printTitle {
+    display: block !important;
+    font-size: 16pt !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    margin-bottom: 20px !important;
+    text-align: left !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  /* 3. ЖОРСТКЕ ФОРМАТУВАННЯ ТАБЛИЦІ (Щоб скасувати мобільні стилі) */
   .invoiceTable {
+    display: table !important;
     width: 100% !important;
     border-collapse: collapse !important;
+    font-family: Arial, sans-serif !important;
+  }
+
+  .invoiceTable thead {
+    display: table-header-group !important;
+  }
+
+  .invoiceTable tbody {
+    display: table-row-group !important;
+  }
+
+  .invoiceTable tr {
+    display: table-row !important;
   }
 
   .invoiceTable th,
   .invoiceTable td {
-    border: 1px solid #cccccc !important;
-    padding: 10px 12px !important;
+    display: table-cell !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    padding: 10px !important;
     color: #000000 !important;
+    background-color: transparent !important;
     font-size: 11pt !important;
+    text-align: left !important;
   }
 
   .invoiceTable th {
-    background-color: #f5f5f5 !important;
-    color: #000000 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    border-bottom: 2px solid #000000 !important;
+    font-weight: 700 !important;
   }
 
-  .totalRow td,
-  .finalTotalRow td {
-    background-color: #ffffff !important;
-    color: #000000 !important;
+  /* Прибираємо мобільні підписи комірок */
+  .invoiceTable td::before {
+    display: none !important;
+  }
+
+  /* 4. Підсумок для паперу */
+  .printOnlyTfoot {
+    display: table-footer-group !important;
+  }
+
+  .printOnlyTfoot td {
+    border: none !important;
+    padding: 6px 10px !important;
     font-size: 12pt !important;
-    border-top: 2px solid #000000 !important;
+  }
+
+  .printOnlyTfoot tr:first-child td {
+    padding-top: 24px !important; /* Відступ від списку інвойсів */
+  }
+
+  .printOnlyTfoot td.totalLabel {
+    text-align: right !important;
+    font-weight: 700 !important;
+  }
+
+  .printOnlyTfoot td.totalValue {
+    text-align: left !important;
+    font-weight: 700 !important;
+    padding-left: 20px !important;
+  }
+
+  /* 5. ПРИХОВУВАННЯ ЗАЙВОГО (Це правило має бути в самому кінці, щоб точно спрацювати!) */
+  header,
+  nav,
+  aside,
+  footer,
+  .noPrint,
+  .hideOnPrint,
+  .screenTitle,
+  .screenOnlyTfoot {
+    display: none !important;
   }
 }

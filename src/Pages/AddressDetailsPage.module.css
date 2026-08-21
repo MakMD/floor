@@ -140,6 +140,58 @@
   color: var(--color-text-primary);
 }
 
+/* --- СТИЛІ ДЛЯ ФОТО ТА AI NOTES --- */
+.originalPhoto {
+  max-height: 250px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  background-color: #f9f9f9;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  align-self: flex-start;
+}
+
+.originalPhoto:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.aiNotesBox {
+  background-color: var(--color-background);
+  padding: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.pdfLinkBox {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background-color: var(--color-background);
+  text-decoration: none;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  align-self: flex-start;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+
+.pdfLinkBox:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
 .statusCell {
   display: flex;
   align-items: flex-start;
@@ -412,7 +464,7 @@
 
   .detailsGrid {
     padding: 0;
-    gap: 0; /* Зливаємо картки на мобільному */
+    gap: 0;
   }
 
   .gridColumn {
@@ -423,7 +475,7 @@
     border-radius: 0;
     border-left: none;
     border-right: none;
-    border-top: none; /* Залишаємо лише нижню лінію як роздільник */
+    border-top: none;
     box-shadow: none;
   }
 

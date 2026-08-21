@@ -10,7 +10,7 @@
 
 .mobileLayout {
   width: 100%;
-  max-width: 1000px; /* Трохи звузив для кращого вигляду суцільного списку на десктопі */
+  max-width: 1000px;
   background-color: #ffffff;
   box-shadow: var(--shadow-md);
   border-radius: 8px;
@@ -148,6 +148,17 @@
 .errorMessage {
   color: #b02a48;
   font-size: 0.8rem;
+}
+
+/* Фото оригінал у формі */
+.previewImageDoc {
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: contain;
+  border: 1px solid var(--color-border);
+  align-self: flex-start;
+  margin-top: 8px;
+  background-color: #fff;
 }
 
 /* --- РОЗДІЛЬНИКИ ДНІВ (Точно як Календар) --- */
@@ -308,7 +319,6 @@
 @media (max-width: 767px) {
   .pageContainer {
     padding: 0;
-    /* Змушуємо блок ігнорувати відступи батьківського контейнера */
     width: 100vw;
     margin-left: calc(-50vw + 50%);
     margin-right: calc(-50vw + 50%);
@@ -322,14 +332,13 @@
 
   .header {
     flex-direction: column;
-    padding: 16px 12px; /* Зменшено бокові відступи */
+    padding: 16px 12px;
   }
 
   .header button {
     width: 100%;
   }
 
-  /* Зменшуємо бокові відступи всередині елементів для мобільного */
   .darkFilterPanel {
     padding: 16px 12px;
   }

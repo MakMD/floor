@@ -12,6 +12,8 @@ import {
   FaArrowLeft,
   FaMapMarkerAlt,
   FaCalendarAlt,
+  FaSearch,
+  FaCheckDouble,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
 import styles from "./WorkerPortal.module.css";
@@ -22,16 +24,21 @@ const WorkerPortal = () => {
   const [loading, setLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Стейт для роботи (об'єкти)
   const [myProjects, setMyProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
 
-  // Стейт для виплат (таблиці/папки та інвойси)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [workFilter, setWorkFilter] = useState("active");
+
   const [myTables, setMyTables] = useState([]);
   const [loadingTables, setLoadingTables] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null);
   const [tableInvoices, setTableInvoices] = useState([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
+
+  // Стейт для сповіщень
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const [formData, setFormData] = useState({
     workerStatus: "Ready",
@@ -87,13 +94,43 @@ const WorkerPortal = () => {
     }
   }, [user, role, isInitialized, ensureProfileExists]);
 
+  // Завантаження сповіщень
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setNotifications(data);
+      setUnreadCount(data.filter((n) => !n.is_read).length);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (isInitialized) {
+      fetchNotifications();
       if (activeTab === "work") fetchMyProjects();
       if (activeTab === "profile") fetchWorkerDocuments();
       if (activeTab === "invoices" && !selectedTable) fetchMyTables();
     }
-  }, [activeTab, isInitialized, selectedTable]);
+  }, [activeTab, isInitialized, selectedTable, fetchNotifications]);
+
+  const markNotificationAsRead = async (id) => {
+    await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    fetchNotifications();
+  };
+
+  const markAllAsRead = async () => {
+    await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", user.id);
+    fetchNotifications();
+    toast.success("Всі сповіщення прочитані");
+  };
 
   const fetchMyProjects = async () => {
     if (!user) return;
@@ -161,7 +198,6 @@ const WorkerPortal = () => {
     }
   };
 
-  // ОНОВЛЕНО: Тепер беремо папки ОДРАЗУ з їхніми інвойсами для красивого прев'ю
   const fetchMyTables = async () => {
     if (!user) return;
     setLoadingTables(true);
@@ -183,12 +219,7 @@ const WorkerPortal = () => {
 
       const { data, error } = await supabase
         .from("invoice_tables")
-        .select(
-          `
-          *,
-          invoices (address, total_income, total)
-        `,
-        )
+        .select(`*, invoices (address, total_income, total)`)
         .eq("person_id", workerId)
         .order("created_at", { ascending: false });
 
@@ -303,7 +334,20 @@ const WorkerPortal = () => {
     }
   };
 
-  // Загальна сума для відкритої папки
+  const filteredProjects = myProjects.filter((p) => {
+    const matchesSearch =
+      (p.address || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.work_order_number || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+    const matchesTab =
+      workFilter === "active" ? p.status !== "Ready" : p.status === "Ready";
+    return matchesSearch && matchesTab;
+  });
+
+  const activeCount = myProjects.filter((p) => p.status !== "Ready").length;
+  const completedCount = myProjects.filter((p) => p.status === "Ready").length;
+
   const folderTotal = tableInvoices.reduce((sum, inv) => {
     const val = parseFloat(inv.total_income || inv.total || 0);
     return sum + (isNaN(val) ? 0 : val);
@@ -337,15 +381,42 @@ const WorkerPortal = () => {
             <div className={styles.workTab}>
               {!selectedProject ? (
                 <>
+                  <div className={styles.topControls}>
+                    <div className={styles.searchContainer}>
+                      <FaSearch className={styles.searchIcon} />
+                      <input
+                        type="text"
+                        placeholder="Пошук за адресою або WO..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={styles.searchInput}
+                      />
+                    </div>
+                    <div className={styles.filterTabs}>
+                      <button
+                        className={`${styles.filterTab} ${workFilter === "active" ? styles.activeFilterTab : ""}`}
+                        onClick={() => setWorkFilter("active")}
+                      >
+                        В роботі ({activeCount})
+                      </button>
+                      <button
+                        className={`${styles.filterTab} ${workFilter === "completed" ? styles.activeFilterTab : ""}`}
+                        onClick={() => setWorkFilter("completed")}
+                      >
+                        Завершені ({completedCount})
+                      </button>
+                    </div>
+                  </div>
+
                   {loading ? (
                     <p className={styles.infoText}>Завантаження...</p>
-                  ) : myProjects.length === 0 ? (
+                  ) : filteredProjects.length === 0 ? (
                     <p className={styles.infoText}>
-                      Наразі у вас немає призначених об'єктів.
+                      Немає об'єктів у цій категорії.
                     </p>
                   ) : (
                     <div className={styles.projectList}>
-                      {myProjects.map((proj) => (
+                      {filteredProjects.map((proj) => (
                         <div
                           key={proj.id}
                           className={styles.projectCard}
@@ -507,7 +578,6 @@ const WorkerPortal = () => {
             </div>
           )}
 
-          {/* ВКЛАДКА ІНВОЙСІВ */}
           {activeTab === "invoices" && (
             <div className={styles.invoicesTab}>
               {!selectedTable ? (
@@ -555,7 +625,6 @@ const WorkerPortal = () => {
                                   {table.name}
                                 </span>
                               </div>
-                              {/* Виводимо адреси прямо на папці */}
                               <div className={styles.folderAddresses}>
                                 <FaMapMarkerAlt
                                   style={{
@@ -605,7 +674,6 @@ const WorkerPortal = () => {
                     <div className={styles.invoiceList}>
                       {tableInvoices.map((inv) => (
                         <div key={inv.id} className={styles.invoiceCard}>
-                          {/* Рядок 1: Адреса та Загальна сума */}
                           <div className={styles.invoiceMainRow}>
                             <span className={styles.invoiceAddress}>
                               {inv.address || "Адреса не вказана"}
@@ -618,7 +686,6 @@ const WorkerPortal = () => {
                             </span>
                           </div>
 
-                          {/* Рядок 2: Дата та Квадратура (якщо є) */}
                           <div className={styles.invoiceSubRow}>
                             {inv.date && (
                               <span
@@ -641,7 +708,6 @@ const WorkerPortal = () => {
                             )}
                           </div>
 
-                          {/* Рядок 3: GST (якщо є) */}
                           {inv.GSTCollected || inv.totalWithGst ? (
                             <div className={styles.invoiceGstRow}>
                               <span>
@@ -657,7 +723,6 @@ const WorkerPortal = () => {
                         </div>
                       ))}
 
-                      {/* Фіксована панель Загальної суми знизу */}
                       <div className={styles.folderTotalCard}>
                         <span className={styles.folderTotalLabel}>
                           Всього за період:
@@ -674,10 +739,50 @@ const WorkerPortal = () => {
           )}
 
           {activeTab === "notifications" && (
-            <div className={styles.placeholderTab}>
-              <FaBell size={40} className={styles.placeholderIcon} />
-              <h2>Сповіщення</h2>
-              <p>Немає нових повідомлень.</p>
+            <div className={styles.notificationsTab}>
+              <div className={styles.notifHeaderWrapper}>
+                <h2 style={{ margin: 0 }}>Сповіщення</h2>
+                {notifications.length > 0 && (
+                  <button onClick={markAllAsRead} className={styles.markAllBtn}>
+                    <FaCheckDouble /> Прочитати все
+                  </button>
+                )}
+              </div>
+
+              {notifications.length === 0 ? (
+                <div className={styles.placeholderTab}>
+                  <FaBell size={40} className={styles.placeholderIcon} />
+                  <p>Немає нових повідомлень.</p>
+                </div>
+              ) : (
+                <div className={styles.notifList}>
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`${styles.notifCard} ${!n.is_read ? styles.notifUnread : ""}`}
+                      onClick={() => {
+                        if (!n.is_read) markNotificationAsRead(n.id);
+                      }}
+                    >
+                      <div className={styles.notifTitleRow}>
+                        <span className={styles.notifTitle}>{n.title}</span>
+                        {!n.is_read && (
+                          <span className={styles.unreadDot}></span>
+                        )}
+                      </div>
+                      <p className={styles.notifMessage}>{n.message}</p>
+                      <span className={styles.notifDate}>
+                        {new Date(n.created_at).toLocaleString("uk-UA", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -713,9 +818,13 @@ const WorkerPortal = () => {
           <button
             className={`${styles.navItem} ${activeTab === "notifications" ? styles.activeNav : ""}`}
             onClick={() => setActiveTab("notifications")}
+            style={{ position: "relative" }}
           >
             <FaBell size={20} />
             <span>Сповіщення</span>
+            {unreadCount > 0 && (
+              <span className={styles.badge}>{unreadCount}</span>
+            )}
           </button>
         </div>
       </div>

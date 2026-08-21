@@ -140,12 +140,210 @@
   display: none;
 }
 
-/* Приховуємо мобільний текст на десктопі */
 .mobileOnlyText {
   display: none;
 }
 
-/* Мобільна версія */
+/* =========================================
+   СТИЛІ ДЛЯ СПОВІЩЕНЬ (АДМІН)
+   ========================================= */
+.notifContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.notifButton {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  position: relative;
+  padding: 8px;
+  border-radius: 50%;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notifButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .notifButton {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .notifButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+}
+
+.notifBadge {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: bold;
+  border-radius: 50%;
+  padding: 2px 6px;
+  border: 2px solid #ffffff;
+  line-height: 1;
+}
+
+[data-theme="dark"] .notifBadge {
+  border-color: #1f2937;
+}
+
+.notifDropdown {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  width: 340px;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+[data-theme="dark"] .notifDropdown {
+  background-color: #1f2937;
+  border-color: #374151;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+.notifHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  background-color: #f9fafb;
+}
+
+[data-theme="dark"] .notifHeader {
+  background-color: #111827;
+  border-color: #374151;
+}
+
+.notifTitle {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+}
+
+.markAllBtn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.notifList {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.emptyNotif {
+  padding: 24px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.notifItem {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notifItem:last-child {
+  border-bottom: none;
+}
+
+.notifItem:hover {
+  background-color: #f3f4f6;
+}
+
+[data-theme="dark"] .notifItem {
+  border-color: #374151;
+}
+
+[data-theme="dark"] .notifItem:hover {
+  background-color: #374151;
+}
+
+.notifUnread {
+  background-color: #eff6ff;
+}
+
+[data-theme="dark"] .notifUnread {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.notifItemTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notifItemTitle {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.notifItemMessage {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notifItemDate {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* =========================================
+   Мобільна версія
+   ========================================= */
 @media (max-width: 992px) {
   .header {
     margin: 0;
@@ -156,7 +354,6 @@
     display: none;
   }
 
-  /* Показуємо текст на мобілці */
   .mobileOnlyText {
     display: inline;
   }
@@ -166,7 +363,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 10px; /* Зменшено відстань між пунктами меню */
+    gap: 10px;
     position: fixed;
     top: 0;
     left: 0;
@@ -231,10 +428,10 @@
 
   .navControls {
     border-left: none;
-    padding: 15px 20px; /* Відступи по краях */
-    margin: 20px 0 0 0; /* Прибрали margin-top: auto, щоб кнопки були відразу під меню */
+    padding: 15px 20px;
+    margin: 10px 0 0 0;
     flex-direction: column;
-    align-items: flex-start; /* Вирівнювання по лівому краю */
+    align-items: flex-start;
     width: 100%;
     box-sizing: border-box;
     gap: 15px;
@@ -245,11 +442,55 @@
     border-top-color: #374151;
   }
 
+  /* Адаптація дзвіночка для мобільного меню */
+  .notifContainer {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .notifButton {
+    padding: 12px 20px;
+    width: 100%;
+    justify-content: flex-start;
+    border-radius: 8px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    gap: 12px;
+    font-size: 1.05rem;
+  }
+
+  [data-theme="dark"] .notifButton {
+    background-color: #374151;
+    border-color: #4b5563;
+  }
+
+  .notifBadge {
+    position: static;
+    margin-left: auto;
+    border: none;
+  }
+
+  .notifDropdown {
+    position: static;
+    width: 100%;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    margin-top: 10px;
+    background-color: transparent;
+  }
+
+  [data-theme="dark"] .notifDropdown {
+    background-color: transparent;
+    box-shadow: none;
+  }
+
   .logoutButton {
     width: 100%;
     justify-content: flex-start;
     padding: 12px 20px;
-    font-size: 1.05rem; /* Трохи більший шрифт для зручності */
+    font-size: 1.05rem;
     border-radius: 8px;
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
