@@ -29,7 +29,7 @@ const PhotoUploader = ({
 
         let fileToUpload = file;
         try {
-          // Стискаємо файл
+          // Стискаємо файл (якщо це PDF, бібліотека видасть помилку і ми використаємо оригінал)
           fileToUpload = await imageCompression(file, options);
         } catch (compressionError) {
           console.error(
@@ -41,7 +41,7 @@ const PhotoUploader = ({
         const fileExt = fileToUpload.name.split(".").pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
 
-        // Відправка стисненого файлу в Supabase
+        // Відправка файлу в Supabase
         const { error: uploadError } = await supabase.storage
           .from(bucketName)
           .upload(fileName, fileToUpload);
@@ -79,8 +79,7 @@ const PhotoUploader = ({
       <input
         type="file"
         multiple
-        accept="image/*"
-        capture="environment"
+        accept="image/*, application/pdf"
         onChange={uploadFiles}
         disabled={uploading}
         className={styles.hiddenInput}
