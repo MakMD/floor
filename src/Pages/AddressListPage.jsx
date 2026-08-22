@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAdminLists } from "../hooks/useAdminLists";
@@ -22,6 +22,8 @@ import { format, addDays, subDays, parseISO } from "date-fns";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 
+const PAGE_SIZE = 40;
+
 const AddProjectSchema = Yup.object().shape({
   project_type: Yup.string().required("Project type is required"),
   work_order_number: Yup.string().nullable(),
@@ -40,12 +42,38 @@ const AddProjectSchema = Yup.object().shape({
   builder_id: Yup.number().nullable(),
 });
 
+// --- ОПТИМІЗАЦІЯ 1: Чисті функції винесено за межі компонента ---
+const normalizeText = (text) => {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/the\s|ltd\.?|inc\.?|corp\.?|canada/g, "")
+    .replace(/[^a-z0-9]/g, "");
+};
+
+const isMatch = (dbName, aiName) => {
+  const cleanDb = normalizeText(dbName);
+  const cleanAi = normalizeText(aiName);
+  if (!cleanDb || !cleanAi) return false;
+  if (cleanDb.includes(cleanAi) || cleanAi.includes(cleanDb)) return true;
+  if (
+    (cleanDb.includes("touchstone") && cleanAi.includes("touchtone")) ||
+    (cleanAi.includes("touchstone") && cleanDb.includes("touchtone"))
+  )
+    return true;
+  if (
+    (cleanDb.includes("showfloor") && cleanAi.includes("floorshow")) ||
+    (cleanAi.includes("showfloor") && cleanDb.includes("floorshow"))
+  )
+    return true;
+  return false;
+};
+
 const AddressListPage = () => {
   const [addresses, setAddresses] = useState([]);
   const [addressesLoading, setAddressesLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const PAGE_SIZE = 40;
 
   const { builders, stores, products, loading: listsLoading } = useAdminLists();
   const navigate = useNavigate();
@@ -77,81 +105,89 @@ const AddressListPage = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const fetchAddresses = async (pageNumber = 1, reset = false) => {
-    setAddressesLoading(true);
-    const from = (pageNumber - 1) * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
+  // --- ОПТИМІЗАЦІЯ 2: Використання useCallback для залежностей ефекту ---
+  const fetchAddresses = useCallback(
+    async (pageNumber = 1, reset = false) => {
+      setAddressesLoading(true);
+      const from = (pageNumber - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
 
-    let query = supabase
-      .from("addresses")
-      .select("*, builders(name), stores(name), work_orders(*)", {
-        count: "exact",
-      })
-      .eq("is_deleted", false)
-      .order("date", { ascending: false, nullsLast: true });
+      let query = supabase
+        .from("addresses")
+        .select("*, builders(name), stores(name), work_orders(*)", {
+          count: "exact",
+        })
+        .eq("is_deleted", false)
+        .order("date", { ascending: false, nullsLast: true });
 
-    if (debouncedSearch) query = query.ilike("address", `%${debouncedSearch}%`);
-    if (statusFilter !== "all") query = query.eq("status", statusFilter);
-    if (builderFilter !== "all") query = query.eq("builder_id", builderFilter);
-    if (storeFilter !== "all") query = query.eq("store_id", storeFilter);
+      if (debouncedSearch)
+        query = query.ilike("address", `%${debouncedSearch}%`);
+      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      if (builderFilter !== "all")
+        query = query.eq("builder_id", builderFilter);
+      if (storeFilter !== "all") query = query.eq("store_id", storeFilter);
 
-    if (dateFilter === "today")
-      query = query.eq("date", format(new Date(), "yyyy-MM-dd"));
-    else if (dateFilter === "tomorrow")
-      query = query.eq("date", format(addDays(new Date(), 1), "yyyy-MM-dd"));
-    else if (dateFilter === "yesterday")
-      query = query.eq("date", format(subDays(new Date(), 1), "yyyy-MM-dd"));
+      if (dateFilter === "today")
+        query = query.eq("date", format(new Date(), "yyyy-MM-dd"));
+      else if (dateFilter === "tomorrow")
+        query = query.eq("date", format(addDays(new Date(), 1), "yyyy-MM-dd"));
+      else if (dateFilter === "yesterday")
+        query = query.eq("date", format(subDays(new Date(), 1), "yyyy-MM-dd"));
 
-    const { data, error, count } = await query.range(from, to);
+      const { data, error, count } = await query.range(from, to);
 
-    if (error) {
-      toast.error(`Error: ${error.message}`);
-    } else {
-      let newItems = data || [];
-      if (productFilter !== "all") {
-        newItems = newItems.filter(
-          (item) =>
-            item.work_orders &&
-            item.work_orders.some(
-              (wo) => wo.product_id?.toString() === productFilter,
-            ),
+      if (error) {
+        toast.error(`Error: ${error.message}`);
+      } else {
+        let newItems = data || [];
+        if (productFilter !== "all") {
+          newItems = newItems.filter(
+            (item) =>
+              item.work_orders &&
+              item.work_orders.some(
+                (wo) => wo.product_id?.toString() === productFilter,
+              ),
+          );
+        }
+
+        if (reset) setAddresses(newItems);
+        else {
+          setAddresses((prev) => {
+            const existingIds = new Set(prev.map((i) => i.id));
+            const filteredNew = newItems.filter((i) => !existingIds.has(i.id));
+            return [...prev, ...filteredNew];
+          });
+        }
+
+        setHasMore(
+          count !== null
+            ? from + (data?.length || 0) < count
+            : (data?.length || 0) === PAGE_SIZE,
         );
       }
+      setAddressesLoading(false);
+    },
+    [
+      debouncedSearch,
+      statusFilter,
+      builderFilter,
+      storeFilter,
+      dateFilter,
+      productFilter,
+    ],
+  );
 
-      if (reset) setAddresses(newItems);
-      else {
-        setAddresses((prev) => {
-          const existingIds = new Set(prev.map((i) => i.id));
-          const filteredNew = newItems.filter((i) => !existingIds.has(i.id));
-          return [...prev, ...filteredNew];
-        });
-      }
-
-      setHasMore(
-        count !== null
-          ? from + (data?.length || 0) < count
-          : (data?.length || 0) === PAGE_SIZE,
-      );
-    }
-    setAddressesLoading(false);
-  };
-
+  // Завдяки useCallback, ми тепер можемо безпечно передати fetchAddresses сюди
   useEffect(() => {
     setPage(1);
     fetchAddresses(1, true);
-  }, [
-    debouncedSearch,
-    dateFilter,
-    statusFilter,
-    builderFilter,
-    storeFilter,
-    productFilter,
-  ]);
+  }, [fetchAddresses]);
 
   const refetch = () => {
     setPage(1);
     fetchAddresses(1, true);
   };
+
   const loadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -308,8 +344,8 @@ const AddressListPage = () => {
             {
               address_id: newAddressData.id,
               work_type_template_id: templateId,
-              payment_amount: parsedAmt, // Виправлено з 'amount'
-              person_id: null, // Виправлено з 'worker_id'
+              payment_amount: parsedAmt,
+              person_id: null,
             },
           ]);
 
@@ -361,32 +397,6 @@ const AddressListPage = () => {
       toast.success("Address deleted!");
       refetch();
     }
-  };
-
-  const normalizeText = (text) => {
-    if (!text) return "";
-    return text
-      .toLowerCase()
-      .replace(/the\s|ltd\.?|inc\.?|corp\.?|canada/g, "")
-      .replace(/[^a-z0-9]/g, "");
-  };
-
-  const isMatch = (dbName, aiName) => {
-    const cleanDb = normalizeText(dbName);
-    const cleanAi = normalizeText(aiName);
-    if (!cleanDb || !cleanAi) return false;
-    if (cleanDb.includes(cleanAi) || cleanAi.includes(cleanDb)) return true;
-    if (
-      (cleanDb.includes("touchstone") && cleanAi.includes("touchtone")) ||
-      (cleanAi.includes("touchstone") && cleanDb.includes("touchtone"))
-    )
-      return true;
-    if (
-      (cleanDb.includes("showfloor") && cleanAi.includes("floorshow")) ||
-      (cleanAi.includes("showfloor") && cleanDb.includes("floorshow"))
-    )
-      return true;
-    return false;
   };
 
   const handleScanDocument = async (event, setFieldValue) => {

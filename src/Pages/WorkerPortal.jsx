@@ -14,6 +14,7 @@ import {
   FaCalendarAlt,
   FaSearch,
   FaCheckDouble,
+  FaCopy,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
 import styles from "./WorkerPortal.module.css";
@@ -36,7 +37,6 @@ const WorkerPortal = () => {
   const [tableInvoices, setTableInvoices] = useState([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
 
-  // Стейт для сповіщень
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -94,7 +94,6 @@ const WorkerPortal = () => {
     }
   }, [user, role, isInitialized, ensureProfileExists]);
 
-  // Завантаження сповіщень
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
     const { data, error } = await supabase
@@ -284,6 +283,14 @@ const WorkerPortal = () => {
     }
   };
 
+  const handleCopyAddress = (address) => {
+    if (!address) return;
+    navigator.clipboard
+      .writeText(address)
+      .then(() => toast.success("Адресу скопійовано!"))
+      .catch(() => toast.error("Помилка копіювання адреси"));
+  };
+
   const handleWorkSubmit = async (e) => {
     e.preventDefault();
     if (!selectedProject) return;
@@ -455,9 +462,21 @@ const WorkerPortal = () => {
                   </button>
 
                   <div className={styles.detailHeader}>
-                    <h2 className={styles.detailTitle}>
-                      {selectedProject.address}
-                    </h2>
+                    <div className={styles.titleRow}>
+                      <h2 className={styles.detailTitle}>
+                        {selectedProject.address}
+                      </h2>
+                      <button
+                        type="button"
+                        className={styles.copyButton}
+                        onClick={() =>
+                          handleCopyAddress(selectedProject.address)
+                        }
+                        title="Скопіювати адресу"
+                      >
+                        <FaCopy />
+                      </button>
+                    </div>
                     <p className={styles.detailSubtitle}>
                       WO #{selectedProject.work_order_number}
                     </p>

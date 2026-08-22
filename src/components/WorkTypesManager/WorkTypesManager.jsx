@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 import styles from "./WorkTypesManager.module.css";
@@ -54,7 +54,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
     fetchData();
   }, [addressId]);
 
-  // Тимчасово заморожена функція відправки повідомлень, щоб уникнути помилки 500
   const sendNotification = async (personId) => {
     if (!personId || !addressData?.address || !addressData?.date) {
       return;
@@ -68,46 +67,31 @@ const WorkTypesManager = ({ addressId, addressData }) => {
 
     console.log("DEBUG: Notification would be sent here:", notificationPayload);
     toast.success("Дані збережено (Сповіщення тимчасово вимкнено)");
-
-    // TODO: Розкоментувати, коли Edge Function буде повністю налаштована в Supabase
-    /*
-    try {
-      const { data, error } = await supabase.functions.invoke(
-        "send-whatsapp-notification",
-        { body: notificationPayload }
-      );
-      if (error) throw error;
-    } catch (error) {
-      console.error("DEBUG: Error invoking Edge Function:", error);
-      toast.error(`Notification failed: ${error.message}`);
-    }
-    */
   };
 
-  const handleInputChange = (e, id) => {
+  // ОПТИМІЗАЦІЯ: useCallback для обробників вводу
+  const handleInputChange = useCallback((e, id) => {
     const { name, value } = e.target;
-    setWorkTypes(
-      workTypes.map((wt) => (wt.id === id ? { ...wt, [name]: value } : wt)),
+    setWorkTypes((prev) =>
+      prev.map((wt) => (wt.id === id ? { ...wt, [name]: value } : wt)),
     );
-  };
+  }, []);
 
-  const handleNewInputChange = (e) => {
+  const handleNewInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setNewWorkType((prev) => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
   const handleAddWorkType = async () => {
-    // Валідація: Обов'язково має бути вибраний тип роботи
     if (!newWorkType.work_type_template_id) {
       toast.error("Please select a Work Type first.");
       return;
     }
 
-    // Санітизація даних перед відправкою (заміна "" на null)
     const payload = {
       address_id: addressId,
       work_type_template_id: newWorkType.work_type_template_id,
-      person_id: newWorkType.person_id || null, // Якщо пусто - передаємо null
+      person_id: newWorkType.person_id || null,
       payment_amount: newWorkType.payment_amount
         ? parseFloat(newWorkType.payment_amount)
         : 0,
@@ -133,7 +117,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
   const handleUpdateWorkType = async (id) => {
     const workTypeToUpdate = workTypes.find((wt) => wt.id === id);
 
-    // Отримуємо старе значення person_id з бази, щоб перевірити, чи воно змінилось
     const { data: originalWorkType } = await supabase
       .from("work_types")
       .select("person_id")
@@ -142,7 +125,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
 
     const oldPersonId = originalWorkType?.person_id;
 
-    // Санітизація даних
     const payload = {
       ...workTypeToUpdate,
       person_id: workTypeToUpdate.person_id || null,
@@ -155,7 +137,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
     await updateWorkTypeAndInvoice(payload);
     toast.success("Work type updated");
 
-    // Відправляємо сповіщення, якщо працівника змінили або призначили вперше
     if (payload.person_id && payload.person_id !== oldPersonId) {
       await sendNotification(payload.person_id);
     }
@@ -224,7 +205,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
         ))}
       </div>
 
-      {/* Форма додавання нового запису */}
       <div className={styles.addWorkTypeForm}>
         <select
           name="work_type_template_id"

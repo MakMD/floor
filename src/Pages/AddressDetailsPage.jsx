@@ -24,6 +24,19 @@ import { usePeople } from "../hooks/usePeople";
 import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager";
 import MaterialsManager from "../components/MaterialsManager/MaterialsManager";
 
+// --- ОПТИМІЗАЦІЯ 1: Чисті функції винесено за межі компонента ---
+const isImage = (url) =>
+  url && url.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null;
+const isPdf = (url) => url && url.match(/\.(pdf)$/i) != null;
+
+const getStatusStyle = (status) => {
+  if (status === "Ready")
+    return { bg: "rgba(40, 167, 69, 0.15)", color: "#28a745" };
+  if (status === "Not Finished")
+    return { bg: "rgba(220, 53, 69, 0.15)", color: "#dc3545" };
+  return { bg: "rgba(255, 193, 7, 0.15)", color: "#d39e00" };
+};
+
 const FileListItem = ({ bucketName, fileIdentifier, onDelete }) => {
   const [signedUrl, setSignedUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,7 +115,7 @@ const AddressDetailsPage = () => {
     status: "",
     builder_id: "",
     store_id: "",
-    ai_translation: "", // Додано для збереження змін в тексті ШІ
+    ai_translation: "",
   });
 
   const [workOrders, setWorkOrders] = useState([]);
@@ -129,52 +142,55 @@ const AddressDetailsPage = () => {
   const fetchData = useCallback(async () => {
     if (!addressId) return;
 
-    // В Supabase select("*") вже дістає поля original_photo_url та ai_translation
-    const { data: addrData, error: addrError } = await supabase
-      .from("addresses")
-      .select("*, builders(name), stores(name)")
-      .eq("id", addressId)
-      .single();
+    // --- ОПТИМІЗАЦІЯ 2: ПАРАЛЕЛЬНІ ЗАПИТИ (Пришвидшення завантаження) ---
+    const [addrRes, woRes, reportsRes] = await Promise.all([
+      supabase
+        .from("addresses")
+        .select("*, builders(name), stores(name)")
+        .eq("id", addressId)
+        .single(),
+      supabase
+        .from("work_orders")
+        .select("*, products(name), people(name)")
+        .eq("address_id", addressId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("daily_reports")
+        .select("*")
+        .eq("address_id", addressId)
+        .order("created_at", { ascending: false }),
+    ]);
 
-    if (addrError) {
+    // Обробка об'єкта
+    if (addrRes.error) {
       toast.error("Could not load address data.");
       navigate("/addresses");
       return;
     }
 
-    setAddressData(addrData);
+    setAddressData(addrRes.data);
     setEditedData({
-      address: addrData.address || "",
-      sq_ft_notes: addrData.sq_ft_notes || [],
-      total_amount: addrData.total_amount || "",
-      date: addrData.date || "",
-      status: addrData.status || "In Process",
-      builder_id: addrData.builder_id || "",
-      store_id: addrData.store_id || "",
-      ai_translation: addrData.ai_translation || "", // Передаємо дані від ШІ у стейт редагування
+      address: addrRes.data.address || "",
+      sq_ft_notes: addrRes.data.sq_ft_notes || [],
+      total_amount: addrRes.data.total_amount || "",
+      date: addrRes.data.date || "",
+      status: addrRes.data.status || "In Process",
+      builder_id: addrRes.data.builder_id || "",
+      store_id: addrRes.data.store_id || "",
+      ai_translation: addrRes.data.ai_translation || "",
     });
 
-    const { data: woList, error: woError } = await supabase
-      .from("work_orders")
-      .select("*, products(name), people(name)")
-      .eq("address_id", addressId)
-      .order("created_at", { ascending: false });
-
-    if (!woError) {
-      setWorkOrders(woList || []);
+    // Обробка Work Orders
+    if (!woRes.error) {
+      setWorkOrders(woRes.data || []);
     }
 
-    const { data: reportsData, error: reportsError } = await supabase
-      .from("daily_reports")
-      .select("*")
-      .eq("address_id", addressId)
-      .order("created_at", { ascending: false });
-
-    if (reportsError) {
-      console.error("Помилка завантаження звітів:", reportsError);
-    } else if (reportsData && reportsData.length > 0) {
+    // Обробка Звітів
+    if (reportsRes.error) {
+      console.error("Помилка завантаження звітів:", reportsRes.error);
+    } else if (reportsRes.data && reportsRes.data.length > 0) {
       const workerIds = [
-        ...new Set(reportsData.map((r) => r.worker_id).filter(Boolean)),
+        ...new Set(reportsRes.data.map((r) => r.worker_id).filter(Boolean)),
       ];
 
       if (workerIds.length > 0) {
@@ -183,7 +199,7 @@ const AddressDetailsPage = () => {
           .select("id, first_name, last_name")
           .in("id", workerIds);
 
-        const reportsWithProfiles = reportsData.map((report) => {
+        const reportsWithProfiles = reportsRes.data.map((report) => {
           const profile = profilesData?.find((p) => p.id === report.worker_id);
           return {
             ...report,
@@ -192,7 +208,7 @@ const AddressDetailsPage = () => {
         });
         setReports(reportsWithProfiles);
       } else {
-        setReports(reportsData);
+        setReports(reportsRes.data);
       }
     } else {
       setReports([]);
@@ -244,7 +260,7 @@ const AddressDetailsPage = () => {
       status: editedData.status,
       builder_id: editedData.builder_id || null,
       store_id: editedData.store_id || null,
-      ai_translation: editedData.ai_translation, // Зберігаємо відредагований текст
+      ai_translation: editedData.ai_translation,
     };
     const updated = await updateAddress(updates);
     if (updated) {
@@ -507,20 +523,7 @@ const AddressDetailsPage = () => {
     }
   };
 
-  // Перевірка чи файл є картинкою або PDF
-  const isImage = (url) =>
-    url && url.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null;
-  const isPdf = (url) => url && url.match(/\.(pdf)$/i) != null;
-
   if (!addressData) return <p>Loading...</p>;
-
-  const getStatusStyle = (status) => {
-    if (status === "Ready")
-      return { bg: "rgba(40, 167, 69, 0.15)", color: "#28a745" };
-    if (status === "Not Finished")
-      return { bg: "rgba(220, 53, 69, 0.15)", color: "#dc3545" };
-    return { bg: "rgba(255, 193, 7, 0.15)", color: "#d39e00" };
-  };
 
   const statusStyle = getStatusStyle(editedData.status);
 
@@ -684,14 +687,13 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* НОВИЙ БЛОК 2: AI TRANSLATION & ORIGINAL DOCUMENT */}
+            {/* БЛОК 2: AI TRANSLATION & ORIGINAL DOCUMENT */}
             {(addressData.original_photo_url ||
               addressData.ai_translation ||
               isEditing) && (
               <div className={styles.detailCard}>
                 <h3>Scanned Document & AI Notes</h3>
                 <div className={styles.cardContentWrapper}>
-                  {/* Photo / PDF */}
                   {addressData.original_photo_url && (
                     <div
                       className={styles.detailItem}
@@ -721,7 +723,6 @@ const AddressDetailsPage = () => {
                     </div>
                   )}
 
-                  {/* Text Notes */}
                   <div
                     className={styles.detailItem}
                     style={{ gridTemplateColumns: "1fr", gap: "8px" }}

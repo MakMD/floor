@@ -16,20 +16,18 @@ const PhotoUploader = ({
     try {
       setUploading(true);
       const files = Array.from(event.target.files);
-      const urls = [];
 
-      for (const file of files) {
-        // Налаштування стиснення фото
+      // --- ОПТИМІЗАЦІЯ: ПАРАЛЕЛЬНЕ СТИСНЕННЯ ТА ЗАВАНТАЖЕННЯ ---
+      const uploadPromises = files.map(async (file) => {
         const options = {
-          maxSizeMB: 2.5, // Збільшено ліміт до 2.5 МБ (оптимально для збереження деталей)
-          maxWidthOrHeight: 2560, // Роздільна здатність 2K (достатньо для зуму)
+          maxSizeMB: 2.5,
+          maxWidthOrHeight: 2560,
           useWebWorker: true,
-          initialQuality: 0.85, // Висока початкова якість
+          initialQuality: 0.85,
         };
 
         let fileToUpload = file;
         try {
-          // Стискаємо файл (якщо це PDF, бібліотека видасть помилку і ми використаємо оригінал)
           fileToUpload = await imageCompression(file, options);
         } catch (compressionError) {
           console.error(
@@ -41,7 +39,6 @@ const PhotoUploader = ({
         const fileExt = fileToUpload.name.split(".").pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
 
-        // Відправка файлу в Supabase
         const { error: uploadError } = await supabase.storage
           .from(bucketName)
           .upload(fileName, fileToUpload);
@@ -52,8 +49,11 @@ const PhotoUploader = ({
           .from(bucketName)
           .getPublicUrl(fileName);
 
-        urls.push(data.publicUrl);
-      }
+        return data.publicUrl;
+      });
+
+      // Чекаємо, поки ВСІ файли завантажаться одночасно
+      const urls = await Promise.all(uploadPromises);
 
       const newUrls = [...uploadedUrls, ...urls];
       setUploadedUrls(newUrls);
@@ -63,6 +63,8 @@ const PhotoUploader = ({
       alert("Не вдалося завантажити файл: " + error.message);
     } finally {
       setUploading(false);
+      // Очищаємо інпут, щоб подія onChange спрацювала знову для тих самих файлів
+      if (event.target) event.target.value = null;
     }
   };
 

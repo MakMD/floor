@@ -4,6 +4,15 @@ import toast from "react-hot-toast";
 import { FaTimes, FaFilePdf, FaFileAlt } from "react-icons/fa";
 import styles from "./WorkerProfileModal.module.css";
 
+// ОПТИМІЗАЦІЯ: Чисті функції винесені за межі компонента
+const isImage = (url) => {
+  return url && url.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null;
+};
+
+const isPdf = (url) => {
+  return url && url.match(/\.(pdf)$/i) != null;
+};
+
 const WorkerProfileModal = ({ personId, personName, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState({
@@ -69,22 +78,13 @@ const WorkerProfileModal = ({ personId, personName, onClose }) => {
     }
   };
 
-  const isImage = (url) => {
-    return url.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null;
-  };
-
-  const isPdf = (url) => {
-    return url.match(/\.(pdf)$/i) != null;
-  };
-
-  // Обробник кліку на документ
-  const handleDocumentClick = (e, url) => {
+  // ОПТИМІЗАЦІЯ: useCallback для обробника
+  const handleDocumentClick = useCallback((e, url) => {
     if (isImage(url)) {
-      e.preventDefault(); // Забороняємо відкриття в новій вкладці
-      setSelectedImage(url); // Відкриваємо наше модальне вікно (Lightbox)
+      e.preventDefault();
+      setSelectedImage(url);
     }
-    // Якщо це не фото (наприклад, PDF), дозволяємо браузеру стандартно відкрити файл у новій вкладці
-  };
+  }, []);
 
   return (
     <>
@@ -204,9 +204,7 @@ const WorkerProfileModal = ({ personId, personName, onClose }) => {
             src={selectedImage}
             alt="Expanded document view"
             className={styles.lightboxImage}
-            onClick={(e) =>
-              e.stopPropagation()
-            } /* Щоб клік по самому фото не закривав вікно */
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}

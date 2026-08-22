@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -86,8 +86,8 @@ const CalendarPage = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
   }, [selectedDate, viewMode]);
 
-  // Завантаження подій для списку (День/Тиждень)
-  const fetchEvents = async () => {
+  // ОПТИМІЗАЦІЯ: useCallback для fetchEvents
+  const fetchEvents = useCallback(async () => {
     setLoading(true);
 
     let startDate, endDate;
@@ -117,11 +117,11 @@ const CalendarPage = () => {
       setEvents(data || []);
     }
     setLoading(false);
-  };
+  }, [selectedDate, viewMode]);
 
   useEffect(() => {
     fetchEvents();
-  }, [selectedDate, viewMode]);
+  }, [fetchEvents]);
 
   // Легке завантаження подій для відображення крапок-індикаторів у всьому місяці
   useEffect(() => {
@@ -143,37 +143,43 @@ const CalendarPage = () => {
   }, [calendarMonth]);
 
   // --- ЛОГІКА ІНДИКАТОРІВ (КРАПОК) ---
-  const getDayStatus = (date) => {
-    if (!monthEvents || monthEvents.length === 0) return null;
+  // ОПТИМІЗАЦІЯ: useCallback для функцій, що передаються у DatePicker
+  const getDayStatus = useCallback(
+    (date) => {
+      if (!monthEvents || monthEvents.length === 0) return null;
 
-    const formattedDate = format(date, "yyyy-MM-dd");
-    const jobsOnDay = monthEvents.filter((job) => job.date === formattedDate);
+      const formattedDate = format(date, "yyyy-MM-dd");
+      const jobsOnDay = monthEvents.filter((job) => job.date === formattedDate);
 
-    if (jobsOnDay.length === 0) return null;
+      if (jobsOnDay.length === 0) return null;
 
-    // Якщо хоча б одна робота НЕ "Ready" і НЕ "Completed" — світимо червоним
-    const hasUnfinished = jobsOnDay.some(
-      (job) => job.status !== "Ready" && job.status !== "Completed",
-    );
+      const hasUnfinished = jobsOnDay.some(
+        (job) => job.status !== "Ready" && job.status !== "Completed",
+      );
 
-    return hasUnfinished ? "red" : "green";
-  };
+      return hasUnfinished ? "red" : "green";
+    },
+    [monthEvents],
+  );
 
-  const renderDayContents = (day, date) => {
-    const status = getDayStatus(date);
-    return (
-      <div className={styles.dateCell}>
-        <span>{day}</span>
-        {status && (
-          <div
-            className={`${styles.indicator} ${
-              status === "red" ? styles.indicatorRed : styles.indicatorGreen
-            }`}
-          />
-        )}
-      </div>
-    );
-  };
+  const renderDayContents = useCallback(
+    (day, date) => {
+      const status = getDayStatus(date);
+      return (
+        <div className={styles.dateCell}>
+          <span>{day}</span>
+          {status && (
+            <div
+              className={`${styles.indicator} ${
+                status === "red" ? styles.indicatorRed : styles.indicatorGreen
+              }`}
+            />
+          )}
+        </div>
+      );
+    },
+    [getDayStatus],
+  );
 
   // --- НАВІГАЦІЯ ---
   const handleNext = () => {
@@ -195,58 +201,73 @@ const CalendarPage = () => {
     toast.success(`Materials confirmed for Job #${id}`);
   };
 
-  // --- ДИНАМІЧНІ СПИСКИ ДЛЯ СЕЛЕКТОРІВ ---
-  const uniqueBuilders = [
-    "All",
-    ...new Set(events.map((e) => e.builders?.name).filter(Boolean)),
-  ].sort();
-  const uniqueStores = [
-    "All",
-    ...new Set(events.map((e) => e.stores?.name).filter(Boolean)),
-  ].sort();
-  const uniqueStatuses = [
-    "All",
-    ...new Set(events.map((e) => e.status).filter(Boolean)),
-  ].sort();
+  // --- ДИНАМІЧНІ СПИСКИ ДЛЯ СЕЛЕКТОРІВ (ОПТИМІЗАЦІЯ: useMemo) ---
+  const uniqueBuilders = useMemo(
+    () =>
+      [
+        "All",
+        ...new Set(events.map((e) => e.builders?.name).filter(Boolean)),
+      ].sort(),
+    [events],
+  );
 
-  // --- ФІЛЬТРАЦІЯ ПОДІЙ ---
-  const filteredEvents = events.filter((event) => {
-    // 1. Пошук по тексту
-    const query = searchQuery.toLowerCase().trim();
-    const address = (event.address || "").toLowerCase();
-    const builder = (event.builders?.name || "").toLowerCase();
-    const wo = String(event.work_order_number || "").toLowerCase();
+  const uniqueStores = useMemo(
+    () =>
+      [
+        "All",
+        ...new Set(events.map((e) => e.stores?.name).filter(Boolean)),
+      ].sort(),
+    [events],
+  );
 
-    const matchesSearch =
-      !query ||
-      address.includes(query) ||
-      builder.includes(query) ||
-      wo.includes(query);
+  const uniqueStatuses = useMemo(
+    () =>
+      ["All", ...new Set(events.map((e) => e.status).filter(Boolean))].sort(),
+    [events],
+  );
 
-    // 2. Селектори
-    const matchesBuilder =
-      selectedBuilder === "All" || event.builders?.name === selectedBuilder;
-    const matchesStore =
-      selectedStore === "All" || event.stores?.name === selectedStore;
-    const matchesStatus =
-      selectedStatus === "All" || event.status === selectedStatus;
+  // --- ФІЛЬТРАЦІЯ ПОДІЙ (ОПТИМІЗАЦІЯ: useMemo) ---
+  const filteredEvents = useMemo(() => {
+    return events.filter((event) => {
+      const query = searchQuery.toLowerCase().trim();
+      const address = (event.address || "").toLowerCase();
+      const builder = (event.builders?.name || "").toLowerCase();
+      const wo = String(event.work_order_number || "").toLowerCase();
 
-    return matchesSearch && matchesBuilder && matchesStore && matchesStatus;
-  });
+      const matchesSearch =
+        !query ||
+        address.includes(query) ||
+        builder.includes(query) ||
+        wo.includes(query);
 
-  const groupedEvents = filteredEvents.reduce((acc, event) => {
-    if (!acc[event.date]) acc[event.date] = { services: [], jobs: [] };
-    if (event.project_type === "Service") acc[event.date].services.push(event);
-    else acc[event.date].jobs.push(event);
-    return acc;
-  }, {});
+      const matchesBuilder =
+        selectedBuilder === "All" || event.builders?.name === selectedBuilder;
+      const matchesStore =
+        selectedStore === "All" || event.stores?.name === selectedStore;
+      const matchesStatus =
+        selectedStatus === "All" || event.status === selectedStatus;
 
-  const datesToRender =
-    Object.keys(groupedEvents).length > 0
+      return matchesSearch && matchesBuilder && matchesStore && matchesStatus;
+    });
+  }, [events, searchQuery, selectedBuilder, selectedStore, selectedStatus]);
+
+  const groupedEvents = useMemo(() => {
+    return filteredEvents.reduce((acc, event) => {
+      if (!acc[event.date]) acc[event.date] = { services: [], jobs: [] };
+      if (event.project_type === "Service")
+        acc[event.date].services.push(event);
+      else acc[event.date].jobs.push(event);
+      return acc;
+    }, {});
+  }, [filteredEvents]);
+
+  const datesToRender = useMemo(() => {
+    return Object.keys(groupedEvents).length > 0
       ? Object.keys(groupedEvents).sort()
       : viewMode === "day"
         ? [format(selectedDate, "yyyy-MM-dd")]
         : [];
+  }, [groupedEvents, viewMode, selectedDate]);
 
   const getHeaderText = () => {
     if (viewMode === "day") return format(selectedDate, "MM/dd/yyyy");

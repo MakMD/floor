@@ -9,17 +9,14 @@ import { useAdminLists } from "../../hooks/useAdminLists";
 import { usePeople } from "../../hooks/usePeople";
 
 const WorkOrdersManager = ({ addressId }) => {
-  // Стани компонента
   const [workOrders, setWorkOrders] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Дані з бази для випадаючих списків
   const { products } = useAdminLists();
   const { people } = usePeople();
 
-  // Стан форми
   const initialFormState = {
     area: "",
     product_id: "",
@@ -30,7 +27,6 @@ const WorkOrdersManager = ({ addressId }) => {
   };
   const [form, setForm] = useState(initialFormState);
 
-  // Завантаження списку Ворк Ордерів
   const loadWorkOrders = useCallback(async () => {
     setIsLoading(true);
     const { data, error } = await supabase
@@ -54,18 +50,15 @@ const WorkOrdersManager = ({ addressId }) => {
     }
   }, [addressId, loadWorkOrders]);
 
-  // Обробка вводу у формі
-  const handleChange = (e) => {
+  // ОПТИМІЗАЦІЯ: useCallback для обробника вводу
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
-  // ЗБЕРЕЖЕННЯ (Переписано для максимальної надійності)
   const handleSave = async () => {
     setIsSaving(true);
-
     try {
-      // Строге форматування даних перед відправкою
       const payload = {
         address_id: parseInt(addressId, 10),
         area: form.area.trim() !== "" ? form.area.trim() : null,
@@ -78,34 +71,30 @@ const WorkOrdersManager = ({ addressId }) => {
         date_completed: form.date_completed !== "" ? form.date_completed : null,
       };
 
-      // Відправка в базу даних
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("work_orders")
         .insert([payload])
-        .select(); // Додано .select(), щоб відразу отримати результат
+        .select();
 
-      // Перевірка на помилку бази
       if (error) {
         console.error("Помилка бази даних Supabase:", error);
         toast.error(`DB Error: ${error.message}`);
         setIsSaving(false);
-        return; // Зупиняємо виконання
+        return;
       }
 
-      // Якщо успішно
       toast.success("Work Order successfully created!");
-      setForm(initialFormState); // Очищаємо форму
-      setIsModalOpen(false); // Закриваємо модалку
-      loadWorkOrders(); // Оновлюємо список
+      setForm(initialFormState);
+      setIsModalOpen(false);
+      loadWorkOrders();
     } catch (err) {
       console.error("Критична помилка коду:", err);
       toast.error("Critical error. Check console.");
     } finally {
-      setIsSaving(false); // Знімаємо стан завантаження в будь-якому випадку
+      setIsSaving(false);
     }
   };
 
-  // ВИДАЛЕННЯ
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this Work Order?"))
       return;
@@ -120,14 +109,12 @@ const WorkOrdersManager = ({ addressId }) => {
     }
   };
 
-  // Drag-and-Drop плейсхолдер
   const handleDragStart = (e, wo) => {
     e.dataTransfer.setData("text/plain", `Work Order ID: ${wo.id}`);
   };
 
   return (
     <div className={styles.managerContainer}>
-      {/* Шапка з кнопкою додавання */}
       <div className={styles.header}>
         <button
           className={commonStyles.buttonPrimary}
@@ -137,7 +124,6 @@ const WorkOrdersManager = ({ addressId }) => {
         </button>
       </div>
 
-      {/* Список збережених Ворк Ордерів */}
       {isLoading ? (
         <p>Loading work orders...</p>
       ) : workOrders.length > 0 ? (
@@ -175,7 +161,6 @@ const WorkOrdersManager = ({ addressId }) => {
         </p>
       )}
 
-      {/* Модальне вікно з формою */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => !isSaving && setIsModalOpen(false)}

@@ -65,7 +65,7 @@
   font-size: 1.05rem;
 }
 
-/* --- ПАНЕЛЬ ПОШУКУ ТА ФІЛЬТРІВ (НОВЕ) --- */
+/* --- ПАНЕЛЬ ПОШУКУ ТА ФІЛЬТРІВ --- */
 .topControls {
   display: flex;
   flex-direction: column;
@@ -251,18 +251,49 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
 .detailTitle {
   font-size: 1.3rem;
   font-weight: 700;
   color: #222222;
-  margin-bottom: 8px;
+  margin: 0;
   line-height: 1.3;
+}
+
+.copyButton {
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  color: #666666;
+  padding: 8px 10px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  flex-shrink: 0;
+}
+
+.copyButton:hover {
+  background-color: #e0e0e0;
+  color: #b02a48;
 }
 
 .detailSubtitle {
   color: #666666;
   font-size: 0.95rem;
   font-weight: 500;
+  margin: 0;
 }
 
 /* --- ФОРМА ЗВІТУ --- */
@@ -594,6 +625,7 @@
     padding: 32px;
   }
 }
+
 /* --- СТИЛІ ДЛЯ СПОВІЩЕНЬ --- */
 .badge {
   position: absolute;

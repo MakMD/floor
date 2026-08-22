@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaPhone, FaSyncAlt } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
@@ -26,38 +26,48 @@ const PeopleList = ({
     setEditedPhones(phonesMap);
   }, [people]);
 
-  const handleNameChange = (id, value) => {
+  // --- ОПТИМІЗАЦІЯ: useCallback для уникнення зайвих перестворень функцій ---
+  const handleNameChange = useCallback((id, value) => {
     setEditedNames((prev) => ({ ...prev, [id]: value }));
-  };
+  }, []);
 
-  const handlePhoneChange = (id, value) => {
+  const handlePhoneChange = useCallback((id, value) => {
     setEditedPhones((prev) => ({ ...prev, [id]: value }));
-  };
+  }, []);
 
-  const handleNameSave = (id) => {
-    const originalPerson = people.find((p) => p.id === id);
-    if (
-      originalPerson &&
-      originalPerson.name !== editedNames[id].trim() &&
-      editedNames[id].trim() !== ""
-    ) {
-      onUpdatePersonName(id, editedNames[id].trim());
-    } else {
-      setEditedNames((prev) => ({ ...prev, [id]: originalPerson.name }));
-    }
-  };
+  const handleNameSave = useCallback(
+    (id) => {
+      const originalPerson = people.find((p) => p.id === id);
+      if (
+        originalPerson &&
+        originalPerson.name !== editedNames[id].trim() &&
+        editedNames[id].trim() !== ""
+      ) {
+        onUpdatePersonName(id, editedNames[id].trim());
+      } else {
+        setEditedNames((prev) => ({ ...prev, [id]: originalPerson.name }));
+      }
+    },
+    [people, editedNames, onUpdatePersonName],
+  );
 
-  const handlePhoneSave = (id) => {
-    const originalPerson = people.find((p) => p.id === id);
-    if (originalPerson && originalPerson.phone !== editedPhones[id].trim()) {
-      onUpdatePersonPhone(id, editedPhones[id].trim());
-    }
-  };
+  const handlePhoneSave = useCallback(
+    (id) => {
+      const originalPerson = people.find((p) => p.id === id);
+      if (originalPerson && originalPerson.phone !== editedPhones[id].trim()) {
+        onUpdatePersonPhone(id, editedPhones[id].trim());
+      }
+    },
+    [people, editedPhones, onUpdatePersonPhone],
+  );
 
-  const handlePersonClick = (personId) => {
-    if (isEditing) return;
-    navigate(`/person/${personId}`);
-  };
+  const handlePersonClick = useCallback(
+    (personId) => {
+      if (isEditing) return;
+      navigate(`/person/${personId}`);
+    },
+    [isEditing, navigate],
+  );
 
   return (
     <div className={styles.peopleListContainer}>
