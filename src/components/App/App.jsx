@@ -15,6 +15,12 @@ import LoginPage from "../../Pages/LoginPage";
 import RegisterPage from "../../Pages/RegisterPage";
 
 // Ліниве завантаження сторінок
+const StoreInvoicesListPage = lazy(
+  () => import("../../Pages/StoreInvoicesListPage"),
+);
+const StoreInvoiceDetailsPage = lazy(
+  () => import("../../Pages/StoreInvoiceDetailsPage"),
+);
 const DashboardPage = lazy(() => import("../../Pages/DashboardPage"));
 const PeopleSection = lazy(() => import("../PeopleSection/PeopleSection"));
 const PersonPage = lazy(() => import("../../Pages/PersonPage"));
@@ -102,6 +108,22 @@ const router = createBrowserRouter(
           element: (
             <AdminRoute>
               <AddressDetailsPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "store-invoices",
+          element: (
+            <AdminRoute>
+              <StoreInvoicesListPage />
+            </AdminRoute>
+          ),
+        },
+        {
+          path: "store-invoices/:storeId",
+          element: (
+            <AdminRoute>
+              <StoreInvoiceDetailsPage />
             </AdminRoute>
           ),
         },

@@ -15,8 +15,10 @@ import {
   FaSearch,
   FaCheckDouble,
   FaCopy,
+  FaInfoCircle,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
+import commonStyles from "../styles/common.module.css";
 import styles from "./WorkerPortal.module.css";
 
 const WorkerPortal = () => {
@@ -152,24 +154,24 @@ const WorkerPortal = () => {
       const workerId = personRecords[0].id;
       let allAddressIds = [];
 
-      const { data: wtData, error: wtError } = await supabase
+      const { data: wtData } = await supabase
         .from("work_types")
         .select("address_id")
         .eq("person_id", workerId);
 
-      if (!wtError && wtData) {
+      if (wtData) {
         allAddressIds = [
           ...allAddressIds,
           ...wtData.map((wt) => wt.address_id),
         ];
       }
 
-      const { data: addrData, error: addrError } = await supabase
+      const { data: addrData } = await supabase
         .from("addresses")
         .select("id")
         .eq("worker_id", workerId);
 
-      if (!addrError && addrData) {
+      if (addrData) {
         allAddressIds = [...allAddressIds, ...addrData.map((a) => a.id)];
       }
 
@@ -181,14 +183,43 @@ const WorkerPortal = () => {
         return;
       }
 
+      // ДОДАНО поле notes до запиту work_types
       const { data: projects, error: projError } = await supabase
         .from("addresses")
-        .select("*, builders(name)")
+        .select(
+          `
+          *,
+          builders(name),
+          work_types (
+            id,
+            person_id,
+            payment_amount,
+            notes,
+            work_type_templates (name)
+          )
+        `,
+        )
         .in("id", uniqueAddressIds)
+        .eq("is_deleted", false)
         .order("date", { ascending: true });
 
       if (projError) throw projError;
-      setMyProjects(projects || []);
+
+      const processedProjects = projects
+        ?.map((proj) => {
+          const myWorkTypes =
+            proj.work_types?.filter((wt) => wt.person_id === workerId) || [];
+          return {
+            ...proj,
+            myWorkTypes,
+          };
+        })
+        .filter(
+          (proj) =>
+            proj.myWorkTypes.length > 0 || proj.project_type === "Service",
+        );
+
+      setMyProjects(processedProjects || []);
     } catch (error) {
       console.error("Помилка завантаження об'єктів:", error.message);
       toast.error("Не вдалося завантажити список об'єктів.");
@@ -481,6 +512,72 @@ const WorkerPortal = () => {
                       WO #{selectedProject.work_order_number}
                     </p>
                   </div>
+
+                  {/* БЛОК ІНСТРУКЦІЙ ТІЛЬКИ ДЛЯ КОНКРЕТНИХ РОБІТ */}
+                  {selectedProject.myWorkTypes &&
+                    selectedProject.myWorkTypes.length > 0 && (
+                      <div className={styles.instructionBlock}>
+                        <div className={styles.instructionHeader}>
+                          <FaInfoCircle className={styles.instructionIcon} />
+                          <h3>Ваші завдання на цьому об'єкті:</h3>
+                        </div>
+                        <ul
+                          style={{
+                            listStyleType: "none",
+                            padding: 0,
+                            margin: 0,
+                          }}
+                        >
+                          {selectedProject.myWorkTypes.map((wt, idx) => (
+                            <li
+                              key={idx}
+                              style={{
+                                marginBottom: "12px",
+                                paddingBottom: "12px",
+                                borderBottom:
+                                  idx !== selectedProject.myWorkTypes.length - 1
+                                    ? "1px dashed #e0b4bc"
+                                    : "none",
+                              }}
+                            >
+                              <div
+                                style={{ fontWeight: "bold", color: "#222" }}
+                              >
+                                🛠{" "}
+                                {wt.work_type_templates?.name ||
+                                  "Невідома робота"}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "0.9rem",
+                                  color: "#555",
+                                  marginTop: "4px",
+                                }}
+                              >
+                                💰 Оплата за позицію: $
+                                {parseFloat(wt.payment_amount || 0).toFixed(2)}
+                              </div>
+
+                              {/* Виводимо примітки ТІЛЬКИ для цієї роботи, якщо вони є */}
+                              {wt.notes && (
+                                <div
+                                  style={{
+                                    marginTop: "8px",
+                                    padding: "8px",
+                                    backgroundColor: "rgba(176, 42, 72, 0.05)",
+                                    borderRadius: "4px",
+                                    fontSize: "0.9rem",
+                                    color: "#444",
+                                  }}
+                                >
+                                  <strong>📝 Примітка:</strong> {wt.notes}
+                                </div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
                   <form
                     onSubmit={handleWorkSubmit}

@@ -31,31 +31,40 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o",
         response_format: { type: "json_object" },
+        temperature: 0.1, // Жорстка точність
         messages: [
           {
             role: "system",
             content:
-              "You are an AI assistant that extracts data from construction work orders. Output ONLY a valid JSON object.",
+              "You are an expert AI assistant specialized in extracting highly accurate data from construction and flooring work orders. Output ONLY a valid JSON object matching the exact requested schema.",
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: `Extract data from this document. If a field is missing, return an empty string or null. JSON structure required: 
+                text: `Analyze the provided work order image carefully. Extract all requested fields. Pay special attention to the line items table.
+
+                HINT FOR TABLE READING: Read horizontally. If a description combines area and material (e.g., 'BASEMENT + LANDING - CARPET'), split them into 'area' ("BASEMENT + LANDING") and 'name' ("CARPET"). 
+                The numeric columns are usually ordered as: 1. Quantity/SqFt (e.g. 308.89), 2. Unit Price/Rate (e.g. 1.50), 3. Extended Price/Total (e.g. 463.33).
+
+                JSON Structure required:
                 { 
                   "type": "Return 'Address' for standard installs, or 'Service' if it's a repair/service ticket", 
-                  "work_order_number": "Extract the Order Number or Job Number (e.g., CG600770, 47174-1)",
-                  "builder_name": "Extract the builder/client name from 'Reference' or 'Sold To'. Ignore contact person names.", 
-                  "store_name": "Identify the store issuing the ticket (usually 'THE FLOOR SHOW' or 'TOUCHSTONE CANADA LTD.')", 
+                  "work_order_number": "Extract the Order Number or Job Number",
+                  "builder_name": "Extract the builder/client name from 'Reference' or 'Sold To'.", 
+                  "store_name": "Identify the store issuing the ticket", 
                   "address": "Full job site address from 'Ship To' or 'Install At'", 
-                  "date": "Extract the date. Format strictly as YYYY-MM-DD. Since current year is 2026, ensure the year is 2026.", 
-                  "total_amount": "Total labor amount at the bottom (number only, no currency symbol)",
-                  "ai_translation": "Extract any special instructions, 'NOTE', 'IMPORTANT NOTE', or descriptions of the work from the document. Translate them clearly into Ukrainian. Structure the text nicely.",
+                  "date": "Extract the date. Format strictly as YYYY-MM-DD. Ensure year is 2026.", 
+                  "total_amount": "Total labor amount at the bottom of the document (number only)",
+                  "ai_translation": "Extract ANY general notes, warnings, or instructions found on the page (like door codes, layout notes). Translate to Ukrainian. DO NOT include line item details here.",
                   "work_types": [
                     {
-                      "name": "Extract the exact text under 'PC Style/Item', 'Description', or 'Item' (e.g., 'LVP CLICK INSTALL', 'STAIRS', 'INSTALL STEPS')",
-                      "amount": "Extract the total price or extended price for this specific line item (number only). If not found, return 0."
+                      "name": "Clean name of the work (e.g., 'Carpet Install', 'LVP Click', 'Flush Vents')",
+                      "area": "Specific zone (e.g., 'Basement', 'Main Floor', 'Stairs'). If not specified, leave empty string.",
+                      "sq_ft": "Quantity / SqFt (number only). Return 0 if missing.",
+                      "rate": "Unit Price / Rate (number only). Return 0 if missing.",
+                      "amount": "Total/Extended Price for this line (number only). Return 0 if missing."
                     }
                   ]
                 }`,

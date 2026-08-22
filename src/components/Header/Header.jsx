@@ -13,6 +13,7 @@ import {
   FaTimes,
   FaBell,
   FaCheckDouble,
+  FaFileInvoice, // ДОДАНО: Іконка для інвойсів магазинів
 } from "react-icons/fa";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -167,6 +168,17 @@ const Header = () => {
               <FaProjectDiagram />
               Projects
             </Link>
+
+            {/* ДОДАНО: Вкладка інвойсів магазинів */}
+            <Link
+              to="/store-invoices"
+              className={getLinkClass("/store-invoices")}
+              onClick={closeMobileMenu}
+            >
+              <FaFileInvoice />
+              Store Invoices
+            </Link>
+
             <Link
               to="/people"
               className={getLinkClass("/people")}

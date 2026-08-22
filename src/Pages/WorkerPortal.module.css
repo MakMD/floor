@@ -716,3 +716,38 @@
   font-size: 0.8rem;
   color: #aaaaaa;
 }
+/* --- БЛОК ІНСТРУКЦІЙ ДЛЯ ПРАЦІВНИКА --- */
+.instructionBlock {
+  background-color: #fff9fa;
+  border-left: 4px solid #b02a48;
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 28px;
+  box-shadow: 0 2px 8px rgba(176, 42, 72, 0.05);
+}
+
+.instructionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.instructionIcon {
+  color: #b02a48;
+  font-size: 1.2rem;
+}
+
+.instructionHeader h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #222222;
+}
+
+.instructionContent {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #444444;
+  white-space: pre-wrap; /* Зберігає переноси рядків від ШІ */
+}
