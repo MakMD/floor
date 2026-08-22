@@ -25,9 +25,18 @@ import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager";
 import MaterialsManager from "../components/MaterialsManager/MaterialsManager";
 
 // --- ОПТИМІЗАЦІЯ 1: Чисті функції винесено за межі компонента ---
-const isImage = (url) =>
-  url && url.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null;
-const isPdf = (url) => url && url.match(/\.(pdf)$/i) != null;
+const isImage = (url) => {
+  if (!url) return false;
+  // Видаляємо всі параметри після знаку питання, щоб отримати чистий шлях
+  const cleanUrl = url.split("?")[0];
+  return cleanUrl.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null;
+};
+
+const isPdf = (url) => {
+  if (!url) return false;
+  const cleanUrl = url.split("?")[0];
+  return cleanUrl.match(/\.(pdf)$/i) != null;
+};
 
 const getStatusStyle = (status) => {
   if (status === "Ready")
@@ -37,7 +46,13 @@ const getStatusStyle = (status) => {
   return { bg: "rgba(255, 193, 7, 0.15)", color: "#d39e00" };
 };
 
-const FileListItem = ({ bucketName, fileIdentifier, onDelete }) => {
+// ВИПРАВЛЕНО: Додано onImageClick для відкриття фото в лайтбоксі
+const FileListItem = ({
+  bucketName,
+  fileIdentifier,
+  onDelete,
+  onImageClick,
+}) => {
   const [signedUrl, setSignedUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -69,6 +84,13 @@ const FileListItem = ({ bucketName, fileIdentifier, onDelete }) => {
     if (!signedUrl) {
       e.preventDefault();
       toast("Generating file link, please wait...");
+      return;
+    }
+
+    // Якщо це картинка - відкриваємо в лайтбоксі
+    if (isImage(signedUrl)) {
+      e.preventDefault();
+      onImageClick(signedUrl);
     }
   };
 
@@ -1142,6 +1164,7 @@ const AddressDetailsPage = () => {
                         bucketName={BUCKET_NAME}
                         fileIdentifier={id}
                         onDelete={handleFileDelete}
+                        onImageClick={(url) => setSelectedImage(url)} // ВИПРАВЛЕНО: Передаємо колбек
                       />
                     ))}
                   </ul>
