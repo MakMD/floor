@@ -45,8 +45,11 @@ serve(async (req) => {
                 type: "text",
                 text: `Analyze the provided work order image carefully. Extract all requested fields. Pay special attention to the line items table.
 
-                HINT FOR TABLE READING: Read horizontally. If a description combines area and material (e.g., 'BASEMENT + LANDING - CARPET'), split them into 'area' ("BASEMENT + LANDING") and 'name' ("CARPET"). 
-                The numeric columns are usually ordered as: 1. Quantity/SqFt (e.g. 308.89), 2. Unit Price/Rate (e.g. 1.50), 3. Extended Price/Total (e.g. 463.33).
+                CRITICAL INSTRUCTIONS FOR TABLE READING:
+                1. The table contains distinct "blocks" of work. Each block may be separated by horizontal lines or spacing.
+                2. A work block usually consists of a primary row (Item, Color, Quantity, Rate, Amount) followed immediately by sub-rows containing specific notes for that item (e.g., "Work Order Areas & Line Notes:", "INSTALL AREAS:").
+                3. You MUST group these sub-row notes with their corresponding primary row into a single object.
+                4. Numeric columns are ordered as: Quantity/SqFt, Unit Price/Rate, Extended Price/Total.
 
                 JSON Structure required:
                 { 
@@ -57,14 +60,15 @@ serve(async (req) => {
                   "address": "Full job site address from 'Ship To' or 'Install At'", 
                   "date": "Extract the date. Format strictly as YYYY-MM-DD. Ensure year is 2026.", 
                   "total_amount": "Total labor amount at the bottom of the document (number only)",
-                  "ai_translation": "Extract ANY general notes, warnings, or instructions found on the page (like door codes, layout notes). Translate to Ukrainian. DO NOT include line item details here.",
+                  "ai_translation": "Extract ONLY GENERAL notes, warnings, or instructions found at the very bottom of the page (e.g., office contacts, general silicone warnings). Translate to Ukrainian. DO NOT put specific line item notes here.",
                   "work_types": [
                     {
                       "name": "Clean name of the work (e.g., 'Carpet Install', 'LVP Click', 'Flush Vents')",
-                      "area": "Specific zone (e.g., 'Basement', 'Main Floor', 'Stairs'). If not specified, leave empty string.",
+                      "area": "Specific zone (e.g., 'Basement', 'Main Floor'). If not specified, leave empty string.",
                       "sq_ft": "Quantity / SqFt (number only). Return 0 if missing.",
                       "rate": "Unit Price / Rate (number only). Return 0 if missing.",
-                      "amount": "Total/Extended Price for this line (number only). Return 0 if missing."
+                      "amount": "Total/Extended Price for this line (number only). Return 0 if missing.",
+                      "line_notes": "Extract any specific 'Order Line Notes', 'Install Areas', or details directly underneath this specific item in its block. Translate these notes to Ukrainian. If none, leave empty string."
                     }
                   ]
                 }`,

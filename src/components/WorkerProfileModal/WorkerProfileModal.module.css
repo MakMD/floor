@@ -378,3 +378,72 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   cursor: default; /* Щоб клік на саме фото не показував лупу з мінусом */
 }
+/* --- СЕКЦІЯ КОНТАКТІВ --- */
+.phoneContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 400px;
+}
+
+.phoneInputWrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0 12px;
+  transition: border-color 0.2s;
+}
+
+.phoneInputWrapper:focus-within {
+  border-color: #b02a48;
+}
+
+.phoneIcon {
+  color: #888;
+  font-size: 0.9rem;
+  margin-right: 8px;
+}
+
+.phoneInput {
+  flex: 1;
+  border: none;
+  padding: 12px 0;
+  font-size: 1rem;
+  color: #333;
+  outline: none;
+  background: transparent;
+}
+
+.savePhoneBtn {
+  background-color: #198754;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.savePhoneBtn:hover {
+  background-color: #157347;
+}
+
+.savePhoneBtn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.hintText {
+  margin: 6px 0 0 0;
+  font-size: 0.85rem;
+  color: #777;
+  font-style: italic;
+}

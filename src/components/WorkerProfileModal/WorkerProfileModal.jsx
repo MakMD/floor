@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
-import { FaTimes, FaFilePdf, FaFileAlt } from "react-icons/fa";
+import {
+  FaTimes,
+  FaFilePdf,
+  FaFileAlt,
+  FaPhone,
+  FaCheck,
+} from "react-icons/fa";
 import styles from "./WorkerProfileModal.module.css";
 
 // ОПТИМІЗАЦІЯ: Чисті функції винесені за межі компонента
@@ -15,11 +21,19 @@ const isPdf = (url) => {
 
 const WorkerProfileModal = ({ personId, personName, onClose }) => {
   const [loading, setLoading] = useState(true);
+
+  // Стан для налаштувань
   const [settings, setSettings] = useState({
     has_gst: false,
     has_wcb: false,
     has_holdback: false,
   });
+
+  // Стан для телефону
+  const [phone, setPhone] = useState("");
+  const [originalPhone, setOriginalPhone] = useState("");
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
+
   const [documents, setDocuments] = useState([]);
 
   // Стан для перегляду фотографій на весь екран
@@ -30,7 +44,7 @@ const WorkerProfileModal = ({ personId, personName, onClose }) => {
     // 1. Отримуємо налаштування робітника
     const { data: personData, error: personError } = await supabase
       .from("people")
-      .select("user_id, has_gst, has_wcb, has_holdback")
+      .select("user_id, has_gst, has_wcb, has_holdback, phone")
       .eq("id", personId)
       .single();
 
@@ -45,6 +59,10 @@ const WorkerProfileModal = ({ personId, personName, onClose }) => {
       has_wcb: personData.has_wcb || false,
       has_holdback: personData.has_holdback || false,
     });
+
+    const phoneVal = personData.phone || "";
+    setPhone(phoneVal);
+    setOriginalPhone(phoneVal);
 
     // 2. Отримуємо документи (через user_id)
     if (personData.user_id) {
@@ -78,6 +96,23 @@ const WorkerProfileModal = ({ personId, personName, onClose }) => {
     }
   };
 
+  const handleSavePhone = async () => {
+    setIsSavingPhone(true);
+    const { error } = await supabase
+      .from("people")
+      .update({ phone: phone || null })
+      .eq("id", personId);
+
+    if (error) {
+      toast.error("Помилка збереження телефону.");
+      setPhone(originalPhone); // відкат
+    } else {
+      toast.success("Номер телефону збережено!");
+      setOriginalPhone(phone);
+    }
+    setIsSavingPhone(false);
+  };
+
   // ОПТИМІЗАЦІЯ: useCallback для обробника
   const handleDocumentClick = useCallback((e, url) => {
     if (isImage(url)) {
@@ -85,6 +120,8 @@ const WorkerProfileModal = ({ personId, personName, onClose }) => {
       setSelectedImage(url);
     }
   }, []);
+
+  const phoneChanged = phone !== originalPhone;
 
   return (
     <>
@@ -105,6 +142,41 @@ const WorkerProfileModal = ({ personId, personName, onClose }) => {
               <p>Завантаження...</p>
             ) : (
               <>
+                {/* КОНТАКТНА ІНФОРМАЦІЯ */}
+                <div>
+                  <h3 className={styles.sectionTitle}>Contact Information</h3>
+                  <div className={styles.phoneContainer}>
+                    <div className={styles.phoneInputWrapper}>
+                      <FaPhone className={styles.phoneIcon} />
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+14035551234"
+                        className={styles.phoneInput}
+                      />
+                    </div>
+                    {phoneChanged && (
+                      <button
+                        className={styles.savePhoneBtn}
+                        onClick={handleSavePhone}
+                        disabled={isSavingPhone}
+                      >
+                        {isSavingPhone ? (
+                          "Saving..."
+                        ) : (
+                          <>
+                            <FaCheck /> Save
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  <p className={styles.hintText}>
+                    Include country code for SMS alerts (e.g. +1 for Canada)
+                  </p>
+                </div>
+
                 {/* НАЛАШТУВАННЯ */}
                 <div>
                   <h3 className={styles.sectionTitle}>

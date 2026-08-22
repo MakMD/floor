@@ -1,49 +1,93 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-Deno.serve(async (req) => {
-  // Обробка CORS
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "authorization, x-client-info, apikey, content-type",
-      },
-    });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const payload = await req.json();
-    if (!payload.personId) {
-      throw new Error("Missing personId.");
+    const bodyText = await req.text();
+    console.log("Received raw body:", bodyText);
+
+    const { personId, address, date } = JSON.parse(bodyText);
+
+    if (!personId || !address) {
+      throw new Error(
+        `Missing required fields: personId=${personId}, address=${address}`,
+      );
     }
 
-    // Перший лог, який ми очікуємо побачити
-    console.log(`[DEBUG] Function started for personId: ${payload.personId}`);
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // НАВМИСНО ГЕНЕРУЄМО ПОМИЛКУ
-    // Ми кидаємо помилку, щоб перевірити, чи з'явиться вона в логах на дашборді Supabase.
-    // Якщо ви побачите цю помилку в логах, це означатиме, що функція виконується,
-    // але з якоїсь причини стандартний `console.log` не відображається.
-    throw new Error("This is a test error to check if logging is working.");
+    const { data: person, error: personError } = await supabase
+      .from("people")
+      .select("phone, name")
+      .eq("id", personId)
+      .single();
 
-    // Код нижче не буде виконано, він тут лише для повноти
-    /*
-    return new Response(JSON.stringify({ message: "This will not be reached" }), {
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-      status: 200,
-    });
-    */
-  } catch (error) {
-    // Важливо: ми також логуємо помилку на сервері перед тим, як відправити її клієнту.
-    console.error(`[ERROR] An error occurred: ${error.message}`);
+    if (personError || !person?.phone) {
+      throw new Error(
+        `Працівника з ID ${personId} не знайдено або у нього немає номера телефону.`,
+      );
+    }
 
-    return new Response(JSON.stringify({ error: error.message }), {
+    const workerPhone = person.phone;
+    const workerName = person.name;
+
+    const messageBody = `Привіт, ${workerName}!\nТебе призначено на новий об'єкт 🛠\n📍 Адреса: ${address}\n📅 Дата: ${date || "Не вказана"}\nЗайди у свій кабінет Flooring Boss для перегляду деталей.`;
+
+    const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const TWILIO_PHONE_NUMBER = Deno.env.get("TWILIO_PHONE_NUMBER");
+
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+      throw new Error("Ключі Twilio не налаштовані на сервері.");
+    }
+
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+    const params = new URLSearchParams();
+
+    params.append("To", workerPhone);
+    params.append("From", TWILIO_PHONE_NUMBER);
+    params.append("Body", messageBody);
+
+    const twilioResponse = await fetch(twilioUrl, {
+      method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization:
+          "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
       },
-      status: 500, // Повертаємо статус 500, щоб чітко бачити помилку на клієнті
+      body: params.toString(),
+    });
+
+    const twilioResult = await twilioResponse.json();
+
+    if (!twilioResponse.ok) {
+      throw new Error(twilioResult.message || "Помилка відправки через Twilio");
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, messageId: twilioResult.sid }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      },
+    );
+  } catch (error) {
+    console.error("Function error:", error.message);
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
     });
   }
 });

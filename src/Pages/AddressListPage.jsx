@@ -327,7 +327,7 @@ const AddressListPage = () => {
           }
         }
 
-        // Прив'язуємо роботу до проекту (використовуємо правильні назви колонок)
+        // Прив'язуємо роботу до проекту
         if (templateId) {
           const rawAmt =
             wt.amount !== undefined
@@ -346,6 +346,7 @@ const AddressListPage = () => {
               work_type_template_id: templateId,
               payment_amount: parsedAmt,
               person_id: null,
+              notes: wt.line_notes || wt.notes || null, // <--- ОСЬ МАГІЧНИЙ РЯДОК
             },
           ]);
 

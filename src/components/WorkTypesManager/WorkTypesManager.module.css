@@ -89,3 +89,53 @@
     grid-template-columns: 1fr;
   }
 }
+/* src/components/WorkTypesManager/WorkTypesManager.module.css */
+
+.workTypeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px;
+  transition: box-shadow 0.2s;
+}
+
+.workTypeBlock:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.workTypeItem {
+  display: grid;
+  grid-template-columns: 3fr 2fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Новий блок для AI нотаток під роботою */
+.lineNotesBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background-color: #f8f9fa; /* Світло-сірий фон для виділення */
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #0dcaf0; /* Блакитна смужка зліва */
+  margin-top: 4px;
+}
+
+.infoIcon {
+  color: #0dcaf0;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.notesText {
+  font-size: 0.85rem;
+  color: #444;
+  line-height: 1.4;
+  white-space: pre-wrap; /* Зберігаємо переноси рядків від ШІ */
+}
+
+/* Інші існуючі класи залишаються без змін... */

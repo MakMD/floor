@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 import styles from "./WorkTypesManager.module.css";
-import { FaPlus, FaTrash, FaSave } from "react-icons/fa";
+import { FaPlus, FaTrash, FaSave, FaInfoCircle } from "react-icons/fa"; // Додав іконку інформації
 import { useAdminLists } from "../../hooks/useAdminLists";
 import {
   addWorkTypeAndInvoice,
@@ -59,17 +59,39 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       return;
     }
 
-    const notificationPayload = {
-      personId: personId,
-      address: addressData.address,
-      date: addressData.date,
-    };
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "send-whatsapp-notification",
+        {
+          body: {
+            personId: personId,
+            address: addressData.address,
+            date: addressData.date,
+          },
+        },
+      );
 
-    console.log("DEBUG: Notification would be sent here:", notificationPayload);
-    toast.success("Дані збережено (Сповіщення тимчасово вимкнено)");
+      if (error) {
+        let errorDetails = error;
+        try {
+          if (error.context && typeof error.context.json === "function") {
+            const errorJson = await error.context.json();
+            errorDetails = errorJson.error || errorJson;
+          }
+        } catch (e) {}
+        console.error("SERVER ERROR DETAILS:", errorDetails);
+        toast.error(
+          `Помилка: ${typeof errorDetails === "string" ? errorDetails : "Не вдалося відправити SMS"}`,
+        );
+      } else {
+        toast.success("SMS успішно відправлено!");
+      }
+    } catch (err) {
+      console.error("Error invoking notification function:", err);
+      toast.error("Помилка відправки SMS.");
+    }
   };
 
-  // ОПТИМІЗАЦІЯ: useCallback для обробників вводу
   const handleInputChange = useCallback((e, id) => {
     const { name, value } = e.target;
     setWorkTypes((prev) =>
@@ -95,6 +117,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       payment_amount: newWorkType.payment_amount
         ? parseFloat(newWorkType.payment_amount)
         : 0,
+      // Тут ми могли б передавати notes, якщо вони є у newWorkType
     };
 
     const addedWorkType = await addWorkTypeAndInvoice(payload);
@@ -153,54 +176,67 @@ const WorkTypesManager = ({ addressId, addressData }) => {
     <div className={styles.container}>
       <div className={styles.workTypeList}>
         {workTypes.map((wt) => (
-          <div key={wt.id} className={styles.workTypeItem}>
-            <select
-              name="work_type_template_id"
-              value={wt.work_type_template_id || ""}
-              onChange={(e) => handleInputChange(e, wt.id)}
-            >
-              {workTypeTemplates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.name}
-                </option>
-              ))}
-            </select>
-            <select
-              name="person_id"
-              value={wt.person_id || ""}
-              onChange={(e) => handleInputChange(e, wt.id)}
-            >
-              <option value="">Unassigned</option>
-              {people.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              name="payment_amount"
-              placeholder="0.00"
-              value={wt.payment_amount || ""}
-              onChange={(e) => handleInputChange(e, wt.id)}
-              className={styles.inputAmount}
-            />
-            <div className={styles.actions}>
-              <button
-                onClick={() => handleUpdateWorkType(wt.id)}
-                className={styles.saveButton}
-                title="Save changes"
+          <div key={wt.id} className={styles.workTypeBlock}>
+            {/* Основний рядок роботи */}
+            <div className={styles.workTypeItem}>
+              <select
+                name="work_type_template_id"
+                value={wt.work_type_template_id || ""}
+                onChange={(e) => handleInputChange(e, wt.id)}
               >
-                <FaSave />
-              </button>
-              <button
-                onClick={() => handleDeleteWorkType(wt.id)}
-                className={styles.deleteButton}
-                title="Delete"
+                {workTypeTemplates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="person_id"
+                value={wt.person_id || ""}
+                onChange={(e) => handleInputChange(e, wt.id)}
               >
-                <FaTrash />
-              </button>
+                <option value="">Unassigned</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                name="payment_amount"
+                placeholder="0.00"
+                value={wt.payment_amount || ""}
+                onChange={(e) => handleInputChange(e, wt.id)}
+                className={styles.inputAmount}
+              />
+              <div className={styles.actions}>
+                <button
+                  onClick={() => handleUpdateWorkType(wt.id)}
+                  className={styles.saveButton}
+                  title="Save changes"
+                >
+                  <FaSave />
+                </button>
+                <button
+                  onClick={() => handleDeleteWorkType(wt.id)}
+                  className={styles.deleteButton}
+                  title="Delete"
+                >
+                  <FaTrash />
+                </button>
+              </div>
             </div>
+
+            {/* БЛОК ДЛЯ СПЕЦИФІЧНИХ НОТАТОК (з AI) */}
+            {(wt.line_notes || wt.notes) && (
+              <div className={styles.lineNotesBox}>
+                <FaInfoCircle className={styles.infoIcon} />
+                <span className={styles.notesText}>
+                  {wt.line_notes || wt.notes}
+                </span>
+              </div>
+            )}
           </div>
         ))}
       </div>
