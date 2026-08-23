@@ -435,16 +435,106 @@
   background-color: #fcfcfc;
 }
 
-.folderInfo {
+.folderContent {
+  flex: 1;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
 }
 
+.folderTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.folderIcon {
+  font-size: 1.4rem;
+}
+
 .folderName {
+  font-size: 1.15rem;
   font-weight: 700;
-  color: #222222;
-  font-size: 1.05rem;
+  color: #2c2c2c;
+}
+
+/* Список адрес-прев'ю (новий акуратний вигляд) */
+.folderAddressesPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.previewList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.previewList li {
+  font-size: 0.9rem;
+  color: #555555;
+  display: flex;
+  align-items: flex-start;
+  line-height: 1.3;
+}
+
+.pinIconSmall {
+  color: #b02a48;
+  margin-top: 2px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.moreAddresses {
+  font-size: 0.85rem;
+  color: #888888;
+  font-style: italic;
+  margin-top: 4px;
+  padding-left: 20px;
+}
+
+.noAddressesText {
+  font-size: 0.9rem;
+  color: #999;
+  font-style: italic;
+}
+
+/* Блок з сумами */
+.folderTotalPreview {
+  display: flex;
+  gap: 20px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px dashed #eaeaea;
+}
+
+.statBox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  color: #777777;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.statValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333333;
+}
+
+.statValueSum {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #28a745;
 }
 
 .invoiceList {
@@ -513,11 +603,6 @@
   color: #2ecc71;
   font-size: 1.15rem;
   white-space: nowrap;
-}
-
-.invoiceWO {
-  font-size: 0.85rem;
-  color: #666666;
 }
 
 .folderTotalCard {
@@ -716,6 +801,7 @@
   font-size: 0.8rem;
   color: #aaaaaa;
 }
+
 /* --- БЛОК ІНСТРУКЦІЙ ДЛЯ ПРАЦІВНИКА --- */
 .instructionBlock {
   background-color: #fff9fa;
@@ -749,5 +835,5 @@
   font-size: 0.95rem;
   line-height: 1.6;
   color: #444444;
-  white-space: pre-wrap; /* Зберігає переноси рядків від ШІ */
+  white-space: pre-wrap;
 }

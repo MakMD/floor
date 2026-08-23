@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+// src/pages/WorkerPortal.jsx
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -18,11 +19,12 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
-import commonStyles from "../styles/common.module.css";
 import styles from "./WorkerPortal.module.css";
 
 const WorkerPortal = () => {
   const { user, role, loading: authLoading } = useAuth();
+  const userId = user?.id;
+
   const [activeTab, setActiveTab] = useState("work");
   const [loading, setLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -58,21 +60,21 @@ const WorkerPortal = () => {
   const [documents, setDocuments] = useState([]);
 
   const ensureProfileExists = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
     try {
       let { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", userId)
         .maybeSingle();
 
       if (error) throw error;
 
       if (!data) {
         const newProfile = {
-          id: user.id,
-          first_name: user.user_metadata?.first_name || "Працівник",
-          last_name: user.user_metadata?.last_name || "",
+          id: userId,
+          first_name: "Працівник",
+          last_name: "",
           role: "worker",
         };
         const { error: insertError } = await supabase
@@ -88,66 +90,42 @@ const WorkerPortal = () => {
     } finally {
       setIsInitialized(true);
     }
-  }, [user]);
+  }, [userId]);
 
   useEffect(() => {
-    if (user && role === "worker" && !isInitialized) {
+    if (userId && role === "worker" && !isInitialized) {
       ensureProfileExists();
     }
-  }, [user, role, isInitialized, ensureProfileExists]);
+  }, [userId, role, isInitialized, ensureProfileExists]);
 
   const fetchNotifications = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (!error && data) {
       setNotifications(data);
       setUnreadCount(data.filter((n) => !n.is_read).length);
     }
-  }, [user]);
+  }, [userId]);
 
-  useEffect(() => {
-    if (isInitialized) {
-      fetchNotifications();
-      if (activeTab === "work") fetchMyProjects();
-      if (activeTab === "profile") fetchWorkerDocuments();
-      if (activeTab === "invoices" && !selectedTable) fetchMyTables();
-    }
-  }, [activeTab, isInitialized, selectedTable, fetchNotifications]);
-
-  const markNotificationAsRead = async (id) => {
-    await supabase.from("notifications").update({ is_read: true }).eq("id", id);
-    fetchNotifications();
-  };
-
-  const markAllAsRead = async () => {
-    await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("user_id", user.id);
-    fetchNotifications();
-    toast.success("Всі сповіщення прочитані");
-  };
-
-  const fetchMyProjects = async () => {
-    if (!user) return;
+  const fetchMyProjects = useCallback(async () => {
+    if (!userId) return;
     setLoading(true);
     try {
       const { data: personRecords, error: personError } = await supabase
         .from("people")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .limit(1);
 
       if (personError) throw personError;
 
       if (!personRecords || personRecords.length === 0) {
         setMyProjects([]);
-        setLoading(false);
         return;
       }
 
@@ -159,31 +137,27 @@ const WorkerPortal = () => {
         .select("address_id")
         .eq("person_id", workerId);
 
-      if (wtData) {
+      if (wtData)
         allAddressIds = [
           ...allAddressIds,
           ...wtData.map((wt) => wt.address_id),
         ];
-      }
 
       const { data: addrData } = await supabase
         .from("addresses")
         .select("id")
         .eq("worker_id", workerId);
 
-      if (addrData) {
+      if (addrData)
         allAddressIds = [...allAddressIds, ...addrData.map((a) => a.id)];
-      }
 
       const uniqueAddressIds = [...new Set(allAddressIds.filter(Boolean))];
 
       if (uniqueAddressIds.length === 0) {
         setMyProjects([]);
-        setLoading(false);
         return;
       }
 
-      // ДОДАНО поле notes до запиту work_types
       const { data: projects, error: projError } = await supabase
         .from("addresses")
         .select(
@@ -209,10 +183,7 @@ const WorkerPortal = () => {
         ?.map((proj) => {
           const myWorkTypes =
             proj.work_types?.filter((wt) => wt.person_id === workerId) || [];
-          return {
-            ...proj,
-            myWorkTypes,
-          };
+          return { ...proj, myWorkTypes };
         })
         .filter(
           (proj) =>
@@ -222,26 +193,24 @@ const WorkerPortal = () => {
       setMyProjects(processedProjects || []);
     } catch (error) {
       console.error("Помилка завантаження об'єктів:", error.message);
-      toast.error("Не вдалося завантажити список об'єктів.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
-  const fetchMyTables = async () => {
-    if (!user) return;
+  const fetchMyTables = useCallback(async () => {
+    if (!userId) return;
     setLoadingTables(true);
     try {
       const { data: personRecords, error: personError } = await supabase
         .from("people")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .limit(1);
 
       if (personError) throw personError;
       if (!personRecords || personRecords.length === 0) {
         setMyTables([]);
-        setLoadingTables(false);
         return;
       }
 
@@ -257,11 +226,41 @@ const WorkerPortal = () => {
       setMyTables(data || []);
     } catch (error) {
       console.error("Помилка завантаження папок:", error.message);
-      toast.error("Не вдалося завантажити папки виплат.");
     } finally {
       setLoadingTables(false);
     }
-  };
+  }, [userId]);
+
+  const fetchWorkerDocuments = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from("worker_documents")
+        .select("*")
+        .eq("worker_id", userId);
+      if (error) throw error;
+      setDocuments(data || []);
+    } catch (error) {
+      console.error("Помилка завантаження документів:", error.message);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (isInitialized) fetchNotifications();
+  }, [isInitialized, fetchNotifications]);
+
+  useEffect(() => {
+    if (isInitialized && activeTab === "work") fetchMyProjects();
+  }, [activeTab, isInitialized, fetchMyProjects]);
+
+  useEffect(() => {
+    if (isInitialized && activeTab === "profile") fetchWorkerDocuments();
+  }, [activeTab, isInitialized, fetchWorkerDocuments]);
+
+  useEffect(() => {
+    if (isInitialized && activeTab === "invoices" && !selectedTable)
+      fetchMyTables();
+  }, [activeTab, isInitialized, selectedTable, fetchMyTables]);
 
   const fetchInvoicesForTable = async (tableId) => {
     setLoadingInvoices(true);
@@ -276,33 +275,30 @@ const WorkerPortal = () => {
       setTableInvoices(data || []);
     } catch (error) {
       console.error("Помилка завантаження інвойсів:", error.message);
-      toast.error("Не вдалося завантажити інвойси.");
     } finally {
       setLoadingInvoices(false);
     }
   };
 
-  const fetchWorkerDocuments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("worker_documents")
-        .select("*")
-        .eq("worker_id", user.id);
-      if (error) throw error;
-      setDocuments(data || []);
-    } catch (error) {
-      console.error("Помилка завантаження документів:", error.message);
-    }
+  const markNotificationAsRead = async (id) => {
+    await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    fetchNotifications();
+  };
+
+  const markAllAsRead = async () => {
+    await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", userId);
+    fetchNotifications();
+    toast.success("Всі сповіщення прочитані");
   };
 
   const handleDocumentUploadComplete = async (urls) => {
     if (!urls || urls.length === 0) return;
     try {
       setLoading(true);
-      const newDocs = urls.map((url) => ({
-        worker_id: user.id,
-        file_url: url,
-      }));
+      const newDocs = urls.map((url) => ({ worker_id: userId, file_url: url }));
       const { error } = await supabase.from("worker_documents").insert(newDocs);
       if (error) throw error;
       toast.success("Документи успішно завантажено!");
@@ -331,7 +327,7 @@ const WorkerPortal = () => {
 
       const { error } = await supabase.from("daily_reports").insert([
         {
-          worker_id: user.id,
+          worker_id: userId,
           address_id: selectedProject.id,
           notes: finalNotes,
           photos_before: formData.photosBefore,
@@ -350,6 +346,7 @@ const WorkerPortal = () => {
         photosBefore: [],
         photosAfter: [],
       });
+      fetchMyProjects();
     } catch (error) {
       toast.error("Помилка відправки: " + error.message);
     } finally {
@@ -383,6 +380,43 @@ const WorkerPortal = () => {
     return matchesSearch && matchesTab;
   });
 
+  // Логіка групування активних проєктів за датами
+  const groupedActiveProjects = useMemo(() => {
+    const todayList = [];
+    const tomorrowList = [];
+    const upcomingList = [];
+    const pastList = [];
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    const tomorrowDate = new Date();
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
+
+    filteredProjects.forEach((proj) => {
+      if (!proj.date) {
+        upcomingList.push(proj);
+        return;
+      }
+
+      if (proj.date === todayStr) {
+        todayList.push(proj);
+      } else if (proj.date === tomorrowStr) {
+        tomorrowList.push(proj);
+      } else if (proj.date > todayStr) {
+        upcomingList.push(proj);
+      } else {
+        pastList.push(proj);
+      }
+    });
+
+    return {
+      today: todayList,
+      tomorrow: tomorrowList,
+      upcoming: upcomingList,
+      past: pastList,
+    };
+  }, [filteredProjects]);
+
   const activeCount = myProjects.filter((p) => p.status !== "Ready").length;
   const completedCount = myProjects.filter((p) => p.status === "Ready").length;
 
@@ -390,6 +424,39 @@ const WorkerPortal = () => {
     const val = parseFloat(inv.total_income || inv.total || 0);
     return sum + (isNaN(val) ? 0 : val);
   }, 0);
+
+  // Допоміжна функція для рендеру картки об'єкта
+  const renderProjectCard = (proj) => (
+    <div
+      key={proj.id}
+      className={styles.projectCard}
+      onClick={() => setSelectedProject(proj)}
+    >
+      <div className={styles.cardTitle}>
+        WO #{proj.work_order_number || "N/A"} -{" "}
+        {proj.builders?.name || "Unknown"}
+      </div>
+      <div className={styles.cardAddress}>
+        <FaMapMarkerAlt className={styles.pinIcon} />
+        <span>{proj.address}</span>
+      </div>
+      {proj.date && (
+        <div
+          style={{ fontSize: "0.85rem", color: "#666", marginBottom: "8px" }}
+        >
+          📅 {proj.date}
+        </div>
+      )}
+      <div className={styles.cardBottomRow}>
+        <span
+          className={`${styles.statusBadge} ${styles[proj.status?.replace(/\s+/g, "")] || ""}`}
+        >
+          {proj.status || "Assigned"}
+        </span>
+      </div>
+      <MdOutlineChevronRight className={styles.chevronIcon} />
+    </div>
+  );
 
   if (authLoading || !role) {
     return (
@@ -454,32 +521,65 @@ const WorkerPortal = () => {
                     </p>
                   ) : (
                     <div className={styles.projectList}>
-                      {filteredProjects.map((proj) => (
-                        <div
-                          key={proj.id}
-                          className={styles.projectCard}
-                          onClick={() => setSelectedProject(proj)}
-                        >
-                          <div className={styles.cardTitle}>
-                            WO #{proj.work_order_number || "N/A"} -{" "}
-                            {proj.builders?.name || "Unknown Builder"}
-                          </div>
-                          <div className={styles.cardAddress}>
-                            <FaMapMarkerAlt className={styles.pinIcon} />
-                            <span>{proj.address}</span>
-                          </div>
-                          <div className={styles.cardBottomRow}>
-                            <span
-                              className={`${styles.statusBadge} ${styles[proj.status?.replace(/\s+/g, "")] || ""}`}
-                            >
-                              {proj.status || "Assigned"}
-                            </span>
-                          </div>
-                          <MdOutlineChevronRight
-                            className={styles.chevronIcon}
-                          />
-                        </div>
-                      ))}
+                      {workFilter === "active" ? (
+                        <>
+                          {groupedActiveProjects.today.length > 0 && (
+                            <div className={styles.dateGroup}>
+                              <div
+                                className={`${styles.dateGroupHeader} ${styles.todayHeader}`}
+                              >
+                                🔥 Сьогодні (
+                                {groupedActiveProjects.today.length})
+                              </div>
+                              {groupedActiveProjects.today.map((proj) =>
+                                renderProjectCard(proj),
+                              )}
+                            </div>
+                          )}
+
+                          {groupedActiveProjects.tomorrow.length > 0 && (
+                            <div className={styles.dateGroup}>
+                              <div
+                                className={`${styles.dateGroupHeader} ${styles.tomorrowHeader}`}
+                              >
+                                📅 Завтра (
+                                {groupedActiveProjects.tomorrow.length})
+                              </div>
+                              {groupedActiveProjects.tomorrow.map((proj) =>
+                                renderProjectCard(proj),
+                              )}
+                            </div>
+                          )}
+
+                          {groupedActiveProjects.upcoming.length > 0 && (
+                            <div className={styles.dateGroup}>
+                              <div className={styles.dateGroupHeader}>
+                                ⏳ Найближчі (
+                                {groupedActiveProjects.upcoming.length})
+                              </div>
+                              {groupedActiveProjects.upcoming.map((proj) =>
+                                renderProjectCard(proj),
+                              )}
+                            </div>
+                          )}
+
+                          {groupedActiveProjects.past.length > 0 && (
+                            <div className={styles.dateGroup}>
+                              <div
+                                className={`${styles.dateGroupHeader} ${styles.pastHeader}`}
+                              >
+                                ⚠️ Протерміновані / Минулі (
+                                {groupedActiveProjects.past.length})
+                              </div>
+                              {groupedActiveProjects.past.map((proj) =>
+                                renderProjectCard(proj),
+                              )}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        filteredProjects.map((proj) => renderProjectCard(proj))
+                      )}
                     </div>
                   )}
                 </>
@@ -513,7 +613,6 @@ const WorkerPortal = () => {
                     </p>
                   </div>
 
-                  {/* БЛОК ІНСТРУКЦІЙ ТІЛЬКИ ДЛЯ КОНКРЕТНИХ РОБІТ */}
                   {selectedProject.myWorkTypes &&
                     selectedProject.myWorkTypes.length > 0 && (
                       <div className={styles.instructionBlock}>
@@ -557,8 +656,6 @@ const WorkerPortal = () => {
                                 💰 Оплата за позицію: $
                                 {parseFloat(wt.payment_amount || 0).toFixed(2)}
                               </div>
-
-                              {/* Виводимо примітки ТІЛЬКИ для цієї роботи, якщо вони є */}
                               {wt.notes && (
                                 <div
                                   style={{
@@ -606,7 +703,6 @@ const WorkerPortal = () => {
                         </option>
                       </select>
                     </div>
-
                     <div className={styles.formGroup}>
                       <label className={styles.sectionLabel}>
                         Нотатки (опціонально)
@@ -620,7 +716,6 @@ const WorkerPortal = () => {
                         className={styles.textarea}
                       />
                     </div>
-
                     <div className={styles.photoUploaders}>
                       <PhotoUploader
                         label="Фото ДО (опціонально)"
@@ -637,7 +732,6 @@ const WorkerPortal = () => {
                         }
                       />
                     </div>
-
                     <button
                       type="submit"
                       disabled={loading || formData.photosAfter.length === 0}
@@ -711,19 +805,19 @@ const WorkerPortal = () => {
                   ) : (
                     <div className={styles.projectList}>
                       {myTables.map((table) => {
-                        const invCount = table.invoices?.length || 0;
-                        const addressesText =
-                          table.invoices
-                            ?.map((i) => i.address)
-                            .filter(Boolean)
-                            .join(" • ") || "Немає об'єктів";
-                        const totalSum =
-                          table.invoices?.reduce(
-                            (sum, inv) =>
-                              sum +
-                              parseFloat(inv.total_income || inv.total || 0),
-                            0,
-                          ) || 0;
+                        const invoicesList = table.invoices || [];
+                        const invCount = invoicesList.length;
+                        const previewAddresses = invoicesList
+                          .slice(0, 2)
+                          .map((i) => i.address)
+                          .filter(Boolean);
+                        const remainingCount = invCount > 2 ? invCount - 2 : 0;
+                        const totalSum = invoicesList.reduce(
+                          (sum, inv) =>
+                            sum +
+                            parseFloat(inv.total_income || inv.total || 0),
+                          0,
+                        );
 
                         return (
                           <div
@@ -736,29 +830,56 @@ const WorkerPortal = () => {
                           >
                             <div className={styles.folderContent}>
                               <div className={styles.folderTitleRow}>
-                                <span style={{ fontSize: "1.4rem" }}>📁</span>
+                                <span className={styles.folderIcon}>📅</span>
                                 <span className={styles.folderName}>
                                   {table.name}
                                 </span>
                               </div>
-                              <div className={styles.folderAddresses}>
-                                <FaMapMarkerAlt
-                                  style={{
-                                    color: "#b02a48",
-                                    display: "inline",
-                                    marginRight: "4px",
-                                  }}
-                                />
-                                {addressesText}
-                              </div>
+                              {invCount > 0 ? (
+                                <div className={styles.folderAddressesPreview}>
+                                  <ul className={styles.previewList}>
+                                    {previewAddresses.map((addr, idx) => (
+                                      <li key={idx}>
+                                        <FaMapMarkerAlt
+                                          className={styles.pinIconSmall}
+                                        />{" "}
+                                        {addr}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  {remainingCount > 0 && (
+                                    <div className={styles.moreAddresses}>
+                                      + ще {remainingCount} об'єкт
+                                      {remainingCount === 1 ? "" : "ів"}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className={styles.noAddressesText}>
+                                  Немає об'єктів
+                                </div>
+                              )}
                               <div className={styles.folderTotalPreview}>
-                                Об'єктів: {invCount} &nbsp;|&nbsp; Всього: $
-                                {totalSum.toFixed(2)}
+                                <div className={styles.statBox}>
+                                  <span className={styles.statLabel}>
+                                    Об'єкти:
+                                  </span>
+                                  <span className={styles.statValue}>
+                                    {invCount}
+                                  </span>
+                                </div>
+                                <div className={styles.statBox}>
+                                  <span className={styles.statLabel}>
+                                    Сума:
+                                  </span>
+                                  <span className={styles.statValueSum}>
+                                    ${totalSum.toFixed(2)}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                             <MdOutlineChevronRight
                               className={styles.chevronIcon}
-                              style={{ position: "static", transform: "none" }}
                             />
                           </div>
                         );
@@ -815,7 +936,6 @@ const WorkerPortal = () => {
                                 {inv.date}
                               </span>
                             )}
-
                             {inv["sf/stairs"] && inv.price && (
                               <span className={styles.invoiceDetailBadge}>
                                 {inv["sf/stairs"]} × $
@@ -823,19 +943,6 @@ const WorkerPortal = () => {
                               </span>
                             )}
                           </div>
-
-                          {inv.GSTCollected || inv.totalWithGst ? (
-                            <div className={styles.invoiceGstRow}>
-                              <span>
-                                GST: $
-                                {parseFloat(inv.GSTCollected || 0).toFixed(2)}
-                              </span>
-                              <span style={{ fontWeight: 600 }}>
-                                Total + GST: $
-                                {parseFloat(inv.totalWithGst || 0).toFixed(2)}
-                              </span>
-                            </div>
-                          ) : null}
                         </div>
                       ))}
 

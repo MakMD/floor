@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 import styles from "./WorkTypesManager.module.css";
-import { FaPlus, FaTrash, FaSave, FaInfoCircle } from "react-icons/fa"; // Додав іконку інформації
+import { FaPlus, FaTrash, FaSave, FaInfoCircle } from "react-icons/fa";
 import { useAdminLists } from "../../hooks/useAdminLists";
 import {
   addWorkTypeAndInvoice,
@@ -31,11 +31,8 @@ const WorkTypesManager = ({ addressId, addressData }) => {
             .select("*, people(name), work_type_templates(name)")
             .eq("address_id", addressId)
             .order("created_at"),
-          supabase
-            .from("people")
-            .select("id, name")
-            .eq("status", "active")
-            .order("name"),
+          // ВИПРАВЛЕННЯ: Завантажуємо ВСІХ працівників та їхній статус
+          supabase.from("people").select("id, name, status").order("name"),
         ]);
 
         if (workTypesRes.error) throw workTypesRes.error;
@@ -117,7 +114,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       payment_amount: newWorkType.payment_amount
         ? parseFloat(newWorkType.payment_amount)
         : 0,
-      // Тут ми могли б передавати notes, якщо вони є у newWorkType
     };
 
     const addedWorkType = await addWorkTypeAndInvoice(payload);
@@ -177,7 +173,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       <div className={styles.workTypeList}>
         {workTypes.map((wt) => (
           <div key={wt.id} className={styles.workTypeBlock}>
-            {/* Основний рядок роботи */}
             <div className={styles.workTypeItem}>
               <select
                 name="work_type_template_id"
@@ -196,11 +191,17 @@ const WorkTypesManager = ({ addressId, addressData }) => {
                 onChange={(e) => handleInputChange(e, wt.id)}
               >
                 <option value="">Unassigned</option>
-                {people.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
+                {people.map((p) => {
+                  // ВИПРАВЛЕННЯ: Показуємо працівника, якщо він активний АБО вже призначений сюди
+                  if (p.status === "active" || p.id === wt.person_id) {
+                    return (
+                      <option key={p.id} value={p.id}>
+                        {p.name} {p.status !== "active" ? "(Inactive)" : ""}
+                      </option>
+                    );
+                  }
+                  return null;
+                })}
               </select>
               <input
                 type="number"
@@ -228,7 +229,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
               </div>
             </div>
 
-            {/* БЛОК ДЛЯ СПЕЦИФІЧНИХ НОТАТОК (з AI) */}
             {(wt.line_notes || wt.notes) && (
               <div className={styles.lineNotesBox}>
                 <FaInfoCircle className={styles.infoIcon} />
@@ -260,11 +260,17 @@ const WorkTypesManager = ({ addressId, addressData }) => {
           onChange={handleNewInputChange}
         >
           <option value="">Assign Worker</option>
-          {people.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
+          {people.map((p) => {
+            // Для нових робіт показуємо ТІЛЬКИ активних
+            if (p.status === "active") {
+              return (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              );
+            }
+            return null;
+          })}
         </select>
         <input
           type="number"

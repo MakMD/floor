@@ -1,13 +1,12 @@
-// makmd/floor/floor-ec2a015c38c9b806424861b2badc2086be27f9c6/src/components/LoginModal/LoginModal.jsx
-
 import { useState } from "react";
 import { supabase } from "../../supabaseClient";
 import Modal from "../Modal/Modal";
 import styles from "./LoginModal.module.css";
 import { FaSignInAlt } from "react-icons/fa";
-import logo from "../../../public/Flooring.Boss.svg"; // ІМПОРТ ЛОГОТИПУ
+import logo from "../../../public/Flooring.Boss.svg";
 
 const LoginModal = ({ onLoginSuccess }) => {
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,44 +15,61 @@ const LoginModal = ({ onLoginSuccess }) => {
     setLoading(true);
     setError("");
 
-    const { data, error: fetchError } = await supabase
-      .from("password")
-      .select("value")
-      .eq("id", 1)
-      .single();
-
-    if (fetchError) {
-      setError("Error checking password. Please try again.");
-      console.error("Error logging in:", fetchError);
+    if (!phone || !password) {
+      setError("Please enter both phone number and password.");
       setLoading(false);
       return;
     }
 
-    const storedPassword = data.value;
+    // Очищаємо номер телефону від будь-яких символів, крім цифр
+    const cleanPhone = phone.replace(/\D/g, "");
 
-    if (password === storedPassword) {
-      onLoginSuccess();
-    } else {
-      setError("Incorrect password");
+    if (cleanPhone.length < 4) {
+      setError("Invalid phone number format.");
+      setLoading(false);
+      return;
+    }
+
+    // Створюємо фіктивний email для Supabase Auth
+    const emailToSubmit = `${cleanPhone}@flooringboss.app`;
+
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email: emailToSubmit,
+      password: password,
+    });
+
+    if (authError) {
+      console.error("Login Error:", authError.message);
+      setError("Incorrect login or password. Please try again.");
+    } else if (data.session) {
+      // Успішний логін
+      onLoginSuccess(data.user);
     }
 
     setLoading(false);
   };
 
   return (
-    // Прибираємо title, щоб використати кастомний заголовок
     <Modal onClose={() => {}}>
-      {/* ОНОВЛЕНИЙ БЛОК */}
       <div className={styles.loginContainer}>
         <div className={styles.header}>
           <img src={logo} alt="Flooring Boss Logo" className={styles.logo} />
-          <h2 className={styles.title}>Welcome Back</h2>
+          <h2 className={styles.title}>Worker Login</h2>
           <p className={styles.subtitle}>
-            Please enter your password to continue.
+            Enter your mobile number and password
           </p>
         </div>
 
         <div className={styles.form}>
+          <input
+            type="text"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Mobile Number (e.g. 1587...)"
+            className={styles.inputField}
+            onKeyPress={(e) => e.key === "Enter" && handleLogin()}
+            disabled={loading}
+          />
           <input
             type="password"
             value={password}

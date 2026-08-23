@@ -31,7 +31,6 @@ const STORAGE_KEY = "calendar_state";
 const EXPIRATION_TIME = 3 * 60 * 1000;
 
 const CalendarPage = () => {
-  // --- СТАНИ ---
   const [selectedDate, setSelectedDate] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -63,20 +62,17 @@ const CalendarPage = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Стани для фільтрації
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBuilder, setSelectedBuilder] = useState("All");
   const [selectedStore, setSelectedStore] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
 
-  // Стан для індикаторів у випадаючому календарі
   const [calendarMonth, setCalendarMonth] = useState(selectedDate);
   const [monthEvents, setMonthEvents] = useState([]);
 
   const navigate = useNavigate();
   const weekStartsOn = 1;
 
-  // --- ЕФЕКТИ ---
   useEffect(() => {
     const stateToSave = {
       selectedDate: selectedDate.toISOString(),
@@ -86,7 +82,6 @@ const CalendarPage = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
   }, [selectedDate, viewMode]);
 
-  // ОПТИМІЗАЦІЯ: useCallback для fetchEvents
   const fetchEvents = useCallback(async () => {
     setLoading(true);
 
@@ -123,7 +118,6 @@ const CalendarPage = () => {
     fetchEvents();
   }, [fetchEvents]);
 
-  // Легке завантаження подій для відображення крапок-індикаторів у всьому місяці
   useEffect(() => {
     const fetchMonthEvents = async () => {
       const start = format(startOfMonth(calendarMonth), "yyyy-MM-dd");
@@ -142,8 +136,6 @@ const CalendarPage = () => {
     fetchMonthEvents();
   }, [calendarMonth]);
 
-  // --- ЛОГІКА ІНДИКАТОРІВ (КРАПОК) ---
-  // ОПТИМІЗАЦІЯ: useCallback для функцій, що передаються у DatePicker
   const getDayStatus = useCallback(
     (date) => {
       if (!monthEvents || monthEvents.length === 0) return null;
@@ -181,7 +173,6 @@ const CalendarPage = () => {
     [getDayStatus],
   );
 
-  // --- НАВІГАЦІЯ ---
   const handleNext = () => {
     const newDate =
       viewMode === "day" ? addDays(selectedDate, 1) : addWeeks(selectedDate, 1);
@@ -201,7 +192,6 @@ const CalendarPage = () => {
     toast.success(`Materials confirmed for Job #${id}`);
   };
 
-  // --- ДИНАМІЧНІ СПИСКИ ДЛЯ СЕЛЕКТОРІВ (ОПТИМІЗАЦІЯ: useMemo) ---
   const uniqueBuilders = useMemo(
     () =>
       [
@@ -226,7 +216,6 @@ const CalendarPage = () => {
     [events],
   );
 
-  // --- ФІЛЬТРАЦІЯ ПОДІЙ (ОПТИМІЗАЦІЯ: useMemo) ---
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
       const query = searchQuery.toLowerCase().trim();
@@ -251,12 +240,21 @@ const CalendarPage = () => {
     });
   }, [events, searchQuery, selectedBuilder, selectedStore, selectedStatus]);
 
+  // ДВОРІВНЕВЕ ГРУПУВАННЯ: Дата -> Магазин
   const groupedEvents = useMemo(() => {
     return filteredEvents.reduce((acc, event) => {
-      if (!acc[event.date]) acc[event.date] = { services: [], jobs: [] };
-      if (event.project_type === "Service")
-        acc[event.date].services.push(event);
-      else acc[event.date].jobs.push(event);
+      const dateKey = event.date;
+      const storeName = event.stores?.name || "Unknown Store";
+
+      if (!acc[dateKey]) acc[dateKey] = {};
+      if (!acc[dateKey][storeName])
+        acc[dateKey][storeName] = { services: [], jobs: [] };
+
+      if (event.project_type === "Service") {
+        acc[dateKey][storeName].services.push(event);
+      } else {
+        acc[dateKey][storeName].jobs.push(event);
+      }
       return acc;
     }, {});
   }, [filteredEvents]);
@@ -279,16 +277,13 @@ const CalendarPage = () => {
   return (
     <div className={styles.calendarContainer}>
       <div className={styles.mobileLayout}>
-        {/* --- ЛИПКА НАВІГАЦІЯ --- */}
         <div className={styles.navbar}>
           <div className={styles.navTopRow}>
-            {/* ВСІ КНОПКИ ЗГРУПОВАНІ ЗЛІВА */}
             <div className={styles.navGroup}>
               <button onClick={handlePrev} className={styles.iconBtn}>
                 <FaChevronLeft size={14} />
               </button>
 
-              {/* ВИПАДАЮЧИЙ КАЛЕНДАР */}
               <DatePicker
                 selected={selectedDate}
                 onChange={(date) => {
@@ -316,7 +311,6 @@ const CalendarPage = () => {
                 <FaSyncAlt size={14} />
               </button>
 
-              {/* ПЕРЕМИКАЧІ ВИГЛЯДУ */}
               <button
                 onClick={() => setViewMode("day")}
                 className={`${styles.iconBtn} ${viewMode === "day" ? styles.activeViewBtn : ""}`}
@@ -334,7 +328,6 @@ const CalendarPage = () => {
             </div>
           </div>
 
-          {/* ПОШУКОВИЙ РЯДОК */}
           <div className={styles.searchContainer}>
             <FaSearch className={styles.searchIcon} />
             <input
@@ -346,7 +339,6 @@ const CalendarPage = () => {
             />
           </div>
 
-          {/* СЕЛЕКТОРИ ФІЛЬТРІВ */}
           <div className={styles.filtersContainer}>
             <select
               value={selectedBuilder}
@@ -401,101 +393,122 @@ const CalendarPage = () => {
           ) : (
             <div className={styles.listContainer}>
               {datesToRender.map((dateKey) => {
-                const dayData = groupedEvents[dateKey] || {
-                  services: [],
-                  jobs: [],
-                };
+                const storesData = groupedEvents[dateKey] || {};
                 const displayDate = format(
                   new Date(dateKey + "T00:00:00"),
-                  "dd MMM yyyy",
+                  "EEEE, dd MMM yyyy",
                 );
+
+                const storeNames = Object.keys(storesData).sort();
 
                 return (
                   <div key={dateKey} className={styles.dayGroup}>
-                    {dayData.services.length > 0 && (
-                      <div className={styles.section}>
-                        <div className={styles.sectionHeader}>
-                          {displayDate} - Services ({dayData.services.length})
-                        </div>
-                        <div className={styles.cardsList}>
-                          {dayData.services.map((event) => (
-                            <div
-                              key={event.id}
-                              className={styles.card}
-                              onClick={() => navigate(`/address/${event.id}`)}
-                            >
-                              <div className={styles.cardContent}>
-                                <div className={styles.cardTitle}>
-                                  Service: {event.work_order_number || "N/A"} -{" "}
-                                  {event.builders?.name || "Unknown Builder"}
-                                  {event.service_time
-                                    ? ` - ${event.service_time}`
-                                    : ""}
-                                </div>
-                                <div className={styles.cardAddress}>
-                                  <FaMapMarkerAlt className={styles.pinIcon} />
-                                  <span>{event.address}</span>
-                                </div>
-                                {event.notes && (
-                                  <div className={styles.cardNotes}>
-                                    {event.notes}
-                                  </div>
-                                )}
-                              </div>
-                              <MdOutlineChevronRight
-                                className={styles.chevronIcon}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    {/* Виділений заголовок дня */}
+                    <div className={styles.dateMainHeader}>{displayDate}</div>
 
-                    {dayData.jobs.length > 0 && (
-                      <div className={styles.section}>
-                        <div className={styles.sectionHeader}>
-                          {displayDate} - Jobs ({dayData.jobs.length})
-                        </div>
-                        <div className={styles.cardsList}>
-                          {dayData.jobs.map((event) => (
-                            <div
-                              key={event.id}
-                              className={styles.card}
-                              onClick={() => navigate(`/address/${event.id}`)}
-                            >
-                              <div className={styles.cardContent}>
-                                <div className={styles.cardTitle}>
-                                  Job Id: {event.work_order_number || "N/A"} -{" "}
-                                  {event.builders?.name || "Unknown Builder"}
-                                </div>
-                                <div className={styles.cardAddress}>
-                                  <FaMapMarkerAlt className={styles.pinIcon} />
-                                  <span>{event.address}</span>
-                                </div>
-                                <button
-                                  className={styles.confirmBtn}
-                                  onClick={(e) =>
-                                    handleConfirmMaterials(e, event.id)
-                                  }
-                                >
-                                  Confirm Materials
-                                </button>
-                              </div>
-                              <MdOutlineChevronRight
-                                className={styles.chevronIcon}
-                              />
-                            </div>
-                          ))}
-                        </div>
+                    {storeNames.length === 0 ? (
+                      <div className={styles.noEvents}>
+                        No projects for {displayDate}.
                       </div>
-                    )}
+                    ) : (
+                      storeNames.map((storeName) => {
+                        const dayData = storesData[storeName];
+                        return (
+                          <div key={storeName} className={styles.storeSection}>
+                            {dayData.services.length > 0 && (
+                              <div className={styles.section}>
+                                <div className={styles.sectionHeader}>
+                                  {storeName} - Services (
+                                  {dayData.services.length})
+                                </div>
+                                <div className={styles.cardsList}>
+                                  {dayData.services.map((event) => (
+                                    <div
+                                      key={event.id}
+                                      className={styles.card}
+                                      onClick={() =>
+                                        navigate(`/address/${event.id}`)
+                                      }
+                                    >
+                                      <div className={styles.cardContent}>
+                                        <div className={styles.cardTitle}>
+                                          Service:{" "}
+                                          {event.work_order_number || "N/A"} -{" "}
+                                          {event.builders?.name ||
+                                            "Unknown Builder"}
+                                          {event.service_time
+                                            ? ` - ${event.service_time}`
+                                            : ""}
+                                        </div>
+                                        <div className={styles.cardAddress}>
+                                          <FaMapMarkerAlt
+                                            className={styles.pinIcon}
+                                          />
+                                          <span>{event.address}</span>
+                                        </div>
+                                        {event.notes && (
+                                          <div className={styles.cardNotes}>
+                                            {event.notes}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <MdOutlineChevronRight
+                                        className={styles.chevronIcon}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
-                    {dayData.services.length === 0 &&
-                      dayData.jobs.length === 0 && (
-                        <div className={styles.noEvents}>
-                          No projects for {displayDate}.
-                        </div>
-                      )}
+                            {dayData.jobs.length > 0 && (
+                              <div className={styles.section}>
+                                <div className={styles.sectionHeader}>
+                                  {storeName} - Jobs ({dayData.jobs.length})
+                                </div>
+                                <div className={styles.cardsList}>
+                                  {dayData.jobs.map((event) => (
+                                    <div
+                                      key={event.id}
+                                      className={styles.card}
+                                      onClick={() =>
+                                        navigate(`/address/${event.id}`)
+                                      }
+                                    >
+                                      <div className={styles.cardContent}>
+                                        <div className={styles.cardTitle}>
+                                          Job Id:{" "}
+                                          {event.work_order_number || "N/A"} -{" "}
+                                          {event.builders?.name ||
+                                            "Unknown Builder"}
+                                        </div>
+                                        <div className={styles.cardAddress}>
+                                          <FaMapMarkerAlt
+                                            className={styles.pinIcon}
+                                          />
+                                          <span>{event.address}</span>
+                                        </div>
+                                        <button
+                                          className={styles.confirmBtn}
+                                          onClick={(e) =>
+                                            handleConfirmMaterials(e, event.id)
+                                          }
+                                        >
+                                          Confirm Materials
+                                        </button>
+                                      </div>
+                                      <MdOutlineChevronRight
+                                        className={styles.chevronIcon}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 );
               })}

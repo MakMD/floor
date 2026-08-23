@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
 
 const LoginPage = () => {
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -22,8 +22,18 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
+      // Очищаємо номер від зайвих символів
+      const cleanPhone = phone.replace(/\D/g, "");
+
+      if (cleanPhone.length < 4) {
+        throw new Error("Невірний формат номера телефону.");
+      }
+
+      // Формуємо email для Supabase
+      const emailToSubmit = `${cleanPhone}@flooringboss.app`;
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: emailToSubmit,
         password,
       });
 
@@ -33,7 +43,7 @@ const LoginPage = () => {
       navigate("/");
     } catch (error) {
       console.error("Помилка входу:", error.message);
-      toast.error("Неправильний email або пароль.");
+      toast.error("Неправильний номер телефону або пароль.");
     } finally {
       setLoading(false);
     }
@@ -75,11 +85,11 @@ const LoginPage = () => {
           style={{ display: "flex", flexDirection: "column", gap: "20px" }}
         >
           <input
-            type="email"
+            type="text"
             required
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Номер телефону (напр. 1587...)"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             style={{
               width: "100%",
               padding: "12px",
