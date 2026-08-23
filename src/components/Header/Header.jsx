@@ -1,3 +1,4 @@
+// src/components/Header/Header.jsx
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
@@ -13,14 +14,16 @@ import {
   FaTimes,
   FaBell,
   FaCheckDouble,
-  FaFileInvoice, // ДОДАНО: Іконка для інвойсів магазинів
+  FaFileInvoice,
+  FaBuilding,
 } from "react-icons/fa";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
 import styles from "./Header.module.css";
+// import ThemeToggleButton from "../ThemeToggleButton/ThemeToggleButton"; // Можна видалити, якщо використовується вбудована кнопка
 
 const Header = () => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme(); // Використовуємо theme та toggleTheme
   const { user, userRole, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -39,7 +42,12 @@ const Header = () => {
   };
 
   const handleLogout = async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Помилка при виході:", error);
+      // Тут можна додати toast.error("Не вдалося вийти з акаунту");
+    }
   };
 
   const toggleMobileMenu = () => {
@@ -56,21 +64,30 @@ const Header = () => {
     if (!user || userRole !== "admin") return;
 
     const fetchNotifications = async () => {
-      const { data } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(50); // Показуємо останні 50
-      if (data) {
-        setNotifications(data);
-        setUnreadCount(data.filter((n) => !n.is_read).length);
+      try {
+        const { data, error } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          setNotifications(data);
+          setUnreadCount(data.filter((n) => !n.is_read).length);
+        }
+      } catch (error) {
+        console.error("Помилка завантаження сповіщень:", error);
       }
     };
 
     fetchNotifications();
 
-    // Підписка на оновлення в реальному часі (Real-time)
+    // Підписка на оновлення в реальному часі
     const subscription = supabase
       .channel("admin_notifications")
       .on(
@@ -82,7 +99,7 @@ const Header = () => {
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          fetchNotifications(); // Оновлюємо список, коли БД змінюється
+          fetchNotifications();
         },
       )
       .subscribe();
@@ -104,23 +121,40 @@ const Header = () => {
   }, []);
 
   const markAsRead = async (id, link) => {
-    await supabase.from("notifications").update({ is_read: true }).eq("id", id);
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-    setIsNotifOpen(false);
-    closeMobileMenu();
-    if (link) navigate(link);
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      setIsNotifOpen(false);
+      closeMobileMenu();
+      if (link) navigate(link);
+    } catch (error) {
+      console.error("Помилка при оновленні сповіщення:", error);
+    }
   };
 
   const markAllAsRead = async () => {
-    await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("user_id", user.id);
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    setUnreadCount(0);
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Помилка при оновленні всіх сповіщень:", error);
+    }
   };
 
   return (
@@ -133,7 +167,11 @@ const Header = () => {
         />
       </Link>
 
-      <button className={styles.hamburgerButton} onClick={toggleMobileMenu}>
+      <button
+        className={styles.hamburgerButton}
+        onClick={toggleMobileMenu}
+        aria-label="Toggle mobile menu" // Додано aria-label
+      >
         <FaBars />
       </button>
 
@@ -151,7 +189,11 @@ const Header = () => {
             >
               Меню
             </span>
-            <button className={styles.closeButton} onClick={closeMobileMenu}>
+            <button
+              className={styles.closeButton}
+              onClick={closeMobileMenu}
+              aria-label="Close mobile menu" // Додано aria-label
+            >
               <FaTimes />
             </button>
           </div>
@@ -169,7 +211,6 @@ const Header = () => {
               Projects
             </Link>
 
-            {/* ДОДАНО: Вкладка інвойсів магазинів */}
             <Link
               to="/store-invoices"
               className={getLinkClass("/store-invoices")}
@@ -177,6 +218,15 @@ const Header = () => {
             >
               <FaFileInvoice />
               Store Invoices
+            </Link>
+
+            <Link
+              to="/builders"
+              className={getLinkClass("/builders")}
+              onClick={closeMobileMenu}
+            >
+              <FaBuilding />
+              Builders
             </Link>
 
             <Link
@@ -218,12 +268,22 @@ const Header = () => {
 
         {/* Контроли (Сповіщення та Вихід) */}
         <div className={styles.navControls}>
+          {/* === КНОПКА ТЕМИ === */}
+          <button
+            onClick={toggleTheme}
+            className={styles.themeToggleBtn}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <FaSun /> : <FaMoon />}
+          </button>
+
           {/* === ДЗВІНОЧОК СПОВІЩЕНЬ (Тільки для Адміна) === */}
           {userRole === "admin" && (
             <div className={styles.notifContainer} ref={notifRef}>
               <button
                 className={styles.notifButton}
                 onClick={() => setIsNotifOpen(!isNotifOpen)}
+                aria-label="Notifications" // Додано aria-label
               >
                 <FaBell />
                 <span className={styles.mobileOnlyText}>Сповіщення</span>

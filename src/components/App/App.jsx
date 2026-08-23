@@ -41,12 +41,13 @@ const AddressDetailsPage = lazy(() => import("../../Pages/AddressDetailsPage"));
 const AdminPage = lazy(() => import("../../Pages/AdminPage"));
 const CalendarPage = lazy(() => import("../../Pages/CalendarPage"));
 const WorkerPortal = lazy(() => import("../../Pages/WorkerPortal"));
+// НОВИЙ ІМПОРТ ДЛЯ БІЛДЕРІВ
+const BuildersListPage = lazy(() => import("../../Pages/BuildersListPage"));
 
 // Розумний редирект для головної сторінки
 const IndexRedirect = () => {
   const { role, loading } = useAuth();
 
-  // ВИПРАВЛЕНО: Чекаємо не лише завантаження сесії, а й отримання самої ролі (щоб уникнути хибного редиректу при F5)
   if (loading || !role)
     return (
       <div
@@ -63,7 +64,6 @@ const IndexRedirect = () => {
       </div>
     );
 
-  // Адмін після входу переходить на сторінку об'єктів
   if (role === "admin") {
     return <Navigate to="/addresses" replace />;
   }
@@ -124,6 +124,15 @@ const router = createBrowserRouter(
           element: (
             <AdminRoute>
               <StoreInvoiceDetailsPage />
+            </AdminRoute>
+          ),
+        },
+        // НОВИЙ МАРШРУТ ДЛЯ БІЛДЕРІВ
+        {
+          path: "builders",
+          element: (
+            <AdminRoute>
+              <BuildersListPage />
             </AdminRoute>
           ),
         },

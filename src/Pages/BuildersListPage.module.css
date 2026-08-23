@@ -1,0 +1,524 @@
+/* src/Pages/BuildersListPage.module.css */
+
+.pageContainer {
+  padding: 0;
+  /* РОЗТЯГУЄМО НА ВЕСЬ ЕКРАН: Компенсуємо відступи батьківського Layout */
+  margin-left: -40px;
+  margin-right: -40px;
+  background-color: var(--color-background);
+  min-height: calc(100vh - 64px);
+}
+
+/* =========================================
+   ШАПКА (HEADER)
+   ========================================= */
+.header {
+  display: flex;
+  flex-direction: row !important;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 40px; /* Вирівнюємо текст по ширині екрану */
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: nowrap !important;
+  gap: 16px;
+}
+
+.pageTitle {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.addBtn {
+  width: auto !important;
+  flex-shrink: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.addBtnText {
+  display: inline;
+}
+
+/* =========================================
+   КОНТЕНТ (СПИСКОВИЙ МАКЕТ)
+   ========================================= */
+.content {
+  width: 100%;
+}
+
+.listContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.listItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 40px; /* Збільшений відступ для ПК */
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.2s;
+  cursor: pointer; /* Вказуємо, що рядок клікабельний для ПРЕВ'Ю */
+}
+
+.listItem:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .listItem:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.itemMain {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.builderNameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.builderIcon {
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+
+.builderName {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-text-primary);
+}
+
+/* Статуси інструкцій */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  width: fit-content;
+  margin-left: 28px;
+}
+
+.hasInstructions {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.noInstructions {
+  background-color: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+}
+
+/* Кнопки дій */
+.actionsCell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.actionBtn {
+  background-color: rgba(0, 0, 0, 0.04);
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+[data-theme="dark"] .actionBtn {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.editBtn {
+  color: var(--color-primary);
+}
+
+.editBtn:hover {
+  background-color: rgba(13, 110, 253, 0.15);
+}
+
+.deleteBtn {
+  color: #dc3545;
+}
+
+.deleteBtn:hover {
+  background-color: rgba(220, 53, 69, 0.15);
+}
+
+/* =========================================
+   МОДАЛЬНЕ ВІКНО ФОРМИ
+   ========================================= */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modalContent {
+  background-color: var(--color-surface);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modalHeader h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-text-primary);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.closeButton:hover {
+  color: #dc3545;
+}
+
+.formGroup {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.inputWrapper label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--color-text-primary);
+}
+
+.inputWrapper p {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.inputField,
+.textareaField {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.inputField:focus,
+.textareaField:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.textareaField {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.modalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  flex-shrink: 0;
+}
+
+/* =========================================
+   ЗАВАНТАЖЕННЯ ФОТО
+   ========================================= */
+.uploadSection {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uploadButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: rgba(0, 0, 0, 0.04);
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+[data-theme="dark"] .uploadButton {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.uploadButton:hover {
+  background-color: rgba(13, 110, 253, 0.05);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.imagePreviewContainer {
+  position: relative;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background-color: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+}
+
+[data-theme="dark"] .imagePreviewContainer {
+  background-color: #1f2937;
+}
+
+.instructionImage {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  display: block;
+  cursor: pointer; /* Вказує на клікабельність */
+  transition: opacity 0.2s;
+}
+
+.instructionImage:hover {
+  opacity: 0.8;
+}
+
+.removeImageBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.removeImageBtn:hover {
+  background-color: #dc3545;
+}
+
+/* =========================================
+   ЛАЙТБОКС (ВІДЦЕНТРОВАНИЙ)
+   ========================================= */
+.lightboxOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  padding: 0;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.lightboxImage {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  margin: auto;
+}
+
+.lightboxCloseBtn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.2s;
+  z-index: 10001;
+}
+
+.lightboxCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* =========================================
+   МОДАЛЬНЕ ВІКНО ПРЕВ'Ю (PREVIEW)
+   ========================================= */
+.previewContent {
+  background-color: #f0f2f5;
+  padding: 0;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .previewContent {
+  background-color: #111827;
+}
+
+.previewBody {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Стиль картки як у працівника */
+.previewCard {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-left: 4px solid var(--color-primary); /* Красивий акцент зліва */
+}
+
+[data-theme="dark"] .previewCard {
+  background-color: #1f2937;
+}
+
+.previewTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 10px;
+  margin-bottom: 5px;
+}
+
+.previewText {
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* =========================================
+   МОБІЛЬНА АДАПТАЦІЯ
+   ========================================= */
+@media (max-width: 992px) {
+  .pageContainer {
+    /* На мобільних телефонах відступи зазвичай менші, тому -16px */
+    margin-left: -16px;
+    margin-right: -16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 12px 16px;
+  }
+
+  .listItem {
+    padding: 16px;
+  }
+
+  .pageTitle {
+    font-size: 1.3rem;
+  }
+
+  .addBtnText {
+    display: none;
+  }
+
+  .addBtn {
+    padding: 10px !important;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .modalContent {
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+
+  .modalOverlay {
+    padding: 0;
+  }
+
+  .modalFooter {
+    border-radius: 0;
+  }
+}
