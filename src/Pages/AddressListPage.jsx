@@ -42,7 +42,6 @@ const AddProjectSchema = Yup.object().shape({
   builder_id: Yup.number().nullable(),
 });
 
-// --- ОПТИМІЗАЦІЯ 1: Чисті функції винесено за межі компонента ---
 const normalizeText = (text) => {
   if (!text) return "";
   return text
@@ -105,7 +104,6 @@ const AddressListPage = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // --- ОПТИМІЗАЦІЯ 2: Використання useCallback для залежностей ефекту ---
   const fetchAddresses = useCallback(
     async (pageNumber = 1, reset = false) => {
       setAddressesLoading(true);
@@ -177,7 +175,6 @@ const AddressListPage = () => {
     ],
   );
 
-  // Завдяки useCallback, ми тепер можемо безпечно передати fetchAddresses сюди
   useEffect(() => {
     setPage(1);
     fetchAddresses(1, true);
@@ -258,7 +255,6 @@ const AddressListPage = () => {
   }, [addresses]);
 
   const handleAddAddress = async (values, { setSubmitting, resetForm }) => {
-    // 1. Створюємо сам Проект
     const newAddressObject = {
       work_order_number: values.work_order_number?.trim() || null,
       address: values.address.trim(),
@@ -287,7 +283,6 @@ const AddressListPage = () => {
       return;
     }
 
-    // 2. Додаємо роботи (Work Types), якщо ШІ їх знайшов
     if (values.pending_work_types && values.pending_work_types.length > 0) {
       let addedCount = 0;
 
@@ -302,7 +297,6 @@ const AddressListPage = () => {
           "Unknown Work";
         const cleanName = rawName.trim();
 
-        // Перевіряємо чи є вже така робота в базі
         const { data: existingTpl } = await supabase
           .from("work_type_templates")
           .select("id")
@@ -312,7 +306,6 @@ const AddressListPage = () => {
         if (existingTpl) {
           templateId = existingTpl.id;
         } else {
-          // Якщо немає - СТВОРЮЄМО НОВУ
           const { data: newTpl, error: newTplError } = await supabase
             .from("work_type_templates")
             .insert([{ name: cleanName }])
@@ -327,7 +320,6 @@ const AddressListPage = () => {
           }
         }
 
-        // Прив'язуємо роботу до проекту
         if (templateId) {
           const rawAmt =
             wt.amount !== undefined
@@ -346,7 +338,7 @@ const AddressListPage = () => {
               work_type_template_id: templateId,
               payment_amount: parsedAmt,
               person_id: null,
-              notes: wt.line_notes || wt.notes || null, // <--- ОСЬ МАГІЧНИЙ РЯДОК
+              notes: wt.notes || wt.line_notes || null, // <--- Виправлено тут
             },
           ]);
 
@@ -408,7 +400,6 @@ const AddressListPage = () => {
     const toastId = toast.loading("Uploading and analyzing document...");
 
     try {
-      // 1. Завантаження фото
       const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
 
@@ -427,7 +418,6 @@ const AddressListPage = () => {
 
       setFieldValue("original_photo_url", publicUrlData.publicUrl);
 
-      // 2. Читання файлу для ШІ
       const base64Image = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -435,7 +425,6 @@ const AddressListPage = () => {
         reader.onerror = (error) => reject(error);
       });
 
-      // 3. Відправка до ШІ
       const { data, error } = await supabase.functions.invoke(
         "scan-work-order",
         { body: { imageBase64: base64Image } },
@@ -444,7 +433,6 @@ const AddressListPage = () => {
       if (error) throw new Error(error.message || "Помилка зв'язку з сервером");
       if (data && data.error) throw new Error(data.error);
 
-      // 4. Заповнення полів
       if (data.work_order_number)
         setFieldValue("work_order_number", data.work_order_number);
       if (data.type) setFieldValue("project_type", data.type);
@@ -452,9 +440,10 @@ const AddressListPage = () => {
       if (data.date) setFieldValue("date", data.date);
       if (data.total_amount) setFieldValue("total_amount", data.total_amount);
 
+      // ГАРАНТОВАНО зберігаємо загальні інструкції
       const translationText =
         data.ai_translation || data.instructions || data.notes || "";
-      if (translationText) setFieldValue("ai_translation", translationText);
+      setFieldValue("ai_translation", translationText);
 
       let extractedWorks = [];
       if (data.work_types && Array.isArray(data.work_types)) {
@@ -466,7 +455,13 @@ const AddressListPage = () => {
       }
 
       if (extractedWorks.length > 0) {
-        setFieldValue("pending_work_types", extractedWorks);
+        // МАГІЯ: Переконуємось, що line_notes не губляться перед збереженням!
+        const processedWorks = extractedWorks.map((wt) => ({
+          ...wt,
+          notes: wt.line_notes || wt.notes || "",
+        }));
+
+        setFieldValue("pending_work_types", processedWorks);
         toast.success(`Found ${extractedWorks.length} work items!`, {
           id: toastId,
         });

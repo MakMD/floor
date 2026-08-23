@@ -31,12 +31,12 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o",
         response_format: { type: "json_object" },
-        temperature: 0.1, // Жорстка точність
+        temperature: 0.1, // Жорстка точність, щоб уникнути фантазій ШІ
         messages: [
           {
             role: "system",
             content:
-              "You are an expert AI assistant specialized in extracting highly accurate data from construction and flooring work orders. Output ONLY a valid JSON object matching the exact requested schema.",
+              "You are an expert AI assistant specialized in extracting highly accurate data from construction and flooring work orders. You meticulously analyze tables and never drop line notes. Output ONLY a valid JSON object matching the exact requested schema.",
           },
           {
             role: "user",
@@ -45,11 +45,12 @@ serve(async (req) => {
                 type: "text",
                 text: `Analyze the provided work order image carefully. Extract all requested fields. Pay special attention to the line items table.
 
-                CRITICAL INSTRUCTIONS FOR TABLE READING:
-                1. The table contains distinct "blocks" of work. Each block may be separated by horizontal lines or spacing.
-                2. A work block usually consists of a primary row (Item, Color, Quantity, Rate, Amount) followed immediately by sub-rows containing specific notes for that item (e.g., "Work Order Areas & Line Notes:", "INSTALL AREAS:").
-                3. You MUST group these sub-row notes with their corresponding primary row into a single object.
+                CRITICAL INSTRUCTIONS FOR TABLE READING & NOTES:
+                1. The table contains distinct "blocks" or rows of work. A primary row (e.g., LVP, CARPET, LABOR) is often followed immediately by sub-rows containing critical notes for that specific item (e.g., "Order Line Notes:", "INSTALL AREAS:").
+                2. You MUST attach these sub-row notes to their corresponding primary row in the 'line_notes' field. Do NOT ignore them.
+                3. Do NOT merge different primary rows together. Treat each main material/labor line as a separate object in the 'work_types' array.
                 4. Numeric columns are ordered as: Quantity/SqFt, Unit Price/Rate, Extended Price/Total.
+                5. Translate all 'line_notes' and the 'ai_translation' (general instructions) into Ukrainian.
 
                 JSON Structure required:
                 { 
@@ -60,10 +61,10 @@ serve(async (req) => {
                   "address": "Full job site address from 'Ship To' or 'Install At'", 
                   "date": "Extract the date. Format strictly as YYYY-MM-DD. Ensure year is 2026.", 
                   "total_amount": "Total labor amount at the bottom of the document (number only)",
-                  "ai_translation": "Extract ONLY GENERAL notes, warnings, or instructions found at the very bottom of the page (e.g., office contacts, general silicone warnings). Translate to Ukrainian. DO NOT put specific line item notes here.",
+                  "ai_translation": "Extract ONLY GENERAL notes, warnings, or instructions found at the very bottom or top of the page (e.g., office contacts, general silicone warnings). Translate to Ukrainian. DO NOT put specific line item notes here.",
                   "work_types": [
                     {
-                      "name": "Clean name of the work (e.g., 'Carpet Install', 'LVP Click', 'Flush Vents')",
+                      "name": "Clean name of the work (e.g., 'Carpet Install', 'LVP Click', 'LVP Locking Labor')",
                       "area": "Specific zone (e.g., 'Basement', 'Main Floor'). If not specified, leave empty string.",
                       "sq_ft": "Quantity / SqFt (number only). Return 0 if missing.",
                       "rate": "Unit Price / Rate (number only). Return 0 if missing.",
@@ -89,7 +90,14 @@ serve(async (req) => {
       throw new Error(`OpenAI Error: ${data.error.message}`);
     }
 
-    const parsedContent = JSON.parse(data.choices[0].message.content);
+    // Додано безпечний парсинг JSON
+    let parsedContent;
+    try {
+      parsedContent = JSON.parse(data.choices[0].message.content);
+    } catch (parseError) {
+      throw new Error("Не вдалося розпарсити відповідь від OpenAI як JSON");
+    }
+
     return new Response(JSON.stringify(parsedContent), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

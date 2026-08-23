@@ -6,13 +6,12 @@ import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
 
 const LoginPage = () => {
-  const [phone, setPhone] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Якщо користувач вже авторизований, одразу перенаправляємо його на головну сторінку
   if (user) {
     return <Navigate to="/" replace />;
   }
@@ -22,15 +21,19 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      // Очищаємо номер від зайвих символів
-      const cleanPhone = phone.replace(/\D/g, "");
+      let emailToSubmit = identifier.trim();
 
-      if (cleanPhone.length < 4) {
-        throw new Error("Невірний формат номера телефону.");
+      // Перевіряємо, чи введено пошту (чи є символ '@')
+      if (!emailToSubmit.includes("@")) {
+        // Якщо це не пошта, обробляємо як номер телефону
+        const cleanPhone = emailToSubmit.replace(/\D/g, "");
+
+        if (cleanPhone.length < 4) {
+          throw new Error("Невірний формат номера телефону.");
+        }
+
+        emailToSubmit = `${cleanPhone}@flooringboss.app`;
       }
-
-      // Формуємо email для Supabase
-      const emailToSubmit = `${cleanPhone}@flooringboss.app`;
 
       const { error } = await supabase.auth.signInWithPassword({
         email: emailToSubmit,
@@ -43,7 +46,7 @@ const LoginPage = () => {
       navigate("/");
     } catch (error) {
       console.error("Помилка входу:", error.message);
-      toast.error("Неправильний номер телефону або пароль.");
+      toast.error("Неправильний логін або пароль.");
     } finally {
       setLoading(false);
     }
@@ -87,9 +90,9 @@ const LoginPage = () => {
           <input
             type="text"
             required
-            placeholder="Номер телефону (напр. 1587...)"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Телефон або Email"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             style={{
               width: "100%",
               padding: "12px",
@@ -137,7 +140,6 @@ const LoginPage = () => {
           </button>
         </form>
 
-        {/* Посилання на реєстрацію нового працівника */}
         <div
           style={{ marginTop: "20px", textAlign: "center", fontSize: "0.9rem" }}
         >

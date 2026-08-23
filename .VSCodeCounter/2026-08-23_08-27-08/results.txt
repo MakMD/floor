@@ -1,0 +1,231 @@
+Date : 2026-08-23 08:27:08
+Directory : d:\work2026\floor
+Total : 144 files,  23518 codes, 491 comments, 2200 blanks, all 26209 lines
+
+Languages
++----------------+------------+------------+------------+------------+------------+
+| language       | files      | code       | comment    | blank      | total      |
++----------------+------------+------------+------------+------------+------------+
+| JavaScript JSX |         68 |     10,259 |        316 |      1,094 |     11,669 |
+| PostCSS        |         56 |      6,913 |        161 |      1,032 |      8,106 |
+| JSON           |          6 |      5,932 |          0 |          5 |      5,937 |
+| TypeScript     |          2 |        176 |          1 |         29 |        206 |
+| JavaScript     |          6 |        165 |         13 |         35 |        213 |
+| SVG            |          3 |         46 |          0 |          0 |         46 |
+| HTML           |          1 |         19 |          0 |          1 |         20 |
+| Markdown       |          1 |          5 |          0 |          4 |          9 |
+| Dotenv         |          1 |          3 |          0 |          0 |          3 |
++----------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                   | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                      |        144 |     23,518 |        491 |      2,200 |     26,209 |
+| . (Files)                                                                              |         10 |      6,100 |         11 |         37 |      6,148 |
+| public                                                                                 |          3 |         46 |          0 |          0 |         46 |
+| src                                                                                    |        126 |     17,186 |        479 |      2,132 |     19,797 |
+| src (Files)                                                                            |          2 |         18 |          1 |          7 |         26 |
+| src\Pages                                                                              |         33 |      9,181 |        136 |        991 |     10,308 |
+| src\components                                                                         |         76 |      7,232 |        264 |        990 |      8,486 |
+| src\components\AddCompanyForm                                                          |          1 |         67 |          1 |         12 |         80 |
+| src\components\AddressFilter                                                           |          2 |         71 |          1 |         10 |         82 |
+| src\components\AddressHistory                                                          |          2 |         50 |         54 |         10 |        114 |
+| src\components\AddressSection                                                          |          2 |         48 |          0 |          9 |         57 |
+| src\components\AdminListManager                                                        |          2 |        166 |          3 |         24 |        193 |
+| src\components\App                                                                     |          2 |        485 |         15 |         46 |        546 |
+| src\components\AutocompleteInput                                                       |          2 |        144 |          1 |         20 |        165 |
+| src\components\CompanyList                                                             |          2 |        183 |          2 |         20 |        205 |
+| src\components\CompanySection                                                          |          1 |         18 |          0 |          4 |         22 |
+| src\components\CreateCompanyForm                                                       |          2 |        105 |          2 |         16 |        123 |
+| src\components\CreatePersonForm                                                        |          2 |         86 |          4 |         16 |        106 |
+| src\components\CreateTableForm                                                         |          2 |         32 |          0 |          6 |         38 |
+| src\components\EmptyState                                                              |          2 |         29 |          2 |          6 |         37 |
+| src\components\FileUpload                                                              |          2 |         66 |          5 |         14 |         85 |
+| src\components\Header                                                                  |          2 |        714 |         18 |        100 |        832 |
+| src\components\InvoiceDetailsModal                                                     |          2 |         79 |          2 |         14 |         95 |
+| src\components\InvoiceList                                                             |          2 |         30 |         30 |          9 |         69 |
+| src\components\LoginModal                                                              |          2 |        160 |          4 |         26 |        190 |
+| src\components\MaterialsManager                                                        |          2 |        203 |          2 |         28 |        233 |
+| src\components\Modal                                                                   |          2 |        101 |          4 |         13 |        118 |
+| src\components\NewCompanyTablePage                                                     |          6 |        984 |         47 |        134 |      1,165 |
+| src\components\PeopleList                                                              |          2 |        292 |          4 |         33 |        329 |
+| src\components\PeopleSection                                                           |          2 |        273 |          2 |         38 |        313 |
+| src\components\PersonDetailsModal                                                      |          2 |        301 |          4 |         42 |        347 |
+| src\components\PersonPicker                                                            |          2 |        230 |          2 |         27 |        259 |
+| src\components\PersonStats                                                             |          2 |         90 |          2 |         15 |        107 |
+| src\components\PhotoUploader                                                           |          2 |        164 |          3 |         27 |        194 |
+| src\components\ProtectedRoute                                                          |          1 |         29 |          4 |          7 |         40 |
+| src\components\ReminderPanel                                                           |          2 |        307 |          8 |         42 |        357 |
+| src\components\SearchTables                                                            |          1 |          0 |          0 |          1 |          1 |
+| src\components\SkeletonLoader                                                          |          2 |         57 |          2 |         10 |         69 |
+| src\components\StaticCompanyInfo                                                       |          2 |         14 |          1 |          3 |         18 |
+| src\components\StatsCard                                                               |          2 |        226 |          3 |         28 |        257 |
+| src\components\StatsPanel                                                              |          2 |         70 |          2 |          6 |         78 |
+| src\components\ThemeToggleButton                                                       |          2 |         32 |          2 |          5 |         39 |
+| src\components\WorkOrdersManager                                                       |          2 |        313 |          1 |         37 |        351 |
+| src\components\WorkTypesManager                                                        |          2 |        376 |          8 |         50 |        434 |
+| src\components\WorkerProfileModal                                                      |          2 |        637 |         19 |         82 |        738 |
+| src\contexts                                                                           |          2 |        110 |          4 |         23 |        137 |
+| src\hooks                                                                              |          5 |        212 |          8 |         39 |        259 |
+| src\layouts                                                                            |          2 |         60 |          4 |          9 |         73 |
+| src\services                                                                           |          2 |        250 |         52 |         52 |        354 |
+| src\styles                                                                             |          2 |         97 |          8 |         15 |        120 |
+| src\utils                                                                              |          2 |         26 |          2 |          6 |         34 |
+| supabase                                                                               |          5 |        186 |          1 |         31 |        218 |
+| supabase\.temp                                                                         |          1 |          1 |          0 |          0 |          1 |
+| supabase\functions                                                                     |          4 |        185 |          1 |         31 |        217 |
+| supabase\functions\scan-work-order                                                     |          2 |        107 |          1 |         11 |        119 |
+| supabase\functions\send-whatsapp-notification                                          |          2 |         78 |          0 |         20 |         98 |
++----------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
+| filename                                                                               | language       | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
+| d:\work2026\floor\.env                                                                 | Dotenv         |          3 |          0 |          0 |          3 |
+| d:\work2026\floor\.eslintrc.cjs                                                        | JavaScript     |         21 |          0 |          1 |         22 |
+| d:\work2026\floor\README.md                                                            | Markdown       |          5 |          0 |          4 |          9 |
+| d:\work2026\floor\createWorkerAccounts.js                                              | JavaScript     |        101 |         10 |         22 |        133 |
+| d:\work2026\floor\index.css                                                            | PostCSS        |         21 |          0 |          4 |         25 |
+| d:\work2026\floor\index.html                                                           | HTML           |         19 |          0 |          1 |         20 |
+| d:\work2026\floor\package-lock.json                                                    | JSON           |      5,878 |          0 |          1 |      5,879 |
+| d:\work2026\floor\package.json                                                         | JSON           |         41 |          0 |          1 |         42 |
+| d:\work2026\floor\public\Flooring.Boss.svg                                             | SVG            |          1 |          0 |          0 |          1 |
+| d:\work2026\floor\public\Flooring.Boss3.svg                                            | SVG            |          1 |          0 |          0 |          1 |
+| d:\work2026\floor\public\untitled.svg                                                  | SVG            |         44 |          0 |          0 |         44 |
+| d:\work2026\floor\src\Pages\AddressDetailsPage.jsx                                     | JavaScript JSX |      1,097 |         18 |         71 |      1,186 |
+| d:\work2026\floor\src\Pages\AddressDetailsPage.module.css                              | PostCSS        |        427 |          8 |         57 |        492 |
+| d:\work2026\floor\src\Pages\AddressListPage.jsx                                        | JavaScript JSX |        880 |          2 |         78 |        960 |
+| d:\work2026\floor\src\Pages\AddressListPage.module.css                                 | PostCSS        |        298 |          9 |         47 |        354 |
+| d:\work2026\floor\src\Pages\AdminPage.jsx                                              | JavaScript JSX |         96 |          6 |          8 |        110 |
+| d:\work2026\floor\src\Pages\AdminPage.module.css                                       | PostCSS        |        145 |          4 |         29 |        178 |
+| d:\work2026\floor\src\Pages\CalendarPage.jsx                                           | JavaScript JSX |        470 |          2 |         52 |        524 |
+| d:\work2026\floor\src\Pages\CalendarPage.module.css                                    | PostCSS        |        390 |         21 |         62 |        473 |
+| d:\work2026\floor\src\Pages\CompanyListPage.jsx                                        | JavaScript JSX |         89 |          0 |         10 |         99 |
+| d:\work2026\floor\src\Pages\CompanyListPage.module.css                                 | PostCSS        |         49 |          1 |          7 |         57 |
+| d:\work2026\floor\src\Pages\CompanyTablesPage.jsx                                      | JavaScript JSX |        185 |          1 |         20 |        206 |
+| d:\work2026\floor\src\Pages\CompanyTablesPage.module.css                               | PostCSS        |        150 |          1 |         14 |        165 |
+| d:\work2026\floor\src\Pages\DashboardPage.jsx                                          | JavaScript JSX |        111 |          1 |          9 |        121 |
+| d:\work2026\floor\src\Pages\DashboardPage.module.css                                   | PostCSS        |         55 |          5 |         11 |         71 |
+| d:\work2026\floor\src\Pages\InactiveCompaniesPage.jsx                                  | JavaScript JSX |         65 |          1 |          9 |         75 |
+| d:\work2026\floor\src\Pages\InactiveWorkersPage.jsx                                    | JavaScript JSX |         84 |          0 |          9 |         93 |
+| d:\work2026\floor\src\Pages\InactiveWorkersPage.module.css                             | PostCSS        |         64 |          2 |         10 |         76 |
+| d:\work2026\floor\src\Pages\LoginPage.jsx                                              | JavaScript JSX |        146 |          3 |         17 |        166 |
+| d:\work2026\floor\src\Pages\LoginPage.module.css                                       | PostCSS        |         79 |          0 |         13 |         92 |
+| d:\work2026\floor\src\Pages\PersonPage.jsx                                             | JavaScript JSX |        212 |          2 |         20 |        234 |
+| d:\work2026\floor\src\Pages\PersonPage.module.css                                      | PostCSS        |        197 |          2 |         26 |        225 |
+| d:\work2026\floor\src\Pages\PersonTableDetailsPage.jsx                                 | JavaScript JSX |        502 |          8 |         42 |        552 |
+| d:\work2026\floor\src\Pages\PersonTableDetailsPage.module.css                          | PostCSS        |        253 |          5 |         28 |        286 |
+| d:\work2026\floor\src\Pages\RegisterPage.jsx                                           | JavaScript JSX |        185 |          1 |         12 |        198 |
+| d:\work2026\floor\src\Pages\StoreInvoiceDetailsPage.jsx                                | JavaScript JSX |        347 |          8 |         37 |        392 |
+| d:\work2026\floor\src\Pages\StoreInvoiceDetailsPage.module.css                         | PostCSS        |        197 |          2 |         30 |        229 |
+| d:\work2026\floor\src\Pages\StoreInvoicesListPage.jsx                                  | JavaScript JSX |         77 |          0 |          8 |         85 |
+| d:\work2026\floor\src\Pages\StoreInvoicesListPage.module.css                           | PostCSS        |         88 |          0 |         13 |        101 |
+| d:\work2026\floor\src\Pages\TableDetailsPage.jsx                                       | JavaScript JSX |        329 |          1 |         26 |        356 |
+| d:\work2026\floor\src\Pages\TableDetailsPage.module.css                                | PostCSS        |        129 |          2 |         22 |        153 |
+| d:\work2026\floor\src\Pages\TablePage.module.css                                       | PostCSS        |         88 |          0 |         12 |        100 |
+| d:\work2026\floor\src\Pages\WorkerPortal.jsx                                           | JavaScript JSX |        973 |          3 |         83 |      1,059 |
+| d:\work2026\floor\src\Pages\WorkerPortal.module.css                                    | PostCSS        |        724 |         17 |         99 |        840 |
+| d:\work2026\floor\src\components\AddCompanyForm\AddCompanyForm.jsx                     | JavaScript JSX |         67 |          1 |         12 |         80 |
+| d:\work2026\floor\src\components\AddressFilter\AddressFilter.jsx                       | JavaScript JSX |         37 |          0 |          5 |         42 |
+| d:\work2026\floor\src\components\AddressFilter\AddressFilter.module.css                | PostCSS        |         34 |          1 |          5 |         40 |
+| d:\work2026\floor\src\components\AddressHistory\AddressHistory.jsx                     | JavaScript JSX |         11 |         54 |          4 |         69 |
+| d:\work2026\floor\src\components\AddressHistory\AddressHistory.module.css              | PostCSS        |         39 |          0 |          6 |         45 |
+| d:\work2026\floor\src\components\AddressSection\AddressSection.jsx                     | JavaScript JSX |         18 |          0 |          4 |         22 |
+| d:\work2026\floor\src\components\AddressSection\AddressSection.module.css              | PostCSS        |         30 |          0 |          5 |         35 |
+| d:\work2026\floor\src\components\AdminListManager\AdminListManager.jsx                 | JavaScript JSX |         96 |          0 |         13 |        109 |
+| d:\work2026\floor\src\components\AdminListManager\AdminListManager.module.css          | PostCSS        |         70 |          3 |         11 |         84 |
+| d:\work2026\floor\src\components\App\App.jsx                                           | JavaScript JSX |        245 |          7 |         10 |        262 |
+| d:\work2026\floor\src\components\App\App.module.css                                    | PostCSS        |        240 |          8 |         36 |        284 |
+| d:\work2026\floor\src\components\AutocompleteInput\AutocompleteInput.jsx               | JavaScript JSX |         72 |          1 |         11 |         84 |
+| d:\work2026\floor\src\components\AutocompleteInput\AutocompleteInput.module.css        | PostCSS        |         72 |          0 |          9 |         81 |
+| d:\work2026\floor\src\components\CompanyList\CompanyList.jsx                           | JavaScript JSX |         86 |          1 |          9 |         96 |
+| d:\work2026\floor\src\components\CompanyList\CompanyList.module.css                    | PostCSS        |         97 |          1 |         11 |        109 |
+| d:\work2026\floor\src\components\CompanySection\CompanySection.jsx                     | JavaScript JSX |         18 |          0 |          4 |         22 |
+| d:\work2026\floor\src\components\CreateCompanyForm\CreateCompanyForm.jsx               | JavaScript JSX |         53 |          1 |          8 |         62 |
+| d:\work2026\floor\src\components\CreateCompanyForm\CreateCompanyForm.module.css        | PostCSS        |         52 |          1 |          8 |         61 |
+| d:\work2026\floor\src\components\CreatePersonForm\CreatePersonForm.jsx                 | JavaScript JSX |         54 |          4 |         11 |         69 |
+| d:\work2026\floor\src\components\CreatePersonForm\CreatePersonForm.module.css          | PostCSS        |         32 |          0 |          5 |         37 |
+| d:\work2026\floor\src\components\CreateTableForm\CreateTableForm.jsx                   | JavaScript JSX |         32 |          0 |          5 |         37 |
+| d:\work2026\floor\src\components\CreateTableForm\CreateTableForm.module.css            | PostCSS        |          0 |          0 |          1 |          1 |
+| d:\work2026\floor\src\components\EmptyState\EmptyState.jsx                             | JavaScript JSX |         12 |          1 |          3 |         16 |
+| d:\work2026\floor\src\components\EmptyState\EmptyState.module.css                      | PostCSS        |         17 |          1 |          3 |         21 |
+| d:\work2026\floor\src\components\FileUpload\FileUpload.jsx                             | JavaScript JSX |         40 |          4 |          9 |         53 |
+| d:\work2026\floor\src\components\FileUpload\FileUpload.module.css                      | PostCSS        |         26 |          1 |          5 |         32 |
+| d:\work2026\floor\src\components\Header\Header.jsx                                     | JavaScript JSX |        272 |         10 |         27 |        309 |
+| d:\work2026\floor\src\components\Header\Header.module.css                              | PostCSS        |        442 |          8 |         73 |        523 |
+| d:\work2026\floor\src\components\InvoiceDetailsModal\InvoiceDetailsModal.jsx           | JavaScript JSX |         23 |          1 |          5 |         29 |
+| d:\work2026\floor\src\components\InvoiceDetailsModal\InvoiceDetailsModal.module.css    | PostCSS        |         56 |          1 |          9 |         66 |
+| d:\work2026\floor\src\components\InvoiceList\InvoiceList.jsx                           | JavaScript JSX |          0 |         30 |          3 |         33 |
+| d:\work2026\floor\src\components\InvoiceList\InvoiceList.module.css                    | PostCSS        |         30 |          0 |          6 |         36 |
+| d:\work2026\floor\src\components\LoginModal\LoginModal.jsx                             | JavaScript JSX |         87 |          3 |         13 |        103 |
+| d:\work2026\floor\src\components\LoginModal\LoginModal.module.css                      | PostCSS        |         73 |          1 |         13 |         87 |
+| d:\work2026\floor\src\components\MaterialsManager\MaterialsManager.jsx                 | JavaScript JSX |        127 |          1 |         17 |        145 |
+| d:\work2026\floor\src\components\MaterialsManager\MaterialsManager.module.css          | PostCSS        |         76 |          1 |         11 |         88 |
+| d:\work2026\floor\src\components\Modal\Modal.jsx                                       | JavaScript JSX |         19 |          1 |          3 |         23 |
+| d:\work2026\floor\src\components\Modal\Modal.module.css                                | PostCSS        |         82 |          3 |         10 |         95 |
+| d:\work2026\floor\src\components\NewCompanyTablePage\BelvistaTablesPage.jsx            | JavaScript JSX |        233 |         27 |         28 |        288 |
+| d:\work2026\floor\src\components\NewCompanyTablePage\NewCompanyTableDetails.jsx        | JavaScript JSX |        290 |          7 |         32 |        329 |
+| d:\work2026\floor\src\components\NewCompanyTablePage\NewCompanyTableDetails.module.css | PostCSS        |        173 |          2 |         34 |        209 |
+| d:\work2026\floor\src\components\NewCompanyTablePage\NewCompanyTablePage.module.css    | PostCSS        |        180 |         11 |         26 |        217 |
+| d:\work2026\floor\src\components\NewCompanyTablePage\NewInvoiceForm.jsx                | JavaScript JSX |        108 |          0 |         13 |        121 |
+| d:\work2026\floor\src\components\NewCompanyTablePage\NewInvoiceForm.module.css         | PostCSS        |          0 |          0 |          1 |          1 |
+| d:\work2026\floor\src\components\PeopleList\PeopleList.jsx                             | JavaScript JSX |        151 |          1 |         10 |        162 |
+| d:\work2026\floor\src\components\PeopleList\PeopleList.module.css                      | PostCSS        |        141 |          3 |         23 |        167 |
+| d:\work2026\floor\src\components\PeopleSection\PeopleSection.jsx                       | JavaScript JSX |        166 |          0 |         20 |        186 |
+| d:\work2026\floor\src\components\PeopleSection\PeopleSection.module.css                | PostCSS        |        107 |          2 |         18 |        127 |
+| d:\work2026\floor\src\components\PersonDetailsModal\PersonDetailsModal.jsx             | JavaScript JSX |        140 |          3 |         16 |        159 |
+| d:\work2026\floor\src\components\PersonDetailsModal\PersonDetailsModal.module.css      | PostCSS        |        161 |          1 |         26 |        188 |
+| d:\work2026\floor\src\components\PersonPicker\PersonPicker.jsx                         | JavaScript JSX |        111 |          1 |         13 |        125 |
+| d:\work2026\floor\src\components\PersonPicker\PersonPicker.module.css                  | PostCSS        |        119 |          1 |         14 |        134 |
+| d:\work2026\floor\src\components\PersonStats\PersonStats.jsx                           | JavaScript JSX |         34 |          1 |          4 |         39 |
+| d:\work2026\floor\src\components\PersonStats\PersonStats.module.css                    | PostCSS        |         56 |          1 |         11 |         68 |
+| d:\work2026\floor\src\components\PhotoUploader\PhotoUploader.jsx                       | JavaScript JSX |        100 |          3 |         18 |        121 |
+| d:\work2026\floor\src\components\PhotoUploader\PhotoUploader.module.css                | PostCSS        |         64 |          0 |          9 |         73 |
+| d:\work2026\floor\src\components\ProtectedRoute\AdminRoute.jsx                         | JavaScript JSX |         29 |          4 |          7 |         40 |
+| d:\work2026\floor\src\components\ReminderPanel\ReminderPanel.jsx                       | JavaScript JSX |        129 |          3 |         16 |        148 |
+| d:\work2026\floor\src\components\ReminderPanel\ReminderPanel.module.css                | PostCSS        |        178 |          5 |         26 |        209 |
+| d:\work2026\floor\src\components\SearchTables\SearchTables.jsx                         | JavaScript JSX |          0 |          0 |          1 |          1 |
+| d:\work2026\floor\src\components\SkeletonLoader\SkeletonLoader.jsx                     | JavaScript JSX |         18 |          1 |          4 |         23 |
+| d:\work2026\floor\src\components\SkeletonLoader\SkeletonLoader.module.css              | PostCSS        |         39 |          1 |          6 |         46 |
+| d:\work2026\floor\src\components\StaticCompanyInfo\StaticCompanyInfo.jsx               | JavaScript JSX |         14 |          1 |          2 |         17 |
+| d:\work2026\floor\src\components\StaticCompanyInfo\StaticCompanyInfo.module.css        | PostCSS        |          0 |          0 |          1 |          1 |
+| d:\work2026\floor\src\components\StatsCard\StatsCard.jsx                               | JavaScript JSX |         84 |          1 |          9 |         94 |
+| d:\work2026\floor\src\components\StatsCard\StatsCard.module.css                        | PostCSS        |        142 |          2 |         19 |        163 |
+| d:\work2026\floor\src\components\StatsPanel\StatsPanel.jsx                             | JavaScript JSX |         38 |          1 |          5 |         44 |
+| d:\work2026\floor\src\components\StatsPanel\StatsPanel.module.css                      | PostCSS        |         32 |          1 |          1 |         34 |
+| d:\work2026\floor\src\components\ThemeToggleButton\ThemeToggleButton.jsx               | JavaScript JSX |         15 |          1 |          3 |         19 |
+| d:\work2026\floor\src\components\ThemeToggleButton\ThemeToggleButton.module.css        | PostCSS        |         17 |          1 |          2 |         20 |
+| d:\work2026\floor\src\components\WorkOrdersManager\WorkOrdersManager.jsx               | JavaScript JSX |        246 |          1 |         25 |        272 |
+| d:\work2026\floor\src\components\WorkOrdersManager\WorkOrdersManager.module.css        | PostCSS        |         67 |          0 |         12 |         79 |
+| d:\work2026\floor\src\components\WorkTypesManager\WorkTypesManager.jsx                 | JavaScript JSX |        260 |          3 |         29 |        292 |
+| d:\work2026\floor\src\components\WorkTypesManager\WorkTypesManager.module.css          | PostCSS        |        116 |          5 |         21 |        142 |
+| d:\work2026\floor\src\components\WorkerProfileModal\WorkerProfileModal.jsx             | JavaScript JSX |        248 |         11 |         29 |        288 |
+| d:\work2026\floor\src\components\WorkerProfileModal\WorkerProfileModal.module.css      | PostCSS        |        389 |          8 |         53 |        450 |
+| d:\work2026\floor\src\contexts\AuthContext.jsx                                         | JavaScript JSX |         90 |          4 |         16 |        110 |
+| d:\work2026\floor\src\contexts\ThemeContext.jsx                                        | JavaScript JSX |         20 |          0 |          7 |         27 |
+| d:\work2026\floor\src\hooks\useAddresses.jsx                                           | JavaScript JSX |         40 |          0 |          8 |         48 |
+| d:\work2026\floor\src\hooks\useAdminLists.jsx                                          | JavaScript JSX |         43 |          0 |          7 |         50 |
+| d:\work2026\floor\src\hooks\useAnalytics.jsx                                           | JavaScript JSX |         71 |          3 |          6 |         80 |
+| d:\work2026\floor\src\hooks\useCompanies.jsx                                           | JavaScript JSX |         23 |          2 |          7 |         32 |
+| d:\work2026\floor\src\hooks\usePeople.jsx                                              | JavaScript JSX |         35 |          3 |         11 |         49 |
+| d:\work2026\floor\src\layouts\AuthLayout.jsx                                           | JavaScript JSX |         47 |          4 |          6 |         57 |
+| d:\work2026\floor\src\layouts\AuthLayout.module.css                                    | PostCSS        |         13 |          0 |          3 |         16 |
+| d:\work2026\floor\src\main.jsx                                                         | JavaScript JSX |          9 |          1 |          3 |         13 |
+| d:\work2026\floor\src\services\invoiceService.jsx                                      | JavaScript JSX |        119 |         23 |         25 |        167 |
+| d:\work2026\floor\src\services\workTypeService.jsx                                     | JavaScript JSX |        131 |         29 |         27 |        187 |
+| d:\work2026\floor\src\styles\common.module.css                                         | PostCSS        |         68 |          3 |          9 |         80 |
+| d:\work2026\floor\src\styles\variables.css                                             | PostCSS        |         29 |          5 |          6 |         40 |
+| d:\work2026\floor\src\supabaseClient.js                                                | JavaScript     |          9 |          0 |          4 |         13 |
+| d:\work2026\floor\src\utils\constants.js                                               | JavaScript     |         14 |          0 |          3 |         17 |
+| d:\work2026\floor\src\utils\validations.js                                             | JavaScript     |         12 |          2 |          3 |         17 |
+| d:\work2026\floor\supabase\.temp\linked-project.json                                   | JSON           |          1 |          0 |          0 |          1 |
+| d:\work2026\floor\supabase\functions\scan-work-order\deno.json                         | JSON           |          6 |          0 |          1 |          7 |
+| d:\work2026\floor\supabase\functions\scan-work-order\index.ts                          | TypeScript     |        101 |          1 |         10 |        112 |
+| d:\work2026\floor\supabase\functions\send-whatsapp-notification\deno.json              | JSON           |          3 |          0 |          1 |          4 |
+| d:\work2026\floor\supabase\functions\send-whatsapp-notification\index.ts               | TypeScript     |         75 |          0 |         19 |         94 |
+| d:\work2026\floor\vercel.json                                                          | JSON           |          3 |          0 |          1 |          4 |
+| d:\work2026\floor\vite.config.js                                                       | JavaScript     |          8 |          1 |          2 |         11 |
+| Total                                                                                  |                |     23,518 |        491 |      2,200 |     26,209 |
++----------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
