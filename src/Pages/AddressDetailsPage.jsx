@@ -146,7 +146,6 @@ const AddressDetailsPage = () => {
   const [expandedReports, setExpandedReports] = useState({});
   const [selectedImage, setSelectedImage] = useState(null);
 
-  // Стейти для зуму та перетягування зображення
   const [zoomScale, setZoomScale] = useState(1);
   const [imgPosition, setImgPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -259,7 +258,6 @@ const AddressDetailsPage = () => {
     fetchData();
   }, [fetchData]);
 
-  // Логіка масштабування та перетягування
   const handleWheel = (e) => {
     e.preventDefault();
     const zoomFactor = 1.1;
@@ -620,7 +618,6 @@ const AddressDetailsPage = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.mobileLayout}>
-        {/* ЛАЙТБОКС ЗІ ЗУМОМ ТА ПЕРЕТЯГУВАННЯМ */}
         {selectedImage && (
           <div
             className={styles.lightbox}
@@ -1136,6 +1133,7 @@ const AddressDetailsPage = () => {
                                 </span>
                               </div>
 
+                              {/* ВИПРАВЛЕНО: Надійне відображення назви роботи біля кожного звіту */}
                               <div style={{ marginTop: "4px" }}>
                                 {(() => {
                                   let taskName = null;
