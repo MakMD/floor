@@ -12,10 +12,26 @@
   gap: 12px;
 }
 
+.workTypeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px;
+  transition: box-shadow 0.2s;
+}
+
+.workTypeBlock:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
 .workTypeItem,
 .addWorkTypeForm {
   display: grid;
-  grid-template-columns: 3fr 2fr 1fr auto;
+  /* ЗМІНЕНО: зменшено першу колонку, збільшено третю (сума) */
+  grid-template-columns: 2fr 2fr 1.5fr auto;
   gap: 10px;
   align-items: center;
 }
@@ -37,7 +53,7 @@
 }
 
 .inputAmount {
-  max-width: 100px;
+  max-width: 150px; /* Збільшено з 100px */
 }
 
 .actions {
@@ -82,37 +98,6 @@
   background-color: #d1e7dd;
 }
 
-/* Адаптивність */
-@media (max-width: 768px) {
-  .workTypeItem,
-  .addWorkTypeForm {
-    grid-template-columns: 1fr;
-  }
-}
-/* src/components/WorkTypesManager/WorkTypesManager.module.css */
-
-.workTypeBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background-color: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 10px;
-  transition: box-shadow 0.2s;
-}
-
-.workTypeBlock:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.workTypeItem {
-  display: grid;
-  grid-template-columns: 3fr 2fr 1fr auto;
-  gap: 10px;
-  align-items: center;
-}
-
 /* Новий блок для AI нотаток під роботою */
 .lineNotesBox {
   display: flex;
@@ -138,4 +123,13 @@
   white-space: pre-wrap; /* Зберігаємо переноси рядків від ШІ */
 }
 
-/* Інші існуючі класи залишаються без змін... */
+/* Адаптивність */
+@media (max-width: 768px) {
+  .workTypeItem,
+  .addWorkTypeForm {
+    grid-template-columns: 1fr;
+  }
+  .inputAmount {
+    max-width: 100%;
+  }
+}

@@ -848,15 +848,7 @@ const AddressDetailsPage = () => {
               </div>
             )}
 
-            {/* 3. MATERIALS */}
-            <div className={styles.detailCard}>
-              <h3>Materials</h3>
-              <div className={styles.cardContentWrapper}>
-                <MaterialsManager addressId={addressId} />
-              </div>
-            </div>
-
-            {/* 4. WORK TYPES & PAYMENTS */}
+            {/* 3. WORK TYPES & PAYMENTS */}
             <div className={styles.detailCard}>
               <h3>Work Types & Payments</h3>
               <div className={styles.cardContentWrapper}>
@@ -867,7 +859,7 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* 5. WORK ORDERS */}
+            {/* 4. WORK ORDERS */}
             <div className={styles.detailCard}>
               <div className={styles.cardHeader}>
                 <h3>Work Orders</h3>
@@ -1133,7 +1125,6 @@ const AddressDetailsPage = () => {
                                 </span>
                               </div>
 
-                              {/* ВИПРАВЛЕНО: Надійне відображення назви роботи біля кожного звіту */}
                               <div style={{ marginTop: "4px" }}>
                                 {(() => {
                                   let taskName = null;
@@ -1381,6 +1372,14 @@ const AddressDetailsPage = () => {
                     No files uploaded yet.
                   </p>
                 )}
+              </div>
+            </div>
+
+            {/* 4. MATERIALS */}
+            <div className={styles.detailCard}>
+              <h3>Materials</h3>
+              <div className={styles.cardContentWrapper}>
+                <MaterialsManager addressId={addressId} />
               </div>
             </div>
           </div>

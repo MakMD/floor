@@ -24,6 +24,27 @@ serve(async (req) => {
       );
     }
 
+    // --- ПЕРЕВІРКА ДАТИ ДЛЯ БЛОКУВАННЯ ВІДПРАВКИ СТАРИМ ДАТАМ ---
+    if (date) {
+      const projectDate = new Date(date);
+      const today = new Date();
+      // Обнуляємо час, щоб порівнювати лише дні
+      projectDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+
+      // Якщо дата проєкту менша за сьогоднішню — не відправляємо SMS
+      if (projectDate < today) {
+        console.log("Дата в минулому. Пропускаємо відправку SMS.");
+        return new Response(
+          JSON.stringify({ success: true, messageId: "skipped_past_date" }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          },
+        );
+      }
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
