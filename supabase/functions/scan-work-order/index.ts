@@ -22,6 +22,8 @@ serve(async (req) => {
       throw new Error("Фотографія не була передана");
     }
 
+    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -30,53 +32,140 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "gpt-4o",
-        response_format: { type: "json_object" },
-        temperature: 0.1, // Жорстка точність, щоб уникнути фантазій ШІ
+        temperature: 0.1,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "work_order_schema",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                type: {
+                  type: "string",
+                  description:
+                    "Return 'Address' for standard installs, or 'Service' if it's a repair/service ticket",
+                },
+                work_order_number: {
+                  type: "string",
+                  description: "Extract the Order Number or Job Number",
+                },
+                builder_name: {
+                  type: "string",
+                  description:
+                    "Extract the builder/client name from 'Reference' or 'Sold To'.",
+                },
+                store_name: {
+                  type: "string",
+                  description: "Identify the store issuing the ticket",
+                },
+                address: {
+                  type: "string",
+                  description:
+                    "Full job site address from 'Ship To' or 'Install At'",
+                },
+                date: {
+                  type: "string",
+                  description:
+                    "Extract the date. Format strictly as YYYY-MM-DD. Ensure year is 2026.",
+                },
+                total_amount: {
+                  type: "number",
+                  description:
+                    "Total labor amount at the bottom of the document",
+                },
+                ai_translation: {
+                  type: "string",
+                  description:
+                    "Translate ONLY GENERAL notes into Ukrainian. STRICT FORMAT: 'Ukrainian translation (ORIGINAL ENGLISH TEXT)'. Do not put line-item specific notes here.",
+                },
+                work_types: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      name: {
+                        type: "string",
+                        description:
+                          "Clean name of the work (e.g., 'LVP CLICK INSTALL')",
+                      },
+                      area: {
+                        type: "string",
+                        description:
+                          "Specific zone if mentioned on the same line. Empty string if not.",
+                      },
+                      sq_ft: {
+                        type: "number",
+                        description: "Quantity / SqFt. 0 if missing.",
+                      },
+                      rate: {
+                        type: "number",
+                        description: "Unit Price / Rate. 0 if missing.",
+                      },
+                      amount: {
+                        type: "number",
+                        description:
+                          "Total/Extended Price for this line. 0 if missing.",
+                      },
+                      line_notes: {
+                        type: "string",
+                        description:
+                          "Translate text found directly under this item into Ukrainian. STRICT FORMAT: 'Ukrainian translation (ORIGINAL ENGLISH TEXT)'. Empty string if none.",
+                      },
+                    },
+                    required: [
+                      "name",
+                      "area",
+                      "sq_ft",
+                      "rate",
+                      "amount",
+                      "line_notes",
+                    ],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: [
+                "type",
+                "work_order_number",
+                "builder_name",
+                "store_name",
+                "address",
+                "date",
+                "total_amount",
+                "ai_translation",
+                "work_types",
+              ],
+              additionalProperties: false,
+            },
+          },
+        },
         messages: [
           {
             role: "system",
             content:
-              "You are an expert AI assistant specialized in extracting highly accurate data from construction and flooring work orders. You meticulously analyze tables and never drop line notes. Output ONLY a valid JSON object matching the exact requested schema.",
+              "You are an OCR and data extraction specialist for construction work orders. You extract data exactly as seen. CRITICAL RULE FOR TRANSLATIONS: Whenever you translate text to Ukrainian (for 'line_notes' or 'ai_translation'), you MUST ALWAYS append the exact original English text in parentheses. Example output format: 'Весь головний поверх (WHOLE MAIN FLOOR)'. Never output only Ukrainian.",
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: `Analyze the provided work order image carefully. Extract all requested fields. Pay special attention to the line items table.
-
-                CRITICAL INSTRUCTIONS FOR TABLE READING & NOTES:
-                1. The table contains distinct "blocks" or rows of work. A primary row (e.g., LVP, CARPET, LABOR) is often followed immediately by sub-rows containing critical notes for that specific item (e.g., "Order Line Notes:", "INSTALL AREAS:").
-                2. You MUST attach these sub-row notes to their corresponding primary row in the 'line_notes' field. Do NOT ignore them.
-                3. Do NOT merge different primary rows together. Treat each main material/labor line as a separate object in the 'work_types' array.
-                4. Numeric columns are ordered as: Quantity/SqFt, Unit Price/Rate, Extended Price/Total.
-                5. Translate all 'line_notes' and the 'ai_translation' (general instructions) into Ukrainian.
-
-                JSON Structure required:
-                { 
-                  "type": "Return 'Address' for standard installs, or 'Service' if it's a repair/service ticket", 
-                  "work_order_number": "Extract the Order Number or Job Number",
-                  "builder_name": "Extract the builder/client name from 'Reference' or 'Sold To'.", 
-                  "store_name": "Identify the store issuing the ticket", 
-                  "address": "Full job site address from 'Ship To' or 'Install At'", 
-                  "date": "Extract the date. Format strictly as YYYY-MM-DD. Ensure year is 2026.", 
-                  "total_amount": "Total labor amount at the bottom of the document (number only)",
-                  "ai_translation": "Extract ONLY GENERAL notes, warnings, or instructions found at the very bottom or top of the page (e.g., office contacts, general silicone warnings). Translate to Ukrainian. DO NOT put specific line item notes here.",
-                  "work_types": [
-                    {
-                      "name": "Clean name of the work (e.g., 'Carpet Install', 'LVP Click', 'LVP Locking Labor')",
-                      "area": "Specific zone (e.g., 'Basement', 'Main Floor'). If not specified, leave empty string.",
-                      "sq_ft": "Quantity / SqFt (number only). Return 0 if missing.",
-                      "rate": "Unit Price / Rate (number only). Return 0 if missing.",
-                      "amount": "Total/Extended Price for this line (number only). Return 0 if missing.",
-                      "line_notes": "Extract any specific 'Order Line Notes', 'Install Areas', or details directly underneath this specific item in its block. Translate these notes to Ukrainian. If none, leave empty string."
-                    }
-                  ]
-                }`,
+                text: `Analyze this work order and extract the data according to the schema. 
+                
+                CRITICAL INSTRUCTIONS FOR 'line_notes' EXTRACTION:
+                1. Identifying Items: Every new work item starts with the text "Customer Order Line Number:".
+                2. Finding Notes: Look directly BENEATH the item description.
+                3. The Problem: Line notes DO NOT have numbers in the Quantity/Rate/Labor columns.
+                4. The Rule: Any text physically located between one "Customer Order Line Number" and the next one (or the final subtotal line), which lacks its own price/quantity, MUST be captured and concatenated into the 'line_notes' field of the item immediately above it.
+                5. Translation & Formatting: Translate ALL 'line_notes' and 'ai_translation' notes into Ukrainian. YOU MUST USE THIS EXACT FORMAT: [Ukrainian Translation] ([ORIGINAL ENGLISH TEXT]). If you fail to include the English text in parentheses, the system will break.`,
               },
               {
                 type: "image_url",
-                image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+                image_url: {
+                  url: `data:image/jpeg;base64,${cleanBase64}`,
+                  detail: "high",
+                },
               },
             ],
           },
@@ -90,19 +179,14 @@ serve(async (req) => {
       throw new Error(`OpenAI Error: ${data.error.message}`);
     }
 
-    // Додано безпечний парсинг JSON
-    let parsedContent;
-    try {
-      parsedContent = JSON.parse(data.choices[0].message.content);
-    } catch (parseError) {
-      throw new Error("Не вдалося розпарсити відповідь від OpenAI як JSON");
-    }
+    const parsedContent = JSON.parse(data.choices[0].message.content);
 
     return new Response(JSON.stringify(parsedContent), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
+    console.error("Work Order Extraction Error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,

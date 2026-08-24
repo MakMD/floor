@@ -1,4 +1,4 @@
-// src/pages/WorkerPortal.jsx
+// src/Pages/WorkerPortal.jsx
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
@@ -16,6 +16,9 @@ import {
   FaSearch,
   FaCheckDouble,
   FaCopy,
+  FaChevronDown,
+  FaChevronUp,
+  FaWrench,
   FaInfoCircle,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
@@ -29,11 +32,18 @@ const WorkerPortal = () => {
   const [loading, setLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const [myProjects, setMyProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState(null);
+  const [myTasks, setMyTasks] = useState([]);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [workFilter, setWorkFilter] = useState("active");
+
+  const [expandedGroups, setExpandedGroups] = useState({
+    today: true,
+    tomorrow: true,
+    upcoming: true,
+    past: false,
+  });
 
   const [myTables, setMyTables] = useState([]);
   const [loadingTables, setLoadingTables] = useState(false);
@@ -112,7 +122,7 @@ const WorkerPortal = () => {
     }
   }, [userId]);
 
-  const fetchMyProjects = useCallback(async () => {
+  const fetchMyTasks = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
     try {
@@ -125,74 +135,58 @@ const WorkerPortal = () => {
       if (personError) throw personError;
 
       if (!personRecords || personRecords.length === 0) {
-        setMyProjects([]);
+        setMyTasks([]);
         return;
       }
 
       const workerId = personRecords[0].id;
-      let allAddressIds = [];
 
-      const { data: wtData } = await supabase
+      const { data: tasks, error: tasksError } = await supabase
         .from("work_types")
-        .select("address_id")
-        .eq("person_id", workerId);
-
-      if (wtData)
-        allAddressIds = [
-          ...allAddressIds,
-          ...wtData.map((wt) => wt.address_id),
-        ];
-
-      const { data: addrData } = await supabase
-        .from("addresses")
-        .select("id")
-        .eq("worker_id", workerId);
-
-      if (addrData)
-        allAddressIds = [...allAddressIds, ...addrData.map((a) => a.id)];
-
-      const uniqueAddressIds = [...new Set(allAddressIds.filter(Boolean))];
-
-      if (uniqueAddressIds.length === 0) {
-        setMyProjects([]);
-        return;
-      }
-
-      const { data: projects, error: projError } = await supabase
-        .from("addresses")
         .select(
           `
-          *,
-          builders(name),
-          work_types (
+          id,
+          person_id,
+          payment_amount,
+          notes,
+          work_type_templates (name),
+          addresses!inner (
             id,
-            person_id,
-            payment_amount,
-            notes,
-            work_type_templates (name)
+            address,
+            date,
+            status,
+            is_deleted,
+            ai_translation,
+            work_order_number
           )
         `,
         )
-        .in("id", uniqueAddressIds)
-        .eq("is_deleted", false)
-        .order("date", { ascending: true });
+        .eq("person_id", workerId)
+        .eq("addresses.is_deleted", false);
 
-      if (projError) throw projError;
+      if (tasksError) {
+        console.error("Помилка Supabase:", tasksError);
+        throw tasksError;
+      }
 
-      const processedProjects = projects
-        ?.map((proj) => {
-          const myWorkTypes =
-            proj.work_types?.filter((wt) => wt.person_id === workerId) || [];
-          return { ...proj, myWorkTypes };
-        })
-        .filter(
-          (proj) =>
-            proj.myWorkTypes.length > 0 || proj.project_type === "Service",
-        );
+      const formattedTasks = tasks.map((task) => ({
+        id: task.id,
+        address_id: task.addresses.id,
+        address: task.addresses.address,
+        date: task.addresses.date,
+        work_order_number: task.addresses.work_order_number,
+        task_name: task.work_type_templates?.name || "Невідома робота",
+        payment_amount: task.payment_amount,
+        notes: task.notes,
+        ai_translation: task.addresses.ai_translation,
+        status: task.status || "Assigned",
+      }));
 
-      setMyProjects(processedProjects || []);
+      formattedTasks.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      setMyTasks(formattedTasks);
     } catch (error) {
-      console.error("Помилка завантаження об'єктів:", error.message);
+      console.error("Помилка завантаження завдань:", error.message);
     } finally {
       setLoading(false);
     }
@@ -250,8 +244,8 @@ const WorkerPortal = () => {
   }, [isInitialized, fetchNotifications]);
 
   useEffect(() => {
-    if (isInitialized && activeTab === "work") fetchMyProjects();
-  }, [activeTab, isInitialized, fetchMyProjects]);
+    if (isInitialized && activeTab === "work") fetchMyTasks();
+  }, [activeTab, isInitialized, fetchMyTasks]);
 
   useEffect(() => {
     if (isInitialized && activeTab === "profile") fetchWorkerDocuments();
@@ -320,33 +314,36 @@ const WorkerPortal = () => {
 
   const handleWorkSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedProject) return;
+    if (!selectedTask) return;
     setLoading(true);
     try {
-      const finalNotes = `[Статус від працівника: ${formData.workerStatus}]\n${formData.notes ? formData.notes : "Без додаткових коментарів."}`;
+      const finalNotes = `[Завдання: ${selectedTask.task_name}]\n[Статус від працівника: ${formData.workerStatus}]\n${formData.notes ? formData.notes : "Без додаткових коментарів."}`;
 
-      const { error } = await supabase.from("daily_reports").insert([
-        {
-          worker_id: userId,
-          address_id: selectedProject.id,
-          notes: finalNotes,
-          photos_before: formData.photosBefore,
-          photos_after: formData.photosAfter,
-          report_date: new Date().toISOString(),
-        },
-      ]);
+      const { error: reportError } = await supabase
+        .from("daily_reports")
+        .insert([
+          {
+            worker_id: userId,
+            address_id: selectedTask.address_id,
+            work_type_id: selectedTask.id,
+            notes: finalNotes,
+            photos_before: formData.photosBefore,
+            photos_after: formData.photosAfter,
+            report_date: new Date().toISOString(),
+          },
+        ]);
 
-      if (error) throw error;
+      if (reportError) throw reportError;
 
       toast.success("Звіт успішно надіслано на перевірку!");
-      setSelectedProject(null);
+      setSelectedTask(null);
       setFormData({
         workerStatus: "Ready",
         notes: "",
         photosBefore: [],
         photosAfter: [],
       });
-      fetchMyProjects();
+      fetchMyTasks();
     } catch (error) {
       toast.error("Помилка відправки: " + error.message);
     } finally {
@@ -354,10 +351,37 @@ const WorkerPortal = () => {
     }
   };
 
+  // --- ОЧИЩЕНА ФУНКЦІЯ: Тільки інструкція до конкретної роботи ---
+  const extractRelevantInstruction = (fullText, taskName) => {
+    if (!fullText) return null;
+
+    // Прибираємо секцію з примітками менеджера, якщо вона є в кінці
+    let textToParse = fullText;
+    const managerNoteToken = "⚠️ Примітки від менеджера:";
+    if (fullText.includes(managerNoteToken)) {
+      const idx = fullText.indexOf(managerNoteToken);
+      textToParse = fullText.substring(0, idx);
+    }
+
+    // Розбиваємо текст на блоки по "📍 Зона:"
+    const blocks = textToParse.split("📍 Зона:").filter(Boolean);
+
+    // Шукаємо блок, який містить ім'я нашого завдання
+    for (const block of blocks) {
+      const cleanBlock = ("📍 Зона:" + block).trim();
+      if (cleanBlock.toLowerCase().includes(taskName.toLowerCase())) {
+        return cleanBlock; // Повертаємо виключно інструкцію до цієї роботи
+      }
+    }
+
+    // Якщо точного збігу за назвою не знайдено, повертаємо весь текст (як fallback)
+    return textToParse.trim();
+  };
+
   const getPageTitle = () => {
     switch (activeTab) {
       case "work":
-        return selectedProject ? "Деталі об'єкта" : "Мої об'єкти";
+        return selectedTask ? "Деталі завдання" : "Мої завдання";
       case "profile":
         return "Мій профіль";
       case "invoices":
@@ -369,19 +393,20 @@ const WorkerPortal = () => {
     }
   };
 
-  const filteredProjects = myProjects.filter((p) => {
+  const toggleGroup = (groupName) => {
+    setExpandedGroups((prev) => ({ ...prev, [groupName]: !prev[groupName] }));
+  };
+
+  const filteredTasks = myTasks.filter((t) => {
     const matchesSearch =
-      (p.address || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.work_order_number || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+      (t.address || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.task_name || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTab =
-      workFilter === "active" ? p.status !== "Ready" : p.status === "Ready";
+      workFilter === "active" ? t.status !== "Ready" : t.status === "Ready";
     return matchesSearch && matchesTab;
   });
 
-  // Логіка групування активних проєктів за датами
-  const groupedActiveProjects = useMemo(() => {
+  const groupedActiveTasks = useMemo(() => {
     const todayList = [];
     const tomorrowList = [];
     const upcomingList = [];
@@ -392,20 +417,20 @@ const WorkerPortal = () => {
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
 
-    filteredProjects.forEach((proj) => {
-      if (!proj.date) {
-        upcomingList.push(proj);
+    filteredTasks.forEach((task) => {
+      if (!task.date) {
+        upcomingList.push(task);
         return;
       }
 
-      if (proj.date === todayStr) {
-        todayList.push(proj);
-      } else if (proj.date === tomorrowStr) {
-        tomorrowList.push(proj);
-      } else if (proj.date > todayStr) {
-        upcomingList.push(proj);
+      if (task.date === todayStr) {
+        todayList.push(task);
+      } else if (task.date === tomorrowStr) {
+        tomorrowList.push(task);
+      } else if (task.date > todayStr) {
+        upcomingList.push(task);
       } else {
-        pastList.push(proj);
+        pastList.push(task);
       }
     });
 
@@ -415,43 +440,54 @@ const WorkerPortal = () => {
       upcoming: upcomingList,
       past: pastList,
     };
-  }, [filteredProjects]);
+  }, [filteredTasks]);
 
-  const activeCount = myProjects.filter((p) => p.status !== "Ready").length;
-  const completedCount = myProjects.filter((p) => p.status === "Ready").length;
+  const activeCount = myTasks.filter((t) => t.status !== "Ready").length;
+  const completedCount = myTasks.filter((t) => t.status === "Ready").length;
 
   const folderTotal = tableInvoices.reduce((sum, inv) => {
     const val = parseFloat(inv.total_income || inv.total || 0);
     return sum + (isNaN(val) ? 0 : val);
   }, 0);
 
-  // Допоміжна функція для рендеру картки об'єкта
-  const renderProjectCard = (proj) => (
+  const renderTaskCard = (task) => (
     <div
-      key={proj.id}
+      key={task.id}
       className={styles.projectCard}
-      onClick={() => setSelectedProject(proj)}
+      onClick={() => setSelectedTask(task)}
     >
-      <div className={styles.cardTitle}>
-        WO #{proj.work_order_number || "N/A"} -{" "}
-        {proj.builders?.name || "Unknown"}
+      <div
+        className={styles.cardTitle}
+        style={{
+          color: "var(--color-primary)",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        <FaWrench /> Завдання: {task.task_name}
       </div>
-      <div className={styles.cardAddress}>
+      <div className={styles.cardAddress} style={{ marginTop: "4px" }}>
         <FaMapMarkerAlt className={styles.pinIcon} />
-        <span>{proj.address}</span>
+        <span>{task.address}</span>
       </div>
-      {proj.date && (
-        <div
-          style={{ fontSize: "0.85rem", color: "#666", marginBottom: "8px" }}
-        >
-          📅 {proj.date}
-        </div>
-      )}
+
+      <div
+        style={{
+          fontSize: "0.85rem",
+          color: "#666",
+          marginBottom: "8px",
+          marginTop: "4px",
+        }}
+      >
+        📅 Дата об'єкта: {task.date || "Не вказано"}
+      </div>
+
       <div className={styles.cardBottomRow}>
         <span
-          className={`${styles.statusBadge} ${styles[proj.status?.replace(/\s+/g, "")] || ""}`}
+          className={`${styles.statusBadge} ${styles[task.status?.replace(/\s+/g, "")] || ""}`}
         >
-          {proj.status || "Assigned"}
+          {task.status}
         </span>
       </div>
       <MdOutlineChevronRight className={styles.chevronIcon} />
@@ -484,14 +520,14 @@ const WorkerPortal = () => {
         <div className={styles.contentArea}>
           {activeTab === "work" && (
             <div className={styles.workTab}>
-              {!selectedProject ? (
+              {!selectedTask ? (
                 <>
                   <div className={styles.topControls}>
                     <div className={styles.searchContainer}>
                       <FaSearch className={styles.searchIcon} />
                       <input
                         type="text"
-                        placeholder="Пошук за адресою або WO..."
+                        placeholder="Пошук за адресою або назвою роботи..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className={styles.searchInput}
@@ -515,70 +551,172 @@ const WorkerPortal = () => {
 
                   {loading ? (
                     <p className={styles.infoText}>Завантаження...</p>
-                  ) : filteredProjects.length === 0 ? (
+                  ) : filteredTasks.length === 0 ? (
                     <p className={styles.infoText}>
-                      Немає об'єктів у цій категорії.
+                      Немає завдань у цій категорії.
                     </p>
                   ) : (
                     <div className={styles.projectList}>
                       {workFilter === "active" ? (
                         <>
-                          {groupedActiveProjects.today.length > 0 && (
+                          {groupedActiveTasks.today.length > 0 && (
                             <div className={styles.dateGroup}>
                               <div
                                 className={`${styles.dateGroupHeader} ${styles.todayHeader}`}
+                                onClick={() => toggleGroup("today")}
+                                style={{
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
                               >
-                                🔥 Сьогодні (
-                                {groupedActiveProjects.today.length})
+                                <span>
+                                  🔥 Сьогодні ({groupedActiveTasks.today.length}
+                                  )
+                                </span>
+                                {expandedGroups.today ? (
+                                  <FaChevronUp size={14} />
+                                ) : (
+                                  <FaChevronDown size={14} />
+                                )}
                               </div>
-                              {groupedActiveProjects.today.map((proj) =>
-                                renderProjectCard(proj),
+                              {expandedGroups.today && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "10px",
+                                    marginTop: "10px",
+                                  }}
+                                >
+                                  {groupedActiveTasks.today.map((task) =>
+                                    renderTaskCard(task),
+                                  )}
+                                </div>
                               )}
                             </div>
                           )}
 
-                          {groupedActiveProjects.tomorrow.length > 0 && (
+                          {groupedActiveTasks.tomorrow.length > 0 && (
                             <div className={styles.dateGroup}>
                               <div
                                 className={`${styles.dateGroupHeader} ${styles.tomorrowHeader}`}
+                                onClick={() => toggleGroup("tomorrow")}
+                                style={{
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
                               >
-                                📅 Завтра (
-                                {groupedActiveProjects.tomorrow.length})
+                                <span>
+                                  📅 Завтра (
+                                  {groupedActiveTasks.tomorrow.length})
+                                </span>
+                                {expandedGroups.tomorrow ? (
+                                  <FaChevronUp size={14} />
+                                ) : (
+                                  <FaChevronDown size={14} />
+                                )}
                               </div>
-                              {groupedActiveProjects.tomorrow.map((proj) =>
-                                renderProjectCard(proj),
+                              {expandedGroups.tomorrow && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "10px",
+                                    marginTop: "10px",
+                                  }}
+                                >
+                                  {groupedActiveTasks.tomorrow.map((task) =>
+                                    renderTaskCard(task),
+                                  )}
+                                </div>
                               )}
                             </div>
                           )}
 
-                          {groupedActiveProjects.upcoming.length > 0 && (
+                          {groupedActiveTasks.upcoming.length > 0 && (
                             <div className={styles.dateGroup}>
-                              <div className={styles.dateGroupHeader}>
-                                ⏳ Найближчі (
-                                {groupedActiveProjects.upcoming.length})
+                              <div
+                                className={styles.dateGroupHeader}
+                                onClick={() => toggleGroup("upcoming")}
+                                style={{
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <span>
+                                  ⏳ Найближчі (
+                                  {groupedActiveTasks.upcoming.length})
+                                </span>
+                                {expandedGroups.upcoming ? (
+                                  <FaChevronUp size={14} />
+                                ) : (
+                                  <FaChevronDown size={14} />
+                                )}
                               </div>
-                              {groupedActiveProjects.upcoming.map((proj) =>
-                                renderProjectCard(proj),
+                              {expandedGroups.upcoming && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "10px",
+                                    marginTop: "10px",
+                                  }}
+                                >
+                                  {groupedActiveTasks.upcoming.map((task) =>
+                                    renderTaskCard(task),
+                                  )}
+                                </div>
                               )}
                             </div>
                           )}
 
-                          {groupedActiveProjects.past.length > 0 && (
+                          {groupedActiveTasks.past.length > 0 && (
                             <div className={styles.dateGroup}>
                               <div
                                 className={`${styles.dateGroupHeader} ${styles.pastHeader}`}
+                                onClick={() => toggleGroup("past")}
+                                style={{
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
                               >
-                                ⚠️ Протерміновані / Минулі (
-                                {groupedActiveProjects.past.length})
+                                <span>
+                                  ⚠️ Протерміновані / Минулі (
+                                  {groupedActiveTasks.past.length})
+                                </span>
+                                {expandedGroups.past ? (
+                                  <FaChevronUp size={14} />
+                                ) : (
+                                  <FaChevronDown size={14} />
+                                )}
                               </div>
-                              {groupedActiveProjects.past.map((proj) =>
-                                renderProjectCard(proj),
+                              {expandedGroups.past && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "10px",
+                                    marginTop: "10px",
+                                  }}
+                                >
+                                  {groupedActiveTasks.past.map((task) =>
+                                    renderTaskCard(task),
+                                  )}
+                                </div>
                               )}
                             </div>
                           )}
                         </>
                       ) : (
-                        filteredProjects.map((proj) => renderProjectCard(proj))
+                        filteredTasks.map((task) => renderTaskCard(task))
                       )}
                     </div>
                   )}
@@ -586,7 +724,7 @@ const WorkerPortal = () => {
               ) : (
                 <div className={styles.projectDetail}>
                   <button
-                    onClick={() => setSelectedProject(null)}
+                    onClick={() => setSelectedTask(null)}
                     className={styles.backButton}
                   >
                     <FaArrowLeft /> Назад до списку
@@ -595,86 +733,102 @@ const WorkerPortal = () => {
                   <div className={styles.detailHeader}>
                     <div className={styles.titleRow}>
                       <h2 className={styles.detailTitle}>
-                        {selectedProject.address}
+                        {selectedTask.address}
                       </h2>
                       <button
                         type="button"
                         className={styles.copyButton}
-                        onClick={() =>
-                          handleCopyAddress(selectedProject.address)
-                        }
+                        onClick={() => handleCopyAddress(selectedTask.address)}
                         title="Скопіювати адресу"
                       >
                         <FaCopy />
                       </button>
                     </div>
-                    <p className={styles.detailSubtitle}>
-                      WO #{selectedProject.work_order_number}
-                    </p>
                   </div>
 
-                  {selectedProject.myWorkTypes &&
-                    selectedProject.myWorkTypes.length > 0 && (
-                      <div className={styles.instructionBlock}>
-                        <div className={styles.instructionHeader}>
-                          <FaInfoCircle className={styles.instructionIcon} />
-                          <h3>Ваші завдання на цьому об'єкті:</h3>
-                        </div>
-                        <ul
+                  {selectedTask.ai_translation && (
+                    <div
+                      className={styles.instructionBlock}
+                      style={{
+                        backgroundColor: "#fef3c7",
+                        borderColor: "#fde68a",
+                      }}
+                    >
+                      <div
+                        className={styles.instructionHeader}
+                        style={{ color: "#d97706" }}
+                      >
+                        <FaInfoCircle className={styles.instructionIcon} />
+                        <h3>Інструкція до завдання:</h3>
+                      </div>
+                      <div
+                        style={{
+                          padding: "10px",
+                          backgroundColor: "#fff",
+                          borderRadius: "8px",
+                          border: "1px solid #fde68a",
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {extractRelevantInstruction(
+                          selectedTask.ai_translation,
+                          selectedTask.task_name,
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className={styles.instructionBlock}>
+                    <div className={styles.instructionHeader}>
+                      <FaWrench className={styles.instructionIcon} />
+                      <h3>Ваше завдання:</h3>
+                    </div>
+                    <div
+                      style={{
+                        padding: "10px",
+                        backgroundColor: "#fff",
+                        borderRadius: "8px",
+                        border: "1px solid var(--color-border)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: "1.1rem",
+                          color: "var(--color-primary)",
+                        }}
+                      >
+                        {selectedTask.task_name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "0.95rem",
+                          color: "#555",
+                          marginTop: "8px",
+                        }}
+                      >
+                        Оплата за це завдання: $
+                        {parseFloat(selectedTask.payment_amount || 0).toFixed(
+                          2,
+                        )}
+                      </div>
+                      {selectedTask.notes && (
+                        <div
                           style={{
-                            listStyleType: "none",
-                            padding: 0,
-                            margin: 0,
+                            marginTop: "12px",
+                            padding: "10px",
+                            backgroundColor: "rgba(176, 42, 72, 0.05)",
+                            borderRadius: "6px",
+                            fontSize: "0.9rem",
+                            color: "#444",
                           }}
                         >
-                          {selectedProject.myWorkTypes.map((wt, idx) => (
-                            <li
-                              key={idx}
-                              style={{
-                                marginBottom: "12px",
-                                paddingBottom: "12px",
-                                borderBottom:
-                                  idx !== selectedProject.myWorkTypes.length - 1
-                                    ? "1px dashed #e0b4bc"
-                                    : "none",
-                              }}
-                            >
-                              <div
-                                style={{ fontWeight: "bold", color: "#222" }}
-                              >
-                                🛠{" "}
-                                {wt.work_type_templates?.name ||
-                                  "Невідома робота"}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "0.9rem",
-                                  color: "#555",
-                                  marginTop: "4px",
-                                }}
-                              >
-                                💰 Оплата за позицію: $
-                                {parseFloat(wt.payment_amount || 0).toFixed(2)}
-                              </div>
-                              {wt.notes && (
-                                <div
-                                  style={{
-                                    marginTop: "8px",
-                                    padding: "8px",
-                                    backgroundColor: "rgba(176, 42, 72, 0.05)",
-                                    borderRadius: "4px",
-                                    fontSize: "0.9rem",
-                                    color: "#444",
-                                  }}
-                                >
-                                  <strong>📝 Примітка:</strong> {wt.notes}
-                                </div>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                          <strong>📝 Примітка до завдання:</strong>{" "}
+                          {selectedTask.notes}
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
                   <form
                     onSubmit={handleWorkSubmit}
@@ -682,7 +836,7 @@ const WorkerPortal = () => {
                   >
                     <div className={styles.formGroup}>
                       <label className={styles.sectionLabel}>
-                        Ваш статус роботи
+                        Статус цього завдання
                       </label>
                       <select
                         className={styles.statusSelect}
@@ -694,18 +848,19 @@ const WorkerPortal = () => {
                           })
                         }
                       >
-                        <option value="Ready">Ready (Готово)</option>
+                        <option value="Ready">Ready (Готово повністю)</option>
                         <option value="In Process">
-                          In Process (В процесі)
+                          In Process (В процесі виконання)
                         </option>
                         <option value="Not Finished">
                           Not Finished (Не завершено)
                         </option>
                       </select>
                     </div>
+
                     <div className={styles.formGroup}>
                       <label className={styles.sectionLabel}>
-                        Нотатки (опціонально)
+                        Нотатки до звіту (опціонально)
                       </label>
                       <textarea
                         value={formData.notes}
@@ -716,6 +871,7 @@ const WorkerPortal = () => {
                         className={styles.textarea}
                       />
                     </div>
+
                     <div className={styles.photoUploaders}>
                       <PhotoUploader
                         label="Фото ДО (опціонально)"
@@ -725,25 +881,21 @@ const WorkerPortal = () => {
                         }
                       />
                       <PhotoUploader
-                        label="Фото ПІСЛЯ (обов'язково)"
+                        label="Фото ПІСЛЯ (рекомендується)"
                         bucketName="worker-photos"
                         onUploadComplete={(urls) =>
                           setFormData({ ...formData, photosAfter: urls })
                         }
                       />
                     </div>
+
                     <button
                       type="submit"
-                      disabled={loading || formData.photosAfter.length === 0}
+                      disabled={loading}
                       className={styles.submitReportBtn}
                     >
-                      {loading ? "Відправка..." : "Зберегти звіт та фото"}
+                      {loading ? "Відправка..." : "Зберегти звіт"}
                     </button>
-                    {formData.photosAfter.length === 0 && (
-                      <p className={styles.warningText}>
-                        * Додайте хоча б одне фото результату
-                      </p>
-                    )}
                   </form>
                 </div>
               )}
@@ -1015,7 +1167,7 @@ const WorkerPortal = () => {
             className={`${styles.navItem} ${activeTab === "work" ? styles.activeNav : ""}`}
             onClick={() => {
               setActiveTab("work");
-              setSelectedProject(null);
+              setSelectedTask(null);
             }}
           >
             <FaClipboardList size={20} />

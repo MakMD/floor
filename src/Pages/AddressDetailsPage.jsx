@@ -1,3 +1,4 @@
+// src/Pages/AddressDetailsPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -14,6 +15,10 @@ import {
   FaFilePdf,
   FaDownload,
   FaCheckCircle,
+  FaWrench,
+  FaInfoCircle,
+  FaChevronDown,
+  FaChevronUp,
 } from "react-icons/fa";
 import styles from "./AddressDetailsPage.module.css";
 import commonStyles from "../styles/common.module.css";
@@ -24,10 +29,8 @@ import { usePeople } from "../hooks/usePeople";
 import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager";
 import MaterialsManager from "../components/MaterialsManager/MaterialsManager";
 
-// --- ОПТИМІЗАЦІЯ 1: Чисті функції винесено за межі компонента ---
 const isImage = (url) => {
   if (!url) return false;
-  // Видаляємо всі параметри після знаку питання, щоб отримати чистий шлях
   const cleanUrl = url.split("?")[0];
   return cleanUrl.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null;
 };
@@ -46,7 +49,6 @@ const getStatusStyle = (status) => {
   return { bg: "rgba(255, 193, 7, 0.15)", color: "#d39e00" };
 };
 
-// ВИПРАВЛЕНО: Додано onImageClick для відкриття фото в лайтбоксі
 const FileListItem = ({
   bucketName,
   fileIdentifier,
@@ -87,7 +89,6 @@ const FileListItem = ({
       return;
     }
 
-    // Якщо це картинка - відкриваємо в лайтбоксі
     if (isImage(signedUrl)) {
       e.preventDefault();
       onImageClick(signedUrl);
@@ -123,7 +124,6 @@ const AddressDetailsPage = () => {
   const { addressId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const searchState = location.state || null;
 
   const [addressData, setAddressData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -142,7 +142,15 @@ const AddressDetailsPage = () => {
 
   const [workOrders, setWorkOrders] = useState([]);
   const [reports, setReports] = useState([]);
+
+  const [expandedReports, setExpandedReports] = useState({});
   const [selectedImage, setSelectedImage] = useState(null);
+
+  // Стейти для зуму та перетягування зображення
+  const [zoomScale, setZoomScale] = useState(1);
+  const [imgPosition, setImgPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   const [showWoForm, setShowWoForm] = useState(false);
   const [isSubmittingWo, setIsSubmittingWo] = useState(false);
@@ -164,7 +172,6 @@ const AddressDetailsPage = () => {
   const fetchData = useCallback(async () => {
     if (!addressId) return;
 
-    // --- ОПТИМІЗАЦІЯ 2: ПАРАЛЕЛЬНІ ЗАПИТИ (Пришвидшення завантаження) ---
     const [addrRes, woRes, reportsRes] = await Promise.all([
       supabase
         .from("addresses")
@@ -178,12 +185,18 @@ const AddressDetailsPage = () => {
         .order("created_at", { ascending: false }),
       supabase
         .from("daily_reports")
-        .select("*")
+        .select(
+          `
+          *,
+          work_types (
+            work_type_templates (name)
+          )
+        `,
+        )
         .eq("address_id", addressId)
         .order("created_at", { ascending: false }),
     ]);
 
-    // Обробка об'єкта
     if (addrRes.error) {
       toast.error("Could not load address data.");
       navigate("/addresses");
@@ -202,12 +215,10 @@ const AddressDetailsPage = () => {
       ai_translation: addrRes.data.ai_translation || "",
     });
 
-    // Обробка Work Orders
     if (!woRes.error) {
       setWorkOrders(woRes.data || []);
     }
 
-    // Обробка Звітів
     if (reportsRes.error) {
       console.error("Помилка завантаження звітів:", reportsRes.error);
     } else if (reportsRes.data && reportsRes.data.length > 0) {
@@ -228,7 +239,14 @@ const AddressDetailsPage = () => {
             profiles: profile || null,
           };
         });
+
         setReports(reportsWithProfiles);
+
+        const initialExpandedState = {};
+        reportsRes.data.forEach((r) => {
+          initialExpandedState[r.id] = false;
+        });
+        setExpandedReports(initialExpandedState);
       } else {
         setReports(reportsRes.data);
       }
@@ -240,6 +258,55 @@ const AddressDetailsPage = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Логіка масштабування та перетягування
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const zoomFactor = 1.1;
+    let newScale =
+      e.deltaY < 0 ? zoomScale * zoomFactor : zoomScale / zoomFactor;
+    newScale = Math.max(1, Math.min(newScale, 5));
+    setZoomScale(newScale);
+    if (newScale === 1) {
+      setImgPosition({ x: 0, y: 0 });
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (zoomScale > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - imgPosition.x,
+        y: e.clientY - imgPosition.y,
+      });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      setImgPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const closeLightbox = () => {
+    setSelectedImage(null);
+    setZoomScale(1);
+    setImgPosition({ x: 0, y: 0 });
+  };
+
+  const toggleReportExpansion = (reportId) => {
+    setExpandedReports((prev) => ({
+      ...prev,
+      [reportId]: !prev[reportId],
+    }));
+  };
 
   const updateAddress = async (updates) => {
     const { data, error } = await supabase
@@ -537,7 +604,8 @@ const AddressDetailsPage = () => {
     );
   };
 
-  const handleApproveReport = async () => {
+  const handleApproveReport = async (e) => {
+    e.stopPropagation();
     setEditedData((prev) => ({ ...prev, status: "Ready" }));
     const updated = await updateAddress({ status: "Ready" });
     if (updated) {
@@ -552,20 +620,26 @@ const AddressDetailsPage = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.mobileLayout}>
+        {/* ЛАЙТБОКС ЗІ ЗУМОМ ТА ПЕРЕТЯГУВАННЯМ */}
         {selectedImage && (
           <div
             className={styles.lightbox}
-            onClick={() => setSelectedImage(null)}
+            onClick={closeLightbox}
+            onWheel={handleWheel}
           >
-            <button
-              className={styles.closeLightbox}
-              onClick={() => setSelectedImage(null)}
-            >
+            <button className={styles.closeLightbox} onClick={closeLightbox}>
               <FaTimes />
             </button>
             <img
               src={selectedImage}
               alt="Fullscreen view"
+              style={{
+                transform: `scale(${zoomScale}) translate(${imgPosition.x / zoomScale}px, ${imgPosition.y / zoomScale}px)`,
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -709,7 +783,7 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* БЛОК 2: AI TRANSLATION & ORIGINAL DOCUMENT */}
+            {/* БЛОК 2: AI TRANSLATION */}
             {(addressData.original_photo_url ||
               addressData.ai_translation ||
               isEditing) && (
@@ -1010,96 +1084,232 @@ const AddressDetailsPage = () => {
               <div className={styles.cardContentWrapper}>
                 {reports.length > 0 ? (
                   <div className={styles.reportsList}>
-                    {reports.map((report) => (
-                      <div key={report.id} className={styles.reportCard}>
-                        <div className={styles.reportHeader}>
-                          <div>
-                            <strong>
-                              {report.profiles?.first_name}{" "}
-                              {report.profiles?.last_name || ""}
-                            </strong>
-                            <div
-                              style={{
-                                fontSize: "0.85rem",
-                                color: "var(--color-text-secondary)",
-                              }}
-                            >
-                              {new Date(report.report_date).toLocaleString()}
+                    {reports.map((report) => {
+                      const isExpanded = !!expandedReports[report.id];
+                      return (
+                        <div
+                          key={report.id}
+                          className={styles.reportCard}
+                          style={{
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                            backgroundColor: isExpanded
+                              ? "var(--color-surface)"
+                              : "var(--color-background)",
+                          }}
+                          onClick={() => toggleReportExpansion(report.id)}
+                        >
+                          <div
+                            className={styles.reportHeader}
+                            style={{
+                              borderBottom: isExpanded
+                                ? "1px solid var(--color-border)"
+                                : "none",
+                              paddingBottom: isExpanded ? "12px" : "0",
+                              marginBottom: isExpanded ? "12px" : "0",
+                            }}
+                          >
+                            <div style={{ flex: 1 }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                }}
+                              >
+                                <strong>
+                                  {report.profiles?.first_name}{" "}
+                                  {report.profiles?.last_name || ""}
+                                </strong>
+                                <span
+                                  style={{
+                                    color: "var(--color-text-secondary)",
+                                    fontSize: "0.8rem",
+                                    paddingTop: "2px",
+                                  }}
+                                >
+                                  {isExpanded ? (
+                                    <FaChevronUp />
+                                  ) : (
+                                    <FaChevronDown />
+                                  )}
+                                </span>
+                              </div>
+
+                              <div style={{ marginTop: "4px" }}>
+                                {(() => {
+                                  let taskName = null;
+
+                                  if (
+                                    report.work_types?.work_type_templates?.name
+                                  ) {
+                                    taskName =
+                                      report.work_types.work_type_templates
+                                        .name;
+                                  } else if (
+                                    report.notes &&
+                                    report.notes.includes("[Завдання: ")
+                                  ) {
+                                    const match = report.notes.match(
+                                      /\[Завдання:\s*(.*?)\]/,
+                                    );
+                                    if (match && match[1]) {
+                                      taskName = match[1];
+                                    }
+                                  }
+
+                                  if (taskName) {
+                                    return (
+                                      <span
+                                        style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          gap: "4px",
+                                          backgroundColor:
+                                            "rgba(13, 110, 253, 0.1)",
+                                          color: "var(--color-primary)",
+                                          padding: "4px 8px",
+                                          borderRadius: "6px",
+                                          fontSize: "0.8rem",
+                                          fontWeight: "600",
+                                          marginTop: "6px",
+                                        }}
+                                      >
+                                        <FaWrench size={10} />
+                                        Виконано: {taskName}
+                                      </span>
+                                    );
+                                  }
+
+                                  return (
+                                    <span
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "4px",
+                                        backgroundColor:
+                                          "rgba(108, 117, 125, 0.1)",
+                                        color: "#6c757d",
+                                        padding: "4px 8px",
+                                        borderRadius: "6px",
+                                        fontSize: "0.8rem",
+                                        fontWeight: "600",
+                                        marginTop: "6px",
+                                      }}
+                                    >
+                                      <FaInfoCircle size={10} /> General Project
+                                      Report
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+
+                              <div
+                                style={{
+                                  fontSize: "0.85rem",
+                                  color: "var(--color-text-secondary)",
+                                  marginTop: "8px",
+                                }}
+                              >
+                                {new Date(report.report_date).toLocaleString()}
+                              </div>
+                            </div>
+
+                            <div onClick={(e) => e.stopPropagation()}>
+                              {editedData.status === "Ready" ? (
+                                <span
+                                  style={{
+                                    color: "#10b981",
+                                    fontSize: "0.95rem",
+                                    fontWeight: "bold",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                  }}
+                                >
+                                  <FaCheckCircle /> Approved
+                                </span>
+                              ) : (
+                                <button
+                                  className={commonStyles.buttonSuccess}
+                                  style={{
+                                    padding: "6px 12px",
+                                    fontSize: "0.85rem",
+                                  }}
+                                  onClick={handleApproveReport}
+                                  title="Approve report and mark project as Ready"
+                                >
+                                  <FaCheckCircle /> Approve
+                                </button>
+                              )}
                             </div>
                           </div>
-                          {editedData.status === "Ready" ? (
-                            <span
-                              style={{
-                                color: "#10b981",
-                                fontSize: "0.95rem",
-                                fontWeight: "bold",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                              }}
+
+                          {isExpanded && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              style={{ marginTop: "12px" }}
                             >
-                              <FaCheckCircle /> Approved
-                            </span>
-                          ) : (
-                            <button
-                              className={commonStyles.buttonSuccess}
-                              style={{
-                                padding: "6px 12px",
-                                fontSize: "0.85rem",
-                              }}
-                              onClick={handleApproveReport}
-                              title="Approve report and mark project as Ready"
-                            >
-                              <FaCheckCircle /> Approve
-                            </button>
+                              {report.notes && (
+                                <div className={styles.reportNotes}>
+                                  <p
+                                    style={{
+                                      margin: 0,
+                                      whiteSpace: "pre-wrap",
+                                    }}
+                                  >
+                                    {report.notes
+                                      .replace(/\[Завдання:\s*.*?\]\n?/g, "")
+                                      .replace(
+                                        /\[Статус від працівника:\s*.*?\]\n?/g,
+                                        "",
+                                      )}
+                                  </p>
+                                </div>
+                              )}
+
+                              {report.photos_before?.length > 0 && (
+                                <div className={styles.photoSection}>
+                                  <span className={styles.photoSectionTitle}>
+                                    Photos Before:
+                                  </span>
+                                  <div className={styles.photoGrid}>
+                                    {report.photos_before.map((url, i) => (
+                                      <img
+                                        key={`before-${i}`}
+                                        src={url}
+                                        alt="Before"
+                                        className={styles.thumbnail}
+                                        onClick={() => setSelectedImage(url)}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {report.photos_after?.length > 0 && (
+                                <div className={styles.photoSection}>
+                                  <span className={styles.photoSectionTitle}>
+                                    Photos After:
+                                  </span>
+                                  <div className={styles.photoGrid}>
+                                    {report.photos_after.map((url, i) => (
+                                      <img
+                                        key={`after-${i}`}
+                                        src={url}
+                                        alt="After"
+                                        className={styles.thumbnail}
+                                        onClick={() => setSelectedImage(url)}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
-
-                        {report.notes && (
-                          <div className={styles.reportNotes}>
-                            <p>{report.notes}</p>
-                          </div>
-                        )}
-
-                        {report.photos_before?.length > 0 && (
-                          <div className={styles.photoSection}>
-                            <span className={styles.photoSectionTitle}>
-                              Photos Before:
-                            </span>
-                            <div className={styles.photoGrid}>
-                              {report.photos_before.map((url, i) => (
-                                <img
-                                  key={`before-${i}`}
-                                  src={url}
-                                  alt="Before"
-                                  className={styles.thumbnail}
-                                  onClick={() => setSelectedImage(url)}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {report.photos_after?.length > 0 && (
-                          <div className={styles.photoSection}>
-                            <span className={styles.photoSectionTitle}>
-                              Photos After:
-                            </span>
-                            <div className={styles.photoGrid}>
-                              {report.photos_after.map((url, i) => (
-                                <img
-                                  key={`after-${i}`}
-                                  src={url}
-                                  alt="After"
-                                  className={styles.thumbnail}
-                                  onClick={() => setSelectedImage(url)}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className={styles.noItemsMessage}>
@@ -1164,7 +1374,7 @@ const AddressDetailsPage = () => {
                         bucketName={BUCKET_NAME}
                         fileIdentifier={id}
                         onDelete={handleFileDelete}
-                        onImageClick={(url) => setSelectedImage(url)} // ВИПРАВЛЕНО: Передаємо колбек
+                        onImageClick={(url) => setSelectedImage(url)}
                       />
                     ))}
                   </ul>

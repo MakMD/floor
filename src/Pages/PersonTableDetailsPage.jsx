@@ -198,17 +198,17 @@ const PersonTableDetailsPage = () => {
     setModalFilterAddress("");
   };
 
-  // --- ЛОГІКА ГЕНЕРАЦІЇ PDF ---
+  // --- ЛОГІКА ГЕНЕРАЦІЇ PDF (ОПТИМІЗОВАНО ДЛЯ ДОВГИХ ТЕКСТІВ) ---
   const handlePrint = () => {
     const doc = new jsPDF();
 
-    // 1. Заголовок документа
+    // Заголовок документа
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     const title = `${person.name.toUpperCase()} — ${tableInfo.name}`;
     doc.text(title, 14, 20);
 
-    // 2. Підготовка даних таблиці
+    // Підготовка даних таблиці
     const tableColumn = ["DATE", "ADDRESS", "WORK TYPE", "AMOUNT"];
     const tableRows = invoices.map((inv) => [
       inv.date,
@@ -217,12 +217,16 @@ const PersonTableDetailsPage = () => {
       `$${parseFloat(inv.total_income || 0).toFixed(2)}`,
     ]);
 
-    // 3. Рендер таблиці
+    // Рендер таблиці з оптимізованими колонками
     autoTable(doc, {
       startY: 30,
       head: [tableColumn],
       body: tableRows,
       theme: "plain",
+      styles: {
+        fontSize: 10, // Зменшено шрифт для кращого вміщення
+        cellPadding: 4,
+      },
       headStyles: {
         fontStyle: "bold",
         textColor: [0, 0, 0],
@@ -235,27 +239,28 @@ const PersonTableDetailsPage = () => {
         lineColor: [220, 220, 220],
       },
       columnStyles: {
-        0: { cellWidth: 35 },
-        1: { cellWidth: "auto" },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 30, halign: "left" },
+        0: { cellWidth: 28 }, // Date
+        1: { cellWidth: "auto" }, // Address (тягнеться)
+        2: { cellWidth: 50 }, // Work Type (розширено)
+        3: { cellWidth: 28, halign: "right" }, // Amount (вирівняно вправо)
       },
-      margin: { top: 30 },
+      margin: { top: 30, left: 14, right: 14 },
     });
 
-    // 4. Підсумки (Totals)
+    // Підсумки (Totals)
     let finalY = doc.lastAutoTable.finalY + 15;
     doc.setFontSize(11);
 
     const addTotalRow = (label, amount, isBold = false) => {
       doc.setFont("helvetica", isBold ? "bold" : "normal");
-      doc.text(label, 120, finalY);
+      doc.text(label, 140, finalY, { align: "right" });
       doc.text(
         amount < 0
           ? `-$${Math.abs(amount).toFixed(2)}`
           : `$${amount.toFixed(2)}`,
-        160,
+        180,
         finalY,
+        { align: "right" },
       );
       finalY += 7;
     };
@@ -272,7 +277,7 @@ const PersonTableDetailsPage = () => {
       addTotalRow("TOTAL PAYOUT:", totals.finalTotal, true);
     }
 
-    // 5. Відкриття файлу у новій вкладці для друку
+    // Відкриття файлу у новій вкладці для друку
     const pdfBlob = doc.output("blob");
     const blobUrl = URL.createObjectURL(pdfBlob);
     window.open(blobUrl, "_blank");

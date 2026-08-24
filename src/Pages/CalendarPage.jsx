@@ -100,6 +100,7 @@ const CalendarPage = () => {
     const { data, error } = await supabase
       .from("addresses")
       .select("*, builders(name), stores(name)")
+      .eq("is_deleted", false) // ВАЖЛИВО: Виключаємо видалені записи
       .gte("date", startDate)
       .lte("date", endDate)
       .order("date", { ascending: true })
@@ -126,6 +127,7 @@ const CalendarPage = () => {
       const { data, error } = await supabase
         .from("addresses")
         .select("date, status")
+        .eq("is_deleted", false) // ВАЖЛИВО: Виключаємо видалені записи з індикаторів місяця
         .gte("date", start)
         .lte("date", end);
 

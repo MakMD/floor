@@ -8,8 +8,6 @@ import {
   FaCalendarAlt,
   FaCog,
   FaSignOutAlt,
-  FaSun,
-  FaMoon,
   FaBars,
   FaTimes,
   FaBell,
@@ -17,13 +15,10 @@ import {
   FaFileInvoice,
   FaBuilding,
 } from "react-icons/fa";
-import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
 import styles from "./Header.module.css";
-// import ThemeToggleButton from "../ThemeToggleButton/ThemeToggleButton"; // Можна видалити, якщо використовується вбудована кнопка
 
 const Header = () => {
-  const { theme, toggleTheme } = useTheme(); // Використовуємо theme та toggleTheme
   const { user, userRole, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,7 +41,6 @@ const Header = () => {
       await signOut();
     } catch (error) {
       console.error("Помилка при виході:", error);
-      // Тут можна додати toast.error("Не вдалося вийти з акаунту");
     }
   };
 
@@ -170,7 +164,7 @@ const Header = () => {
       <button
         className={styles.hamburgerButton}
         onClick={toggleMobileMenu}
-        aria-label="Toggle mobile menu" // Додано aria-label
+        aria-label="Toggle mobile menu"
       >
         <FaBars />
       </button>
@@ -192,7 +186,7 @@ const Header = () => {
             <button
               className={styles.closeButton}
               onClick={closeMobileMenu}
-              aria-label="Close mobile menu" // Додано aria-label
+              aria-label="Close mobile menu"
             >
               <FaTimes />
             </button>
@@ -268,22 +262,13 @@ const Header = () => {
 
         {/* Контроли (Сповіщення та Вихід) */}
         <div className={styles.navControls}>
-          {/* === КНОПКА ТЕМИ === */}
-          <button
-            onClick={toggleTheme}
-            className={styles.themeToggleBtn}
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? <FaSun /> : <FaMoon />}
-          </button>
-
           {/* === ДЗВІНОЧОК СПОВІЩЕНЬ (Тільки для Адміна) === */}
           {userRole === "admin" && (
             <div className={styles.notifContainer} ref={notifRef}>
               <button
                 className={styles.notifButton}
                 onClick={() => setIsNotifOpen(!isNotifOpen)}
-                aria-label="Notifications" // Додано aria-label
+                aria-label="Notifications"
               >
                 <FaBell />
                 <span className={styles.mobileOnlyText}>Сповіщення</span>
