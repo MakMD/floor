@@ -1,3 +1,4 @@
+// src/Pages/AddressListPage.jsx
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -13,6 +14,8 @@ import {
   FaMapMarkerAlt,
   FaSearch,
   FaTimes,
+  FaWrench,
+  FaBuilding,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
 import styles from "./AddressListPage.module.css";
@@ -74,6 +77,9 @@ const AddressListPage = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
+  // НОВИЙ СТЕЙТ ДЛЯ РОЗДІЛЕННЯ ТАБІВ
+  const [projectTab, setProjectTab] = useState("Address"); // "Address" або "Service"
+
   const { builders, stores, products, loading: listsLoading } = useAdminLists();
   const navigate = useNavigate();
   const location = useLocation();
@@ -110,12 +116,17 @@ const AddressListPage = () => {
       const from = (pageNumber - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
+      // ДОДАНО: work_types(person_id) для перевірки призначень
       let query = supabase
         .from("addresses")
-        .select("*, builders(name), stores(name), work_orders(*)", {
-          count: "exact",
-        })
+        .select(
+          "*, builders(name), stores(name), work_orders(*), work_types(person_id)",
+          {
+            count: "exact",
+          },
+        )
         .eq("is_deleted", false)
+        .eq("project_type", projectTab) // ФІЛЬТРАЦІЯ ЗА ТАБОМ
         .order("date", { ascending: false, nullsLast: true });
 
       if (debouncedSearch)
@@ -172,6 +183,7 @@ const AddressListPage = () => {
       storeFilter,
       dateFilter,
       productFilter,
+      projectTab, // Залежність від активного таба
     ],
   );
 
@@ -255,6 +267,24 @@ const AddressListPage = () => {
   }, [addresses]);
 
   const handleAddAddress = async (values, { setSubmitting, resetForm }) => {
+    // 1. ЗАХИСТ ВІД ДУБЛІКАТІВ
+    if (values.work_order_number && values.work_order_number.trim() !== "") {
+      const { data: existingWo } = await supabase
+        .from("addresses")
+        .select("id")
+        .eq("work_order_number", values.work_order_number.trim())
+        .eq("is_deleted", false)
+        .maybeSingle();
+
+      if (existingWo) {
+        toast.error(
+          `❌ Work Order #${values.work_order_number} already exists in the system!`,
+        );
+        setSubmitting(false);
+        return;
+      }
+    }
+
     const newAddressObject = {
       work_order_number: values.work_order_number?.trim() || null,
       address: values.address.trim(),
@@ -338,7 +368,7 @@ const AddressListPage = () => {
               work_type_template_id: templateId,
               payment_amount: parsedAmt,
               person_id: null,
-              notes: wt.notes || wt.line_notes || null, // <--- Виправлено тут
+              notes: wt.notes || wt.line_notes || null,
             },
           ]);
 
@@ -440,7 +470,6 @@ const AddressListPage = () => {
       if (data.date) setFieldValue("date", data.date);
       if (data.total_amount) setFieldValue("total_amount", data.total_amount);
 
-      // ГАРАНТОВАНО зберігаємо загальні інструкції
       const translationText =
         data.ai_translation || data.instructions || data.notes || "";
       setFieldValue("ai_translation", translationText);
@@ -455,7 +484,6 @@ const AddressListPage = () => {
       }
 
       if (extractedWorks.length > 0) {
-        // МАГІЯ: Переконуємось, що line_notes не губляться перед збереженням!
         const processedWorks = extractedWorks.map((wt) => ({
           ...wt,
           notes: wt.line_notes || wt.notes || "",
@@ -489,6 +517,70 @@ const AddressListPage = () => {
       setIsScanning(false);
       event.target.value = null;
     }
+  };
+
+  // 3. РОЗУМНІ СТАТУСИ (Відображення)
+  const renderStatusBadges = (item) => {
+    // Перевіряємо, чи є хоча б одна робота з призначеним person_id
+    const isAssigned =
+      item.work_types && item.work_types.some((wt) => wt.person_id);
+
+    let assignmentBadge = null;
+
+    if (item.status !== "Ready") {
+      if (!isAssigned) {
+        assignmentBadge = (
+          <span
+            style={{
+              backgroundColor: "#fef08a", // жовтий фон
+              color: "#b45309", // темно-оранжевий текст
+              padding: "4px 10px",
+              borderRadius: "20px",
+              fontSize: "0.75rem",
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Непризначено
+          </span>
+        );
+      } else {
+        assignmentBadge = (
+          <span
+            style={{
+              backgroundColor: "#e0e7ff", // синій фон
+              color: "#4338ca", // темно-синій текст
+              padding: "4px 10px",
+              borderRadius: "20px",
+              fontSize: "0.75rem",
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Призначено
+          </span>
+        );
+      }
+    }
+
+    // Основний статус проекту (з таблиці addresses)
+    let mainStatusText =
+      item.status === "Ready"
+        ? "Готово"
+        : item.status === "Not Finished"
+          ? "Не завершено"
+          : "В процесі";
+
+    return (
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        {assignmentBadge}
+        <span
+          className={`${styles.statusBadge} ${styles[item.status?.replace(/\s+/g, "")] || ""}`}
+        >
+          {mainStatusText}
+        </span>
+      </div>
+    );
   };
 
   const renderAddressList = (list) => (
@@ -557,23 +649,8 @@ const AddressListPage = () => {
                 )}
 
                 <div className={styles.cardBottomRow}>
-                  {item.project_type !== "Service" && (
-                    <button
-                      className={styles.confirmBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toast.success("Materials confirmed!");
-                      }}
-                    >
-                      Confirm Materials
-                    </button>
-                  )}
-
-                  <span
-                    className={`${styles.statusBadge} ${styles[item.status?.replace(/\s+/g, "")] || ""}`}
-                  >
-                    {item.status}
-                  </span>
+                  {/* Замість кнопки Confirm Materials виводимо розумні бейджі */}
+                  {renderStatusBadges(item)}
                 </div>
               </>
             )}
@@ -632,7 +709,49 @@ const AddressListPage = () => {
             />
           </div>
 
-          <div className={styles.filterGrid}>
+          {/* ВКЛАДКИ (Адреси / Сервіси) */}
+          <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+            <button
+              onClick={() => setProjectTab("Address")}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "8px",
+                border: "none",
+                fontWeight: "bold",
+                cursor: "pointer",
+                backgroundColor:
+                  projectTab === "Address"
+                    ? "var(--color-primary)"
+                    : "rgba(255, 255, 255, 0.1)",
+                color: projectTab === "Address" ? "#fff" : "#cbd5e1",
+                transition: "all 0.2s",
+              }}
+            >
+              <FaBuilding style={{ marginRight: "6px" }} /> Адреси
+            </button>
+            <button
+              onClick={() => setProjectTab("Service")}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "8px",
+                border: "none",
+                fontWeight: "bold",
+                cursor: "pointer",
+                backgroundColor:
+                  projectTab === "Service"
+                    ? "var(--color-primary)"
+                    : "rgba(255, 255, 255, 0.1)",
+                color: projectTab === "Service" ? "#fff" : "#cbd5e1",
+                transition: "all 0.2s",
+              }}
+            >
+              <FaWrench style={{ marginRight: "6px" }} /> Сервіси
+            </button>
+          </div>
+
+          <div className={styles.filterGrid} style={{ marginTop: "15px" }}>
             <select
               value={builderFilter}
               onChange={(e) => setBuilderFilter(e.target.value)}
@@ -948,7 +1067,9 @@ const AddressListPage = () => {
               )}
             </div>
           ) : (
-            <EmptyState message="No projects found matching your criteria." />
+            <EmptyState
+              message={`No ${projectTab.toLowerCase()}es found matching your criteria.`}
+            />
           )}
         </div>
       </div>

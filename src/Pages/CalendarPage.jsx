@@ -1,3 +1,4 @@
+// src/Pages/CalendarPage.jsx
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
@@ -97,10 +98,11 @@ const CalendarPage = () => {
       endDate = format(endOfWeek(selectedDate, { weekStartsOn }), "yyyy-MM-dd");
     }
 
+    // ДОДАНО: Витягуємо work_types(person_id) для перевірки призначень
     const { data, error } = await supabase
       .from("addresses")
-      .select("*, builders(name), stores(name)")
-      .eq("is_deleted", false) // ВАЖЛИВО: Виключаємо видалені записи
+      .select("*, builders(name), stores(name), work_types(person_id)")
+      .eq("is_deleted", false)
       .gte("date", startDate)
       .lte("date", endDate)
       .order("date", { ascending: true })
@@ -127,7 +129,7 @@ const CalendarPage = () => {
       const { data, error } = await supabase
         .from("addresses")
         .select("date, status")
-        .eq("is_deleted", false) // ВАЖЛИВО: Виключаємо видалені записи з індикаторів місяця
+        .eq("is_deleted", false)
         .gte("date", start)
         .lte("date", end);
 
@@ -189,11 +191,6 @@ const CalendarPage = () => {
     setCalendarMonth(newDate);
   };
 
-  const handleConfirmMaterials = (e, id) => {
-    e.stopPropagation();
-    toast.success(`Materials confirmed for Job #${id}`);
-  };
-
   const uniqueBuilders = useMemo(
     () =>
       [
@@ -242,7 +239,6 @@ const CalendarPage = () => {
     });
   }, [events, searchQuery, selectedBuilder, selectedStore, selectedStatus]);
 
-  // ДВОРІВНЕВЕ ГРУПУВАННЯ: Дата -> Магазин
   const groupedEvents = useMemo(() => {
     return filteredEvents.reduce((acc, event) => {
       const dateKey = event.date;
@@ -274,6 +270,95 @@ const CalendarPage = () => {
     const start = startOfWeek(selectedDate, { weekStartsOn });
     const end = endOfWeek(selectedDate, { weekStartsOn });
     return `${format(start, "MM/dd")} - ${format(end, "MM/dd")}`;
+  };
+
+  // РОЗУМНІ СТАТУСИ
+  const renderStatusBadges = (item) => {
+    // Перевіряємо, чи є хоча б одна робота з призначеним person_id
+    const isAssigned =
+      item.work_types && item.work_types.some((wt) => wt.person_id);
+
+    let assignmentBadge = null;
+
+    if (item.status !== "Ready") {
+      if (!isAssigned) {
+        assignmentBadge = (
+          <span
+            style={{
+              backgroundColor: "#fef08a",
+              color: "#b45309",
+              padding: "4px 10px",
+              borderRadius: "20px",
+              fontSize: "0.75rem",
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Непризначено
+          </span>
+        );
+      } else {
+        assignmentBadge = (
+          <span
+            style={{
+              backgroundColor: "#e0e7ff",
+              color: "#4338ca",
+              padding: "4px 10px",
+              borderRadius: "20px",
+              fontSize: "0.75rem",
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Призначено
+          </span>
+        );
+      }
+    }
+
+    // Основний статус проекту
+    let mainStatusText =
+      item.status === "Ready"
+        ? "Готово"
+        : item.status === "Not Finished"
+          ? "Не завершено"
+          : "В процесі";
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          alignItems: "center",
+          marginTop: "10px",
+        }}
+      >
+        {assignmentBadge}
+        <span
+          style={{
+            backgroundColor:
+              item.status === "Ready"
+                ? "rgba(40, 167, 69, 0.15)"
+                : item.status === "Not Finished"
+                  ? "rgba(220, 53, 69, 0.15)"
+                  : "rgba(255, 193, 7, 0.15)",
+            color:
+              item.status === "Ready"
+                ? "#28a745"
+                : item.status === "Not Finished"
+                  ? "#dc3545"
+                  : "#d39e00",
+            padding: "4px 10px",
+            borderRadius: "20px",
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {mainStatusText}
+        </span>
+      </div>
+    );
   };
 
   return (
@@ -453,6 +538,8 @@ const CalendarPage = () => {
                                             {event.notes}
                                           </div>
                                         )}
+                                        {/* Виводимо бейджі статусу */}
+                                        {renderStatusBadges(event)}
                                       </div>
                                       <MdOutlineChevronRight
                                         className={styles.chevronIcon}
@@ -479,7 +566,7 @@ const CalendarPage = () => {
                                     >
                                       <div className={styles.cardContent}>
                                         <div className={styles.cardTitle}>
-                                          Job Id:{" "}
+                                          WO #:{" "}
                                           {event.work_order_number || "N/A"} -{" "}
                                           {event.builders?.name ||
                                             "Unknown Builder"}
@@ -490,14 +577,8 @@ const CalendarPage = () => {
                                           />
                                           <span>{event.address}</span>
                                         </div>
-                                        <button
-                                          className={styles.confirmBtn}
-                                          onClick={(e) =>
-                                            handleConfirmMaterials(e, event.id)
-                                          }
-                                        >
-                                          Confirm Materials
-                                        </button>
+                                        {/* Виводимо бейджі статусу */}
+                                        {renderStatusBadges(event)}
                                       </div>
                                       <MdOutlineChevronRight
                                         className={styles.chevronIcon}
