@@ -1,3 +1,4 @@
+// src/Pages/StoreInvoiceDetailsPage.jsx
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -23,7 +24,6 @@ const StoreInvoiceDetailsPage = () => {
   const [invoicesHistory, setInvoicesHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Стейт для генератора
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [previewAddresses, setPreviewAddresses] = useState([]);
@@ -56,7 +56,6 @@ const StoreInvoiceDetailsPage = () => {
     fetchPageData();
   }, [fetchPageData]);
 
-  // Завантаження прев'ю адрес
   const handlePreview = async () => {
     if (!startDate || !endDate) {
       toast.error("Please select both Start and End dates.");
@@ -74,7 +73,7 @@ const StoreInvoiceDetailsPage = () => {
       .select("id, address, date, total_amount, work_order_number, status")
       .eq("store_id", storeId)
       .eq("is_deleted", false)
-      .is("store_invoice_id", null) // ТІЛЬКИ ТІ, ЩО НЕ В ІНВОЙСАХ
+      .is("store_invoice_id", null)
       .gte("date", startDate)
       .lte("date", endDate)
       .order("date", { ascending: true });
@@ -109,7 +108,6 @@ const StoreInvoiceDetailsPage = () => {
 
     setIsGenerating(true);
     try {
-      // 1. Створюємо інвойс
       const name = `${startDate} to ${endDate}`;
       const { data: newInvoice, error: invError } = await supabase
         .from("store_invoices")
@@ -125,7 +123,6 @@ const StoreInvoiceDetailsPage = () => {
 
       if (invError) throw invError;
 
-      // 2. Оновлюємо адреси
       const addressIds = previewAddresses.map((a) => a.id);
       const { error: updateError } = await supabase
         .from("addresses")
@@ -138,7 +135,7 @@ const StoreInvoiceDetailsPage = () => {
       setPreviewAddresses([]);
       setStartDate("");
       setEndDate("");
-      fetchPageData(); // Оновлюємо історію
+      fetchPageData();
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate invoice.");
@@ -162,14 +159,13 @@ const StoreInvoiceDetailsPage = () => {
 
     const doc = new jsPDF();
 
-    // Хедер
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text(`INVOICE — ${store.name}`, 14, 20);
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.text(`Period: ${invoice.start_date} to ${invoice.end_date}`, 14, 28);
-    doc.text(`Status: ${invoice.status}`, 14, 34);
+    doc.text(`Status: ${invoice.status || "Pending"}`, 14, 34);
 
     const tableColumn = ["DATE", "WO NUMBER", "ADDRESS", "AMOUNT"];
     const tableRows = (addrs || []).map((addr) => [
@@ -207,10 +203,13 @@ const StoreInvoiceDetailsPage = () => {
       finalY,
     );
 
-    const pdfBlob = doc.output("blob");
-    const blobUrl = URL.createObjectURL(pdfBlob);
-    window.open(blobUrl, "_blank");
-    toast.success("PDF Ready!", { id: toastId });
+    // Пряме завантаження файлу замість відкриття у новій вкладці
+    const safeStoreName = store.name.replace(/[^a-zA-Z0-9]/g, "_");
+    doc.save(
+      `Invoice_${safeStoreName}_${invoice.start_date}_to_${invoice.end_date}.pdf`,
+    );
+
+    toast.success("PDF Downloaded!", { id: toastId });
   };
 
   const handleDeleteInvoice = async (invoiceId) => {
@@ -221,7 +220,6 @@ const StoreInvoiceDetailsPage = () => {
     )
       return;
 
-    // Завдяки "ON DELETE SET NULL" в БД, адреси самі відкріпляться
     const { error } = await supabase
       .from("store_invoices")
       .delete()
