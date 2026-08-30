@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import AdminListManager from "../components/AdminListManager/AdminListManager";
 import styles from "./AdminPage.module.css";
 import {
@@ -66,7 +66,7 @@ const AdminPage = () => {
         <div className={styles.header}>
           <h1 className={styles.pageTitle}>Admin Panel</h1>
           <p className={styles.pageSubtitle}>
-            Manage your application's reference lists here.
+            Manage your application&apos;s reference lists here.
           </p>
         </div>
 
