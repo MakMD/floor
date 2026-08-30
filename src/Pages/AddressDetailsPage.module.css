@@ -53,7 +53,8 @@
 
 .detailsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  /* Змінено з 420px на 350px для кращого вигляду на планшетах/ноутбуках */
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 20px;
   padding: 20px 0;
   align-items: start;
@@ -294,37 +295,6 @@
   font-size: 0.9rem;
   font-style: italic;
   margin: 0;
-}
-
-/* Форма додавання Work Order */
-.formContainer {
-  background-color: var(--color-background);
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.formContainer h4 {
-  margin: 0 0 8px 0;
-  color: var(--color-text-primary);
-}
-
-/* Картка Work Order */
-.draggableCard {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background-color: var(--color-background);
-  cursor: grab;
-  transition: border-color 0.2s;
-}
-.draggableCard:hover {
-  border-color: var(--color-primary);
 }
 
 /* --- СТИЛІ ДЛЯ ЗВІТІВ ПРАЦІВНИКІВ --- */

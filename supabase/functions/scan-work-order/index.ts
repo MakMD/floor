@@ -5,13 +5,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
-
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
+    console.log("=== СТАРТ СКАНУВАННЯ ДОКУМЕНТА ===");
+
     const { imageBase64 } = await req.json();
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
@@ -23,6 +24,9 @@ serve(async (req) => {
     }
 
     const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    console.log(`Розмір зображення: ${cleanBase64.length} символів.`);
+
+    console.log("Відправляємо запит до OpenAI API (gpt-4o)...");
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -175,18 +179,26 @@ serve(async (req) => {
 
     const data = await response.json();
 
+    console.log("=== СИРА ВІДПОВІДЬ ШІ (RAW) ===");
+    console.log(JSON.stringify(data, null, 2));
+
     if (data.error) {
       throw new Error(`OpenAI Error: ${data.error.message}`);
     }
 
     const parsedContent = JSON.parse(data.choices[0].message.content);
 
+    console.log("=== РОЗПАРСЕНИЙ РЕЗУЛЬТАТ (ЩО ЙДЕ НА САЙТ) ===");
+    console.log(JSON.stringify(parsedContent, null, 2));
+
     return new Response(JSON.stringify(parsedContent), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error) {
-    console.error("Work Order Extraction Error:", error);
+  } catch (error: any) {
+    console.error("=== ПОМИЛКА СКАНУВАННЯ ===");
+    console.error("Деталі:", error.message || error);
+
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,

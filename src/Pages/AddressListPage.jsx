@@ -16,6 +16,7 @@ import {
   FaTimes,
   FaWrench,
   FaBuilding,
+  FaCheckCircle,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
 import styles from "./AddressListPage.module.css";
@@ -77,13 +78,11 @@ const AddressListPage = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // НОВИЙ СТЕЙТ ДЛЯ РОЗДІЛЕННЯ ТАБІВ
-  const [projectTab, setProjectTab] = useState("Address"); // "Address" або "Service"
+  const [projectTab, setProjectTab] = useState("Address");
 
-  const { builders, stores, products, loading: listsLoading } = useAdminLists();
-  const navigate = useNavigate();
+  const { builders, stores, products } = useAdminLists();
+  const navigate = useNavigate(); // <--- ОСЬ ЦЕЙ РЯДОК ДОДАЙ
   const location = useLocation();
-
   const [searchTerm, setSearchTerm] = useState(
     location.state?.searchTerm || "",
   );
@@ -105,6 +104,9 @@ const AddressListPage = () => {
 
   const [isScanning, setIsScanning] = useState(false);
 
+  // Додано стан для вікна підтвердження дублікату
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500);
     return () => clearTimeout(timer);
@@ -116,7 +118,6 @@ const AddressListPage = () => {
       const from = (pageNumber - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      // ДОДАНО: work_types(person_id) для перевірки призначень
       let query = supabase
         .from("addresses")
         .select(
@@ -126,11 +127,16 @@ const AddressListPage = () => {
           },
         )
         .eq("is_deleted", false)
-        .eq("project_type", projectTab) // ФІЛЬТРАЦІЯ ЗА ТАБОМ
+        .eq("project_type", projectTab)
         .order("date", { ascending: false, nullsLast: true });
 
-      if (debouncedSearch)
-        query = query.ilike("address", `%${debouncedSearch}%`);
+      // Виправлення пошуку: шукаємо і по адресі, і по номеру WO
+      if (debouncedSearch) {
+        query = query.or(
+          `address.ilike.%${debouncedSearch}%,work_order_number.ilike.%${debouncedSearch}%`,
+        );
+      }
+
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
       if (builderFilter !== "all")
         query = query.eq("builder_id", builderFilter);
@@ -183,7 +189,7 @@ const AddressListPage = () => {
       storeFilter,
       dateFilter,
       productFilter,
-      projectTab, // Залежність від активного таба
+      projectTab,
     ],
   );
 
@@ -266,25 +272,7 @@ const AddressListPage = () => {
     };
   }, [addresses]);
 
-  const handleAddAddress = async (values, { setSubmitting, resetForm }) => {
-    // 1. ЗАХИСТ ВІД ДУБЛІКАТІВ
-    if (values.work_order_number && values.work_order_number.trim() !== "") {
-      const { data: existingWo } = await supabase
-        .from("addresses")
-        .select("id")
-        .eq("work_order_number", values.work_order_number.trim())
-        .eq("is_deleted", false)
-        .maybeSingle();
-
-      if (existingWo) {
-        toast.error(
-          `❌ Work Order #${values.work_order_number} already exists in the system!`,
-        );
-        setSubmitting(false);
-        return;
-      }
-    }
-
+  const saveProjectToDatabase = async (values, setSubmitting, resetForm) => {
     const newAddressObject = {
       work_order_number: values.work_order_number?.trim() || null,
       address: values.address.trim(),
@@ -299,6 +287,7 @@ const AddressListPage = () => {
       service_time: values.project_type === "Service" ? values.time : null,
       original_photo_url: values.original_photo_url || null,
       ai_translation: values.ai_translation || null,
+      files: values.additional_photo_url ? [values.additional_photo_url] : [],
     };
 
     const { data: newAddressData, error: addressError } = await supabase
@@ -390,8 +379,37 @@ const AddressListPage = () => {
 
     resetForm();
     setIsAddFormOpen(false);
+    setDuplicateWarning(null);
     refetch();
     setSubmitting(false);
+  };
+
+  const handleAddAddress = async (values, { setSubmitting, resetForm }) => {
+    // 1. ЗАХИСТ ВІД ДУБЛІКАТІВ
+    if (values.work_order_number && values.work_order_number.trim() !== "") {
+      const { data: existingWo } = await supabase
+        .from("addresses")
+        .select("id, address, date")
+        .eq("work_order_number", values.work_order_number.trim())
+        .eq("is_deleted", false)
+        .maybeSingle();
+
+      if (existingWo) {
+        // Замість жорсткого блокування, показуємо вікно з вибором
+        setDuplicateWarning({
+          existingId: existingWo.id,
+          existingAddress: existingWo.address,
+          existingDate: existingWo.date,
+          valuesToSave: values,
+          setSubmittingFunc: setSubmitting,
+          resetFormFunc: resetForm,
+        });
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    await saveProjectToDatabase(values, setSubmitting, resetForm);
   };
 
   const handleUpdateAddressName = async (id, newName) => {
@@ -519,9 +537,32 @@ const AddressListPage = () => {
     }
   };
 
-  // 3. РОЗУМНІ СТАТУСИ (Відображення)
+  const handleUploadAdditionalPhoto = async (event, setFieldValue) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const toastId = toast.loading("Uploading additional photo...");
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("material-photos") // Використовуємо існуючий бакет для доп. фото
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Зберігаємо шлях у формі, щоб потім додати його до addressData.files
+      const filePath = `material-photos/${fileName}`;
+      setFieldValue("additional_photo_url", filePath);
+
+      toast.success("Additional photo uploaded!", { id: toastId });
+    } catch (error) {
+      toast.error("Upload failed", { id: toastId });
+    }
+  };
+
   const renderStatusBadges = (item) => {
-    // Перевіряємо, чи є хоча б одна робота з призначеним person_id
     const isAssigned =
       item.work_types && item.work_types.some((wt) => wt.person_id);
 
@@ -532,8 +573,8 @@ const AddressListPage = () => {
         assignmentBadge = (
           <span
             style={{
-              backgroundColor: "#fef08a", // жовтий фон
-              color: "#b45309", // темно-оранжевий текст
+              backgroundColor: "#fef08a",
+              color: "#b45309",
               padding: "4px 10px",
               borderRadius: "20px",
               fontSize: "0.75rem",
@@ -548,8 +589,8 @@ const AddressListPage = () => {
         assignmentBadge = (
           <span
             style={{
-              backgroundColor: "#e0e7ff", // синій фон
-              color: "#4338ca", // темно-синій текст
+              backgroundColor: "#e0e7ff",
+              color: "#4338ca",
               padding: "4px 10px",
               borderRadius: "20px",
               fontSize: "0.75rem",
@@ -563,7 +604,6 @@ const AddressListPage = () => {
       }
     }
 
-    // Основний статус проекту (з таблиці addresses)
     let mainStatusText =
       item.status === "Ready"
         ? "Готово"
@@ -649,7 +689,6 @@ const AddressListPage = () => {
                 )}
 
                 <div className={styles.cardBottomRow}>
-                  {/* Замість кнопки Confirm Materials виводимо розумні бейджі */}
                   {renderStatusBadges(item)}
                 </div>
               </>
@@ -709,7 +748,6 @@ const AddressListPage = () => {
             />
           </div>
 
-          {/* ВКЛАДКИ (Адреси / Сервіси) */}
           <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
             <button
               onClick={() => setProjectTab("Address")}
@@ -811,7 +849,62 @@ const AddressListPage = () => {
           </div>
         </div>
 
-        {isAddFormOpen && (
+        {duplicateWarning && (
+          <div className={styles.duplicateWarningOverlay}>
+            <div className={styles.duplicateWarningBox}>
+              <h3 style={{ color: "#b45309", marginTop: 0 }}>
+                ⚠️ Увага: Work Order вже існує!
+              </h3>
+              <p>В системі знайдено проект з таким самим номером WO:</p>
+              <div
+                style={{
+                  background: "#fef3c7",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  marginBottom: "15px",
+                }}
+              >
+                <strong>Адреса:</strong> {duplicateWarning.existingAddress}{" "}
+                <br />
+                <strong>Дата:</strong> {duplicateWarning.existingDate}
+              </div>
+              <p>Що ви хочете зробити?</p>
+              <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+                <button
+                  className={commonStyles.buttonPrimary}
+                  onClick={() => {
+                    navigate(`/address/${duplicateWarning.existingId}`);
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  Перейти до існуючого
+                </button>
+                <button
+                  className={commonStyles.buttonSecondary}
+                  onClick={() => {
+                    saveProjectToDatabase(
+                      duplicateWarning.valuesToSave,
+                      duplicateWarning.setSubmittingFunc,
+                      duplicateWarning.resetFormFunc,
+                    );
+                  }}
+                  style={{ flex: 1, backgroundColor: "#e2e8f0" }}
+                >
+                  Все одно створити новий
+                </button>
+              </div>
+              <button
+                className={commonStyles.buttonSecondary}
+                onClick={() => setDuplicateWarning(null)}
+                style={{ width: "100%", marginTop: "10px", border: "none" }}
+              >
+                Скасувати створення
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isAddFormOpen && !duplicateWarning && (
           <div className={styles.addFormSection}>
             <div className={styles.sectionHeaderForm}>Create New Project</div>
             <Formik
@@ -826,6 +919,7 @@ const AddressListPage = () => {
                 total_amount: "",
                 ai_translation: "",
                 original_photo_url: "",
+                additional_photo_url: "", // Поле для другої фотки
                 pending_work_types: [],
               }}
               validationSchema={AddProjectSchema}
@@ -918,13 +1012,20 @@ const AddressListPage = () => {
                         />
                       </div>
                     )}
-                    <div className={styles.inputGroup}>
+                  </div>
+
+                  <div className={styles.formRow}>
+                    <div
+                      className={styles.inputGroup}
+                      style={{ width: "100%" }}
+                    >
                       <label>Total Amount</label>
                       <Field
                         type="number"
                         name="total_amount"
                         placeholder="0.00"
                         className={styles.formInput}
+                        style={{ width: "100%" }}
                       />
                     </div>
                   </div>
@@ -943,19 +1044,45 @@ const AddressListPage = () => {
                     />
                   </div>
 
-                  {values.original_photo_url && (
-                    <div
-                      className={styles.inputGroup}
-                      style={{ marginTop: "8px" }}
-                    >
-                      <label>Original Document</label>
-                      <img
-                        src={values.original_photo_url}
-                        alt="Scanned Document"
-                        className={styles.previewImageDoc}
-                      />
-                    </div>
-                  )}
+                  {/* ВІДОБРАЖЕННЯ ДВОХ ФОТОГРАФІЙ */}
+                  <div
+                    style={{ display: "flex", gap: "10px", marginTop: "10px" }}
+                  >
+                    {values.original_photo_url && (
+                      <div className={styles.inputGroup} style={{ flex: 1 }}>
+                        <label>Original Document</label>
+                        <img
+                          src={values.original_photo_url}
+                          alt="Scanned Document"
+                          className={styles.previewImageDoc}
+                        />
+                      </div>
+                    )}
+
+                    {values.additional_photo_url && (
+                      <div className={styles.inputGroup} style={{ flex: 1 }}>
+                        <label>Additional Photo</label>
+                        <div
+                          style={{
+                            padding: "10px",
+                            backgroundColor: "#e2e8f0",
+                            borderRadius: "8px",
+                            textAlign: "center",
+                            fontSize: "0.85rem",
+                            color: "#475569",
+                          }}
+                        >
+                          <FaCheckCircle
+                            color="#10b981"
+                            style={{ marginBottom: "5px" }}
+                            size={20}
+                          />
+                          <br />
+                          Додаткове фото завантажено
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   <div
                     style={{
@@ -963,8 +1090,10 @@ const AddressListPage = () => {
                       gap: "12px",
                       marginTop: "16px",
                       width: "100%",
+                      flexWrap: "wrap",
                     }}
                   >
+                    {/* КНОПКА 1: Сканування (з AI) */}
                     <input
                       type="file"
                       id="cameraInput"
@@ -972,7 +1101,6 @@ const AddressListPage = () => {
                       style={{ display: "none" }}
                       onChange={(e) => handleScanDocument(e, setFieldValue)}
                     />
-
                     <button
                       type="button"
                       onClick={() =>
@@ -982,13 +1110,43 @@ const AddressListPage = () => {
                       disabled={isScanning || isSubmitting}
                       style={{
                         flex: 1,
+                        minWidth: "120px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         gap: "8px",
                       }}
                     >
-                      {isScanning ? "Scanning..." : "📷 Scan"}
+                      {isScanning ? "Scanning..." : "📷 Scan WO"}
+                    </button>
+
+                    {/* КНОПКА 2: Додаткове фото (просто збереження) */}
+                    <input
+                      type="file"
+                      id="additionalPhotoInput"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={(e) =>
+                        handleUploadAdditionalPhoto(e, setFieldValue)
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document.getElementById("additionalPhotoInput").click()
+                      }
+                      className={commonStyles.buttonSecondary}
+                      disabled={isSubmitting}
+                      style={{
+                        flex: 1,
+                        minWidth: "120px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      + Add Photo
                     </button>
 
                     <button
@@ -997,13 +1155,14 @@ const AddressListPage = () => {
                       disabled={isSubmitting || isScanning}
                       style={{
                         flex: 2,
+                        minWidth: "200px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         gap: "8px",
                       }}
                     >
-                      <FaPlus /> Add Project
+                      <FaPlus /> Save Project
                     </button>
                   </div>
                 </Form>

@@ -1,8 +1,7 @@
 // src/Pages/AddressDetailsPage.jsx
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { jsPDF } from "jspdf";
 import {
   FaArrowLeft,
   FaPlus,
@@ -13,7 +12,6 @@ import {
   FaSpinner,
   FaTimes,
   FaFilePdf,
-  FaDownload,
   FaCheckCircle,
   FaWrench,
   FaInfoCircle,
@@ -25,7 +23,6 @@ import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
 import FileUpload from "../components/FileUpload/FileUpload";
 import { useAdminLists } from "../hooks/useAdminLists";
-import { usePeople } from "../hooks/usePeople";
 import WorkTypesManager from "../components/WorkTypesManager/WorkTypesManager";
 import MaterialsManager from "../components/MaterialsManager/MaterialsManager";
 
@@ -33,12 +30,6 @@ const isImage = (url) => {
   if (!url) return false;
   const cleanUrl = url.split("?")[0];
   return cleanUrl.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null;
-};
-
-const isPdf = (url) => {
-  if (!url) return false;
-  const cleanUrl = url.split("?")[0];
-  return cleanUrl.match(/\.(pdf)$/i) != null;
 };
 
 const getStatusStyle = (status) => {
@@ -67,7 +58,9 @@ const FileListItem = ({
         path = url.pathname.substring(
           url.pathname.indexOf(bucketName) + bucketName.length + 1,
         );
-      } catch (e) {}
+      } catch (e) {
+        /* ignore */
+      }
 
       const { data, error } = await supabase.storage
         .from(bucketName)
@@ -123,7 +116,6 @@ const FileListItem = ({
 const AddressDetailsPage = () => {
   const { addressId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [addressData, setAddressData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -140,9 +132,7 @@ const AddressDetailsPage = () => {
     ai_translation: "",
   });
 
-  const [workOrders, setWorkOrders] = useState([]);
   const [reports, setReports] = useState([]);
-
   const [expandedReports, setExpandedReports] = useState({});
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -151,37 +141,19 @@ const AddressDetailsPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  const [showWoForm, setShowWoForm] = useState(false);
-  const [isSubmittingWo, setIsSubmittingWo] = useState(false);
-  const [editingWoId, setEditingWoId] = useState(null);
-  const [woData, setWoData] = useState({
-    area: "",
-    product_id: "",
-    sq_ft: "",
-    worker_id: "",
-    people_count: "",
-    date_completed: "",
-  });
-
-  const { builders, stores, products, loading: listsLoading } = useAdminLists();
-  const { people, loading: peopleLoading } = usePeople();
+  const { builders, stores, loading: listsLoading } = useAdminLists();
 
   const BUCKET_NAME = "material-photos";
 
   const fetchData = useCallback(async () => {
     if (!addressId) return;
 
-    const [addrRes, woRes, reportsRes] = await Promise.all([
+    const [addrRes, reportsRes] = await Promise.all([
       supabase
         .from("addresses")
         .select("*, builders(name), stores(name)")
         .eq("id", addressId)
         .single(),
-      supabase
-        .from("work_orders")
-        .select("*, products(name), people(name)")
-        .eq("address_id", addressId)
-        .order("created_at", { ascending: false }),
       supabase
         .from("daily_reports")
         .select(
@@ -213,10 +185,6 @@ const AddressDetailsPage = () => {
       store_id: addrRes.data.store_id || "",
       ai_translation: addrRes.data.ai_translation || "",
     });
-
-    if (!woRes.error) {
-      setWorkOrders(woRes.data || []);
-    }
 
     if (reportsRes.error) {
       console.error("Помилка завантаження звітів:", reportsRes.error);
@@ -391,7 +359,9 @@ const AddressDetailsPage = () => {
       path = url.pathname.substring(
         url.pathname.indexOf(BUCKET_NAME) + BUCKET_NAME.length + 1,
       );
-    } catch (e) {}
+    } catch (e) {
+      /* ignore */
+    }
     const { error } = await supabase.storage.from(BUCKET_NAME).remove([path]);
     if (error) {
       toast.error("Failed to delete file.");
@@ -402,204 +372,6 @@ const AddressDetailsPage = () => {
     );
     const updated = await updateAddress({ files: updatedFiles });
     if (updated) toast.success("File deleted successfully!");
-  };
-
-  const handleWoChange = (e) => {
-    const { name, value } = e.target;
-    setWoData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleEditWO = (e, wo) => {
-    e.stopPropagation();
-    setEditingWoId(wo.id);
-    setWoData({
-      area: wo.area || "",
-      product_id: wo.product_id || "",
-      sq_ft: wo.sq_ft || "",
-      worker_id: wo.worker_id || "",
-      people_count: wo.people_count || "",
-      date_completed: wo.date_completed || "",
-    });
-    setShowWoForm(true);
-  };
-
-  const handleCancelWO = () => {
-    setShowWoForm(false);
-    setEditingWoId(null);
-    setWoData({
-      area: "",
-      product_id: "",
-      sq_ft: "",
-      worker_id: "",
-      people_count: "",
-      date_completed: "",
-    });
-  };
-
-  const handleSaveWO = async () => {
-    setIsSubmittingWo(true);
-    try {
-      const payload = {
-        address_id: parseInt(addressId),
-        area: woData.area ? woData.area.trim() : null,
-        product_id: woData.product_id ? parseInt(woData.product_id) : null,
-        sq_ft: woData.sq_ft ? parseFloat(woData.sq_ft) : null,
-        worker_id: woData.worker_id ? parseInt(woData.worker_id) : null,
-        people_count: woData.people_count
-          ? parseInt(woData.people_count)
-          : null,
-        date_completed: woData.date_completed || null,
-      };
-
-      let error;
-      if (editingWoId) {
-        const { error: updateError } = await supabase
-          .from("work_orders")
-          .update(payload)
-          .eq("id", editingWoId);
-        error = updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from("work_orders")
-          .insert([payload]);
-        error = insertError;
-      }
-
-      if (error) {
-        toast.error(`Database Error: ${error.message}`);
-      } else {
-        toast.success(
-          editingWoId ? "Work Order updated!" : "Work Order added!",
-        );
-        handleCancelWO();
-        const { data } = await supabase
-          .from("work_orders")
-          .select("*, products(name), people(name)")
-          .eq("address_id", addressId)
-          .order("created_at", { ascending: false });
-        if (data) setWorkOrders(data);
-      }
-    } catch (err) {
-      toast.error("Something went wrong!");
-    } finally {
-      setIsSubmittingWo(false);
-    }
-  };
-
-  const handleDeleteWO = async (e, id) => {
-    e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this Work Order?"))
-      return;
-    const { error } = await supabase.from("work_orders").delete().eq("id", id);
-    if (error) {
-      toast.error("Failed to delete");
-    } else {
-      toast.success("Work Order deleted");
-      setWorkOrders((prev) => prev.filter((wo) => wo.id !== id));
-    }
-  };
-
-  const generatePDF = (wo) => {
-    const doc = new jsPDF();
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.text("FLOORING BOSS LTD.", 105, 25, { align: "center" });
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    doc.text("Edmonton, Alberta", 105, 33, { align: "center" });
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(0, 0, 0);
-    doc.text("WORK ORDER", 105, 50, { align: "center" });
-
-    const rows = [
-      { label: "Client:", value: addressData.builders?.name || "N/A" },
-      { label: "Project Address:", value: addressData.address || "N/A" },
-      { label: "Order Date:", value: addressData.date || "N/A" },
-      { label: "Product:", value: wo.products?.name || "N/A" },
-      {
-        label: "Total Sq Footage:",
-        value: wo.sq_ft ? `${wo.sq_ft} sqft` : "N/A",
-      },
-    ];
-
-    if (wo.area && wo.area.trim() !== "") {
-      rows.push({ label: "Area:", value: wo.area });
-    }
-
-    let startY = 65;
-    const leftMargin = 20;
-    const col1Width = 50;
-    const col2Width = 120;
-    const rowHeight = 12;
-
-    doc.setLineWidth(0.3);
-    doc.rect(
-      leftMargin,
-      startY,
-      col1Width + col2Width,
-      rows.length * rowHeight,
-    );
-
-    rows.forEach((row, i) => {
-      const currentY = startY + i * rowHeight;
-      if (i > 0) {
-        doc.line(
-          leftMargin,
-          currentY,
-          leftMargin + col1Width + col2Width,
-          currentY,
-        );
-      }
-      doc.line(
-        leftMargin + col1Width,
-        currentY,
-        leftMargin + col1Width,
-        currentY + rowHeight,
-      );
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text(row.label, leftMargin + 5, currentY + 8);
-      doc.setFont("helvetica", "normal");
-      doc.text(row.value.toString(), leftMargin + col1Width + 5, currentY + 8);
-    });
-
-    let footerY = startY + rows.length * rowHeight + 30;
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Installer Signature:", 20, footerY);
-    doc.setFont("helvetica", "normal");
-    const installerName = wo.people?.name
-      ? wo.people.name
-      : "_________________________________";
-    doc.text(installerName, 65, footerY);
-    footerY += 15;
-    doc.setFont("helvetica", "bold");
-    doc.text("Date Completed:", 20, footerY);
-    doc.setFont("helvetica", "normal");
-    const dateCompleted = wo.date_completed
-      ? wo.date_completed
-      : "_________________________________";
-    doc.text(dateCompleted, 65, footerY);
-
-    return doc;
-  };
-
-  const handleDownloadPDF = (e, wo) => {
-    e.stopPropagation();
-    const doc = generatePDF(wo);
-    doc.save(`WorkOrder_${wo.area || "Doc"}.pdf`);
-  };
-
-  const handleDragStart = (e, wo) => {
-    const doc = generatePDF(wo);
-    const dataUri = doc.output("datauristring");
-    const fileName = `WorkOrder_${wo.area ? wo.area.replace(/\s+/g, "_") : "Doc"}.pdf`;
-    e.dataTransfer.setData(
-      "DownloadURL",
-      `application/pdf:${fileName}:${dataUri}`,
-    );
   };
 
   const handleApproveReport = async (e) => {
@@ -759,8 +531,17 @@ const AddressDetailsPage = () => {
                     <p>{addressData.date || "N/A"}</p>
                   )}
                 </div>
-                <div className={styles.detailItem}>
-                  <label>Total Amount</label>
+                <div
+                  className={styles.detailItem}
+                  style={{
+                    gridColumn: "1 / -1",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    gap: "8px",
+                  }}
+                >
+                  <label style={{ fontSize: "1.1rem" }}>Total Amount</label>
                   {isEditing ? (
                     <input
                       type="number"
@@ -768,9 +549,22 @@ const AddressDetailsPage = () => {
                       value={editedData.total_amount}
                       onChange={handleInputChange}
                       className={styles.editInput}
+                      style={{
+                        textAlign: "right",
+                        fontSize: "1.2rem",
+                        padding: "12px",
+                        width: "100%",
+                      }}
                     />
                   ) : (
-                    <p>
+                    <p
+                      style={{
+                        textAlign: "right",
+                        fontSize: "1.5rem",
+                        fontWeight: "bold",
+                        width: "100%",
+                      }}
+                    >
                       {addressData.total_amount
                         ? `$${addressData.total_amount.toFixed(2)}`
                         : "N/A"}
@@ -856,211 +650,6 @@ const AddressDetailsPage = () => {
                   addressId={addressId}
                   addressData={addressData}
                 />
-              </div>
-            </div>
-
-            {/* 4. WORK ORDERS */}
-            <div className={styles.detailCard}>
-              <div className={styles.cardHeader}>
-                <h3>Work Orders</h3>
-                {!showWoForm && (
-                  <button
-                    onClick={() => {
-                      setEditingWoId(null);
-                      setShowWoForm(true);
-                    }}
-                    className={commonStyles.buttonPrimary}
-                    style={{ padding: "4px 12px", fontSize: "0.85rem" }}
-                  >
-                    <FaPlus /> Add New
-                  </button>
-                )}
-              </div>
-              <div className={styles.cardContentWrapper}>
-                {showWoForm ? (
-                  <div className={styles.formContainer}>
-                    <h4>
-                      {editingWoId ? "Edit Work Order" : "Create Work Order"}
-                    </h4>
-                    <div className={styles.detailItem}>
-                      <label>Area (e.g. Main Floor)</label>
-                      <input
-                        type="text"
-                        name="area"
-                        value={woData.area}
-                        onChange={handleWoChange}
-                        className={styles.editInput}
-                        placeholder="Area..."
-                      />
-                    </div>
-                    <div className={styles.detailItem}>
-                      <label>Product</label>
-                      <select
-                        name="product_id"
-                        value={woData.product_id}
-                        onChange={handleWoChange}
-                        className={styles.editInput}
-                        disabled={listsLoading}
-                      >
-                        <option value="">Select Product</option>
-                        {products?.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <label>Square Feet</label>
-                      <input
-                        type="number"
-                        name="sq_ft"
-                        value={woData.sq_ft}
-                        onChange={handleWoChange}
-                        className={styles.editInput}
-                        placeholder="Sq ft"
-                      />
-                    </div>
-                    <div className={styles.detailItem}>
-                      <label>Installer Signature</label>
-                      <select
-                        name="worker_id"
-                        value={woData.worker_id}
-                        onChange={handleWoChange}
-                        className={styles.editInput}
-                        disabled={peopleLoading}
-                      >
-                        <option value="">Select Installer (Optional)</option>
-                        {people?.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <label>People on Site</label>
-                      <input
-                        type="number"
-                        name="people_count"
-                        value={woData.people_count}
-                        onChange={handleWoChange}
-                        className={styles.editInput}
-                        placeholder="Count"
-                      />
-                    </div>
-                    <div className={styles.detailItem}>
-                      <label>Date Completed</label>
-                      <input
-                        type="date"
-                        name="date_completed"
-                        value={woData.date_completed}
-                        onChange={handleWoChange}
-                        className={styles.editInput}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "10px",
-                        marginTop: "10px",
-                      }}
-                    >
-                      <button
-                        onClick={handleSaveWO}
-                        disabled={isSubmittingWo}
-                        className={commonStyles.buttonSuccess}
-                      >
-                        {isSubmittingWo ? (
-                          <FaSpinner className="spin" />
-                        ) : (
-                          <>
-                            <FaCheck /> Save WO
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={handleCancelWO}
-                        className={commonStyles.buttonSecondary}
-                      >
-                        <FaTimes /> Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "12px",
-                    }}
-                  >
-                    {workOrders.length > 0 ? (
-                      workOrders.map((wo) => (
-                        <div
-                          key={wo.id}
-                          draggable="true"
-                          onDragStart={(e) => handleDragStart(e, wo)}
-                          onClick={(e) => handleEditWO(e, wo)}
-                          className={styles.draggableCard}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: "4px",
-                            }}
-                          >
-                            <strong
-                              style={{
-                                color: "var(--color-text-primary)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                              }}
-                            >
-                              <FaFilePdf
-                                style={{ color: "var(--color-danger)" }}
-                              />{" "}
-                              Area: {wo.area || "N/A"}
-                            </strong>
-                            <span
-                              style={{
-                                fontSize: "0.85rem",
-                                color: "var(--color-text-secondary)",
-                              }}
-                            >
-                              {wo.products?.name || "No Product"} •{" "}
-                              {wo.sq_ft ? `${wo.sq_ft} sq ft` : "No sqft"} •
-                              Installer: {wo.people?.name || "TBD"}
-                            </span>
-                          </div>
-                          <div style={{ display: "flex", gap: "8px" }}>
-                            <button
-                              onClick={(e) => handleDownloadPDF(e, wo)}
-                              className={commonStyles.buttonIcon}
-                              title="Download PDF"
-                              style={{ color: "var(--color-primary)" }}
-                            >
-                              <FaDownload />
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteWO(e, wo.id)}
-                              className={commonStyles.buttonIcon}
-                              title="Delete"
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className={styles.noItemsMessage}>
-                        No work orders created for this project yet.
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>

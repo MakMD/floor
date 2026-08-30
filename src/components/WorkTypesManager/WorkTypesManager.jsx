@@ -2,7 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 import styles from "./WorkTypesManager.module.css";
-import { FaPlus, FaTrash, FaSave, FaInfoCircle } from "react-icons/fa";
+import {
+  FaPlus,
+  FaTrash,
+  FaSave,
+  FaInfoCircle,
+  FaCopy,
+  FaRegCommentDots,
+} from "react-icons/fa";
 import { useAdminLists } from "../../hooks/useAdminLists";
 import {
   addWorkTypeAndInvoice,
@@ -15,6 +22,10 @@ const WorkTypesManager = ({ addressId, addressData }) => {
   const [people, setPeople] = useState([]);
   const { workTypeTemplates, loading: listsLoading } = useAdminLists();
   const [loading, setLoading] = useState(true);
+
+  // Стан для відображення поля вводу нотатки для кожної роботи
+  const [visibleNoteIds, setVisibleNoteIds] = useState({});
+
   const [newWorkType, setNewWorkType] = useState({
     work_type_template_id: "",
     person_id: "",
@@ -31,7 +42,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
             .select("*, people(name), work_type_templates(name)")
             .eq("address_id", addressId)
             .order("created_at"),
-          // ВИПРАВЛЕННЯ: Завантажуємо ВСІХ працівників та їхній статус
           supabase.from("people").select("id, name, status").order("name"),
         ]);
 
@@ -57,7 +67,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke(
+      const { error } = await supabase.functions.invoke(
         "send-whatsapp-notification",
         {
           body: {
@@ -75,7 +85,9 @@ const WorkTypesManager = ({ addressId, addressData }) => {
             const errorJson = await error.context.json();
             errorDetails = errorJson.error || errorJson;
           }
-        } catch (e) {}
+        } catch (e) {
+          /* ignore */
+        }
         console.error("SERVER ERROR DETAILS:", errorDetails);
         toast.error(
           `Помилка: ${typeof errorDetails === "string" ? errorDetails : "Не вдалося відправити SMS"}`,
@@ -100,6 +112,30 @@ const WorkTypesManager = ({ addressId, addressData }) => {
     const { name, value } = e.target;
     setNewWorkType((prev) => ({ ...prev, [name]: value }));
   }, []);
+
+  const toggleNoteInput = (id) => {
+    setVisibleNoteIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // ФУНКЦІЯ ДУБЛЮВАННЯ РОБОТИ
+  const handleDuplicateWorkType = async (wt) => {
+    const payload = {
+      address_id: addressId,
+      work_type_template_id: wt.work_type_template_id,
+      person_id: null, // Скидаємо працівника при дублюванні
+      payment_amount: wt.payment_amount ? parseFloat(wt.payment_amount) : 0,
+      notes: wt.notes || wt.line_notes || null,
+    };
+
+    const addedWorkType = await addWorkTypeAndInvoice(payload);
+
+    if (addedWorkType) {
+      setWorkTypes([...workTypes, addedWorkType]);
+      toast.success("Роботу здубльовано!");
+    } else {
+      toast.error("Помилка дублювання.");
+    }
+  };
 
   const handleAddWorkType = async () => {
     if (!newWorkType.work_type_template_id) {
@@ -151,10 +187,18 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       payment_amount: workTypeToUpdate.payment_amount
         ? parseFloat(workTypeToUpdate.payment_amount)
         : 0,
+      // Зберігаємо нотатку
+      notes:
+        workTypeToUpdate.notes !== undefined
+          ? workTypeToUpdate.notes
+          : workTypeToUpdate.line_notes || null,
     };
 
     await updateWorkTypeAndInvoice(payload);
     toast.success("Work type updated");
+
+    // Закриваємо поле вводу нотатки після збереження
+    setVisibleNoteIds((prev) => ({ ...prev, [id]: false }));
 
     if (payload.person_id && payload.person_id !== oldPersonId) {
       await sendNotification(payload.person_id);
@@ -192,7 +236,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
               >
                 <option value="">Unassigned</option>
                 {people.map((p) => {
-                  // ВИПРАВЛЕННЯ: Показуємо працівника, якщо він активний АБО вже призначений сюди
                   if (p.status === "active" || p.id === wt.person_id) {
                     return (
                       <option key={p.id} value={p.id}>
@@ -213,30 +256,66 @@ const WorkTypesManager = ({ addressId, addressData }) => {
               />
               <div className={styles.actions}>
                 <button
+                  onClick={() => toggleNoteInput(wt.id)}
+                  className={styles.actionBtn}
+                  style={{ color: "#0dcaf0" }}
+                  title="Додати/Редагувати інструкцію"
+                >
+                  <FaRegCommentDots />
+                </button>
+                <button
+                  onClick={() => handleDuplicateWorkType(wt)}
+                  className={styles.actionBtn}
+                  style={{ color: "#6c757d" }}
+                  title="Дублювати роботу"
+                >
+                  <FaCopy />
+                </button>
+                <button
                   onClick={() => handleUpdateWorkType(wt.id)}
-                  className={styles.saveButton}
-                  title="Save changes"
+                  className={styles.actionBtn}
+                  style={{ color: "var(--color-primary)" }}
+                  title="Зберегти"
                 >
                   <FaSave />
                 </button>
                 <button
                   onClick={() => handleDeleteWorkType(wt.id)}
-                  className={styles.deleteButton}
-                  title="Delete"
+                  className={styles.actionBtn}
+                  style={{ color: "#dc3545" }}
+                  title="Видалити"
                 >
                   <FaTrash />
                 </button>
               </div>
             </div>
 
-            {(wt.line_notes || wt.notes) && (
-              <div className={styles.lineNotesBox}>
+            {/* Блок відображення або редагування нотатки */}
+            {visibleNoteIds[wt.id] ? (
+              <div className={styles.noteEditBox}>
+                <textarea
+                  name="notes"
+                  value={
+                    wt.notes !== undefined ? wt.notes : wt.line_notes || ""
+                  }
+                  onChange={(e) => handleInputChange(e, wt.id)}
+                  placeholder="Введіть інструкцію для працівника тут..."
+                  className={styles.noteTextarea}
+                />
+              </div>
+            ) : wt.notes || wt.line_notes ? (
+              <div
+                className={styles.lineNotesBox}
+                onClick={() => toggleNoteInput(wt.id)}
+                style={{ cursor: "pointer" }}
+                title="Натисніть щоб редагувати"
+              >
                 <FaInfoCircle className={styles.infoIcon} />
                 <span className={styles.notesText}>
-                  {wt.line_notes || wt.notes}
+                  {wt.notes || wt.line_notes}
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
         ))}
       </div>
@@ -261,7 +340,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
         >
           <option value="">Assign Worker</option>
           {people.map((p) => {
-            // Для нових робіт показуємо ТІЛЬКИ активних
             if (p.status === "active") {
               return (
                 <option key={p.id} value={p.id}>

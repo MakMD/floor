@@ -22,6 +22,8 @@ import {
   FaRegCalendar,
   FaMapMarkerAlt,
   FaSearch,
+  FaBuilding,
+  FaWrench,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
 import { supabase } from "../supabaseClient";
@@ -56,9 +58,14 @@ const CalendarPage = () => {
           return parsed.viewMode || "day";
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      /* ignore */
+    }
     return "day";
   });
+
+  // НОВИЙ СТЕЙТ ДЛЯ ВКЛАДОК (Адреси/Сервіси)
+  const [projectTab, setProjectTab] = useState("Address");
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -98,11 +105,11 @@ const CalendarPage = () => {
       endDate = format(endOfWeek(selectedDate, { weekStartsOn }), "yyyy-MM-dd");
     }
 
-    // ДОДАНО: Витягуємо work_types(person_id) для перевірки призначень
     const { data, error } = await supabase
       .from("addresses")
       .select("*, builders(name), stores(name), work_types(person_id)")
       .eq("is_deleted", false)
+      .eq("project_type", projectTab) // Фільтрація за вкладкою
       .gte("date", startDate)
       .lte("date", endDate)
       .order("date", { ascending: true })
@@ -115,7 +122,7 @@ const CalendarPage = () => {
       setEvents(data || []);
     }
     setLoading(false);
-  }, [selectedDate, viewMode]);
+  }, [selectedDate, viewMode, projectTab]);
 
   useEffect(() => {
     fetchEvents();
@@ -130,6 +137,7 @@ const CalendarPage = () => {
         .from("addresses")
         .select("date, status")
         .eq("is_deleted", false)
+        .eq("project_type", projectTab) // Фільтрація індикаторів місяця
         .gte("date", start)
         .lte("date", end);
 
@@ -138,7 +146,7 @@ const CalendarPage = () => {
       }
     };
     fetchMonthEvents();
-  }, [calendarMonth]);
+  }, [calendarMonth, projectTab]);
 
   const getDayStatus = useCallback(
     (date) => {
@@ -272,9 +280,7 @@ const CalendarPage = () => {
     return `${format(start, "MM/dd")} - ${format(end, "MM/dd")}`;
   };
 
-  // РОЗУМНІ СТАТУСИ
   const renderStatusBadges = (item) => {
-    // Перевіряємо, чи є хоча б одна робота з призначеним person_id
     const isAssigned =
       item.work_types && item.work_types.some((wt) => wt.person_id);
 
@@ -316,7 +322,6 @@ const CalendarPage = () => {
       }
     }
 
-    // Основний статус проекту
     let mainStatusText =
       item.status === "Ready"
         ? "Готово"
@@ -426,6 +431,48 @@ const CalendarPage = () => {
             />
           </div>
 
+          {/* Вкладки (Адреси / Сервіси) */}
+          <div style={{ display: "flex", gap: "10px", width: "100%" }}>
+            <button
+              onClick={() => setProjectTab("Address")}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "8px",
+                border: "none",
+                fontWeight: "bold",
+                cursor: "pointer",
+                backgroundColor:
+                  projectTab === "Address"
+                    ? "#cfa85c"
+                    : "rgba(255, 255, 255, 0.1)",
+                color: projectTab === "Address" ? "#2c2c2c" : "#cbd5e1",
+                transition: "all 0.2s",
+              }}
+            >
+              <FaBuilding style={{ marginRight: "6px" }} /> Адреси
+            </button>
+            <button
+              onClick={() => setProjectTab("Service")}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "8px",
+                border: "none",
+                fontWeight: "bold",
+                cursor: "pointer",
+                backgroundColor:
+                  projectTab === "Service"
+                    ? "#cfa85c"
+                    : "rgba(255, 255, 255, 0.1)",
+                color: projectTab === "Service" ? "#2c2c2c" : "#cbd5e1",
+                transition: "all 0.2s",
+              }}
+            >
+              <FaWrench style={{ marginRight: "6px" }} /> Сервіси
+            </button>
+          </div>
+
           <div className={styles.filtersContainer}>
             <select
               value={selectedBuilder}
@@ -475,7 +522,7 @@ const CalendarPage = () => {
               selectedStore !== "All" ||
               selectedStatus !== "All"
                 ? "Нічого не знайдено за вашими фільтрами."
-                : "No projects for this period."}
+                : `No ${projectTab.toLowerCase()}es for this period.`}
             </div>
           ) : (
             <div className={styles.listContainer}>

@@ -351,11 +351,9 @@ const WorkerPortal = () => {
     }
   };
 
-  // --- ОЧИЩЕНА ФУНКЦІЯ: Тільки інструкція до конкретної роботи ---
   const extractRelevantInstruction = (fullText, taskName) => {
     if (!fullText) return null;
 
-    // Прибираємо секцію з примітками менеджера, якщо вона є в кінці
     let textToParse = fullText;
     const managerNoteToken = "⚠️ Примітки від менеджера:";
     if (fullText.includes(managerNoteToken)) {
@@ -363,18 +361,15 @@ const WorkerPortal = () => {
       textToParse = fullText.substring(0, idx);
     }
 
-    // Розбиваємо текст на блоки по "📍 Зона:"
     const blocks = textToParse.split("📍 Зона:").filter(Boolean);
 
-    // Шукаємо блок, який містить ім'я нашого завдання
     for (const block of blocks) {
       const cleanBlock = ("📍 Зона:" + block).trim();
       if (cleanBlock.toLowerCase().includes(taskName.toLowerCase())) {
-        return cleanBlock; // Повертаємо виключно інструкцію до цієї роботи
+        return cleanBlock;
       }
     }
 
-    // Якщо точного збігу за назвою не знайдено, повертаємо весь текст (як fallback)
     return textToParse.trim();
   };
 
@@ -384,8 +379,6 @@ const WorkerPortal = () => {
         return selectedTask ? "Деталі завдання" : "Мої завдання";
       case "profile":
         return "Мій профіль";
-      case "invoices":
-        return selectedTable ? selectedTable.name : "Папки виплат";
       case "notifications":
         return "Сповіщення";
       default:
@@ -940,179 +933,6 @@ const WorkerPortal = () => {
             </div>
           )}
 
-          {activeTab === "invoices" && (
-            <div className={styles.invoicesTab}>
-              {!selectedTable ? (
-                <>
-                  {loadingTables ? (
-                    <p className={styles.infoText}>Завантаження папок...</p>
-                  ) : myTables.length === 0 ? (
-                    <div className={styles.placeholderTab}>
-                      <FaFileInvoiceDollar
-                        size={40}
-                        className={styles.placeholderIcon}
-                      />
-                      <p>У вас поки немає папок з виплатами.</p>
-                    </div>
-                  ) : (
-                    <div className={styles.projectList}>
-                      {myTables.map((table) => {
-                        const invoicesList = table.invoices || [];
-                        const invCount = invoicesList.length;
-                        const previewAddresses = invoicesList
-                          .slice(0, 2)
-                          .map((i) => i.address)
-                          .filter(Boolean);
-                        const remainingCount = invCount > 2 ? invCount - 2 : 0;
-                        const totalSum = invoicesList.reduce(
-                          (sum, inv) =>
-                            sum +
-                            parseFloat(inv.total_income || inv.total || 0),
-                          0,
-                        );
-
-                        return (
-                          <div
-                            key={table.id}
-                            className={styles.folderCard}
-                            onClick={() => {
-                              setSelectedTable(table);
-                              fetchInvoicesForTable(table.id);
-                            }}
-                          >
-                            <div className={styles.folderContent}>
-                              <div className={styles.folderTitleRow}>
-                                <span className={styles.folderIcon}>📅</span>
-                                <span className={styles.folderName}>
-                                  {table.name}
-                                </span>
-                              </div>
-                              {invCount > 0 ? (
-                                <div className={styles.folderAddressesPreview}>
-                                  <ul className={styles.previewList}>
-                                    {previewAddresses.map((addr, idx) => (
-                                      <li key={idx}>
-                                        <FaMapMarkerAlt
-                                          className={styles.pinIconSmall}
-                                        />{" "}
-                                        {addr}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                  {remainingCount > 0 && (
-                                    <div className={styles.moreAddresses}>
-                                      + ще {remainingCount} об'єкт
-                                      {remainingCount === 1 ? "" : "ів"}
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className={styles.noAddressesText}>
-                                  Немає об'єктів
-                                </div>
-                              )}
-                              <div className={styles.folderTotalPreview}>
-                                <div className={styles.statBox}>
-                                  <span className={styles.statLabel}>
-                                    Об'єкти:
-                                  </span>
-                                  <span className={styles.statValue}>
-                                    {invCount}
-                                  </span>
-                                </div>
-                                <div className={styles.statBox}>
-                                  <span className={styles.statLabel}>
-                                    Сума:
-                                  </span>
-                                  <span className={styles.statValueSum}>
-                                    ${totalSum.toFixed(2)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <MdOutlineChevronRight
-                              className={styles.chevronIcon}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className={styles.invoicesContainer}>
-                  <button
-                    onClick={() => setSelectedTable(null)}
-                    className={styles.backButton}
-                  >
-                    <FaArrowLeft /> Назад до папок
-                  </button>
-
-                  <div className={styles.detailHeader}>
-                    <h2 className={styles.detailTitle}>{selectedTable.name}</h2>
-                    <p className={styles.detailSubtitle}>
-                      Деталізація ваших виплат
-                    </p>
-                  </div>
-
-                  {loadingInvoices ? (
-                    <p className={styles.infoText}>Завантаження об'єктів...</p>
-                  ) : tableInvoices.length === 0 ? (
-                    <p className={styles.infoText}>Ця папка наразі порожня.</p>
-                  ) : (
-                    <div className={styles.invoiceList}>
-                      {tableInvoices.map((inv) => (
-                        <div key={inv.id} className={styles.invoiceCard}>
-                          <div className={styles.invoiceMainRow}>
-                            <span className={styles.invoiceAddress}>
-                              {inv.address || "Адреса не вказана"}
-                            </span>
-                            <span className={styles.invoiceAmount}>
-                              $
-                              {parseFloat(
-                                inv.total_income || inv.total || 0,
-                              ).toFixed(2)}
-                            </span>
-                          </div>
-
-                          <div className={styles.invoiceSubRow}>
-                            {inv.date && (
-                              <span
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                }}
-                              >
-                                <FaCalendarAlt style={{ opacity: 0.6 }} />{" "}
-                                {inv.date}
-                              </span>
-                            )}
-                            {inv["sf/stairs"] && inv.price && (
-                              <span className={styles.invoiceDetailBadge}>
-                                {inv["sf/stairs"]} × $
-                                {parseFloat(inv.price).toFixed(2)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-
-                      <div className={styles.folderTotalCard}>
-                        <span className={styles.folderTotalLabel}>
-                          Всього за період:
-                        </span>
-                        <span className={styles.folderTotalAmount}>
-                          ${folderTotal.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
           {activeTab === "notifications" && (
             <div className={styles.notificationsTab}>
               <div className={styles.notifHeaderWrapper}>
@@ -1180,16 +1000,7 @@ const WorkerPortal = () => {
             <FaUser size={20} />
             <span>Профіль</span>
           </button>
-          <button
-            className={`${styles.navItem} ${activeTab === "invoices" ? styles.activeNav : ""}`}
-            onClick={() => {
-              setActiveTab("invoices");
-              setSelectedTable(null);
-            }}
-          >
-            <FaFileInvoiceDollar size={20} />
-            <span>Виплати</span>
-          </button>
+          {/* Кнопку "Виплати" прибрано */}
           <button
             className={`${styles.navItem} ${activeTab === "notifications" ? styles.activeNav : ""}`}
             onClick={() => setActiveTab("notifications")}

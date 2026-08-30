@@ -1,5 +1,3 @@
-/* src/components/WorkTypesManager/WorkTypesManager.module.css */
-
 .container {
   display: flex;
   flex-direction: column;
@@ -30,8 +28,8 @@
 .workTypeItem,
 .addWorkTypeForm {
   display: grid;
-  /* ЗМІНЕНО: зменшено першу колонку, збільшено третю (сума) */
-  grid-template-columns: 2fr 2fr 1.5fr auto;
+  /* 2.5fr (робота), 2fr (працівник), 100px (сума), решта під кнопки */
+  grid-template-columns: 2.5fr 2fr 100px auto;
   gap: 10px;
   align-items: center;
 }
@@ -40,29 +38,24 @@
 .workTypeItem select,
 .addWorkTypeForm input,
 .addWorkTypeForm select {
-  padding: 8px 12px;
+  padding: 8px 10px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 0.95rem;
   width: 100%;
   box-sizing: border-box;
 }
 
-.inputName {
-  flex-grow: 3;
-}
-
 .inputAmount {
-  max-width: 150px; /* Збільшено з 100px */
+  min-width: 80px;
 }
 
 .actions {
   display: flex;
-  gap: 8px;
+  gap: 2px;
 }
 
-.saveButton,
-.deleteButton,
+.actionBtn,
 .addButton {
   background: none;
   border: none;
@@ -75,39 +68,58 @@
   transition: background-color 0.2s;
 }
 
-.saveButton {
-  color: var(--color-primary);
-}
-.saveButton:hover {
-  background-color: #e9f2ff;
-}
-
-.deleteButton {
-  color: #dc3545;
-}
-.deleteButton:hover {
-  background-color: #fbebee;
+.actionBtn:hover {
+  background-color: #f0f0f0;
 }
 
 .addButton {
   color: #198754;
   border: 1px dashed #198754;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
 }
-
 .addButton:hover {
   background-color: #d1e7dd;
 }
 
-/* Новий блок для AI нотаток під роботою */
+/* Нотатки */
+.noteEditBox {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.noteTextarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 12px;
+  border: 1px dashed #0dcaf0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  resize: vertical;
+  box-sizing: border-box;
+  background-color: #fdfdfd;
+}
+.noteTextarea:focus {
+  outline: none;
+  border: 1px solid #0dcaf0;
+  background-color: #fff;
+}
+
 .lineNotesBox {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  background-color: #f8f9fa; /* Світло-сірий фон для виділення */
+  background-color: #f8f9fa;
   padding: 8px 12px;
   border-radius: 6px;
-  border-left: 3px solid #0dcaf0; /* Блакитна смужка зліва */
+  border-left: 3px solid #0dcaf0;
   margin-top: 4px;
+}
+
+.lineNotesBox:hover {
+  background-color: #e0f8fc;
 }
 
 .infoIcon {
@@ -120,7 +132,7 @@
   font-size: 0.85rem;
   color: #444;
   line-height: 1.4;
-  white-space: pre-wrap; /* Зберігаємо переноси рядків від ШІ */
+  white-space: pre-wrap;
 }
 
 /* Адаптивність */
@@ -131,5 +143,11 @@
   }
   .inputAmount {
     max-width: 100%;
+  }
+  .actions {
+    justify-content: flex-end;
+    border-top: 1px solid #eee;
+    padding-top: 8px;
+    margin-top: 4px;
   }
 }
