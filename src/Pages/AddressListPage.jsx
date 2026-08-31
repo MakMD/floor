@@ -22,7 +22,14 @@ import { MdOutlineChevronRight } from "react-icons/md";
 import styles from "./AddressListPage.module.css";
 import commonStyles from "../styles/common.module.css";
 import toast from "react-hot-toast";
-import { format, addDays, subDays, parseISO } from "date-fns";
+import {
+  format,
+  addDays,
+  subDays,
+  parseISO,
+  startOfWeek,
+  endOfWeek,
+} from "date-fns";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 
@@ -81,8 +88,9 @@ const AddressListPage = () => {
   const [projectTab, setProjectTab] = useState("Address");
 
   const { builders, stores, products } = useAdminLists();
-  const navigate = useNavigate(); // <--- ОСЬ ЦЕЙ РЯДОК ДОДАЙ
+  const navigate = useNavigate();
   const location = useLocation();
+
   const [searchTerm, setSearchTerm] = useState(
     location.state?.searchTerm || "",
   );
@@ -104,7 +112,7 @@ const AddressListPage = () => {
 
   const [isScanning, setIsScanning] = useState(false);
 
-  // Додано стан для вікна підтвердження дублікату
+  // Стан для вікна підтвердження дублікату
   const [duplicateWarning, setDuplicateWarning] = useState(null);
 
   useEffect(() => {
@@ -130,7 +138,7 @@ const AddressListPage = () => {
         .eq("project_type", projectTab)
         .order("date", { ascending: false, nullsLast: true });
 
-      // Виправлення пошуку: шукаємо і по адресі, і по номеру WO
+      // Пошук по адресі та номеру WO
       if (debouncedSearch) {
         query = query.or(
           `address.ilike.%${debouncedSearch}%,work_order_number.ilike.%${debouncedSearch}%`,
@@ -209,59 +217,60 @@ const AddressListPage = () => {
     fetchAddresses(nextPage, false);
   };
 
+  // ОНОВЛЕНЕ ГРУПУВАННЯ ДЛЯ ЗАХИСТУ ВІД ЧАСОВИХ ПОЯСІВ
   const groupedAddresses = useMemo(() => {
     const todayList = [];
     const tomorrowList = [];
     const upcomingMap = {};
     const pastMap = {};
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
-    const tomorrowDate = new Date(todayDate);
-    tomorrowDate.setDate(todayDate.getDate() + 1);
-    const yesterdayDate = new Date(todayDate);
-    yesterdayDate.setDate(todayDate.getDate() - 1);
+
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const tomorrowStr = format(addDays(new Date(), 1), "yyyy-MM-dd");
 
     addresses.forEach((item) => {
       if (!item.date) return;
-      const dateOnly = new Date(parseISO(item.date));
-      dateOnly.setHours(0, 0, 0, 0);
 
-      if (dateOnly.getTime() === todayDate.getTime()) todayList.push(item);
-      else if (dateOnly.getTime() === tomorrowDate.getTime())
+      const itemDateStr = item.date.split("T")[0];
+      const dateOnly = parseISO(itemDateStr);
+      const todayDate = parseISO(todayStr);
+
+      if (itemDateStr === todayStr) {
+        todayList.push(item);
+      } else if (itemDateStr === tomorrowStr) {
         tomorrowList.push(item);
-      else if (dateOnly > tomorrowDate) {
-        const startChunk = new Date(dateOnly);
-        startChunk.setDate(dateOnly.getDate() - dateOnly.getDay() + 1);
-        const endChunk = new Date(startChunk);
-        endChunk.setDate(startChunk.getDate() + 6);
+      } else if (dateOnly > parseISO(tomorrowStr)) {
+        const startChunk = startOfWeek(dateOnly, { weekStartsOn: 1 });
+        const endChunk = endOfWeek(dateOnly, { weekStartsOn: 1 });
         const key = startChunk.getTime().toString();
-        if (!upcomingMap[key])
+
+        if (!upcomingMap[key]) {
           upcomingMap[key] = { start: startChunk, end: endChunk, items: [] };
+        }
         upcomingMap[key].items.push(item);
       } else if (dateOnly < todayDate) {
-        const startChunk = new Date(dateOnly);
-        startChunk.setDate(dateOnly.getDate() - dateOnly.getDay() + 1);
-        const endChunk = new Date(startChunk);
-        endChunk.setDate(startChunk.getDate() + 6);
+        const startChunk = startOfWeek(dateOnly, { weekStartsOn: 1 });
+        const endChunk = endOfWeek(dateOnly, { weekStartsOn: 1 });
         const key = startChunk.getTime().toString();
-        if (!pastMap[key])
+
+        if (!pastMap[key]) {
           pastMap[key] = { start: startChunk, end: endChunk, items: [] };
+        }
         pastMap[key].items.push(item);
       }
     });
 
-    const formatDate = (d) =>
-      d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const formatDate = (d) => format(d, "MMM d");
+
     const sortAndFormat = (map, isPast) =>
       Object.values(map)
         .sort((a, b) => (isPast ? b.start - a.start : a.start - b.start))
         .map((chunk) => ({
           label: `${formatDate(chunk.start)} - ${formatDate(chunk.end)}`,
-          items: chunk.items.sort((i1, i2) =>
-            isPast
-              ? parseISO(i2.date) - parseISO(i1.date)
-              : parseISO(i1.date) - parseISO(i2.date),
-          ),
+          items: chunk.items.sort((i1, i2) => {
+            const d1 = parseISO(i1.date.split("T")[0]);
+            const d2 = parseISO(i2.date.split("T")[0]);
+            return isPast ? d2 - d1 : d1 - d2;
+          }),
         }));
 
     return {
@@ -395,7 +404,6 @@ const AddressListPage = () => {
         .maybeSingle();
 
       if (existingWo) {
-        // Замість жорсткого блокування, показуємо вікно з вибором
         setDuplicateWarning({
           existingId: existingWo.id,
           existingAddress: existingWo.address,
@@ -547,12 +555,11 @@ const AddressListPage = () => {
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("material-photos") // Використовуємо існуючий бакет для доп. фото
+        .from("material-photos")
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
-      // Зберігаємо шлях у формі, щоб потім додати його до addressData.files
       const filePath = `material-photos/${fileName}`;
       setFieldValue("additional_photo_url", filePath);
 

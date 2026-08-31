@@ -5,6 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -47,8 +48,9 @@ serve(async (req: Request) => {
               properties: {
                 type: {
                   type: "string",
+                  enum: ["Address", "Service"],
                   description:
-                    "Return 'Address' for standard installs, or 'Service' if it's a repair/service ticket",
+                    "Strictly return 'Address' for standard installs, or 'Service' if it's a repair/service ticket.",
                 },
                 work_order_number: {
                   type: "string",
