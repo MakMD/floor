@@ -111,8 +111,8 @@ const AddressListPage = () => {
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
 
   const [isScanning, setIsScanning] = useState(false);
+  const [selectedFilesToScan, setSelectedFilesToScan] = useState([]);
 
-  // Стан для вікна підтвердження дублікату
   const [duplicateWarning, setDuplicateWarning] = useState(null);
 
   useEffect(() => {
@@ -138,7 +138,6 @@ const AddressListPage = () => {
         .eq("project_type", projectTab)
         .order("date", { ascending: false, nullsLast: true });
 
-      // Пошук по адресі та номеру WO
       if (debouncedSearch) {
         query = query.or(
           `address.ilike.%${debouncedSearch}%,work_order_number.ilike.%${debouncedSearch}%`,
@@ -217,7 +216,6 @@ const AddressListPage = () => {
     fetchAddresses(nextPage, false);
   };
 
-  // ОНОВЛЕНЕ ГРУПУВАННЯ ДЛЯ ЗАХИСТУ ВІД ЧАСОВИХ ПОЯСІВ
   const groupedAddresses = useMemo(() => {
     const todayList = [];
     const tomorrowList = [];
@@ -282,6 +280,12 @@ const AddressListPage = () => {
   }, [addresses]);
 
   const saveProjectToDatabase = async (values, setSubmitting, resetForm) => {
+    // Формуємо масив усіх файлів (скановані + додаткові)
+    const combinedFiles = [
+      ...(values.scanned_files_array || []),
+      ...(values.additional_photo_url ? [values.additional_photo_url] : []),
+    ];
+
     const newAddressObject = {
       work_order_number: values.work_order_number?.trim() || null,
       address: values.address.trim(),
@@ -294,9 +298,10 @@ const AddressListPage = () => {
       status: "In Process",
       project_type: values.project_type,
       service_time: values.project_type === "Service" ? values.time : null,
-      original_photo_url: values.original_photo_url || null,
+      original_photo_url:
+        values.scanned_files_array?.[0] || values.original_photo_url || null,
       ai_translation: values.ai_translation || null,
-      files: values.additional_photo_url ? [values.additional_photo_url] : [],
+      files: combinedFiles, // Записуємо всі файли в базу
     };
 
     const { data: newAddressData, error: addressError } = await supabase
@@ -388,13 +393,13 @@ const AddressListPage = () => {
 
     resetForm();
     setIsAddFormOpen(false);
+    setSelectedFilesToScan([]);
     setDuplicateWarning(null);
     refetch();
     setSubmitting(false);
   };
 
   const handleAddAddress = async (values, { setSubmitting, resetForm }) => {
-    // 1. ЗАХИСТ ВІД ДУБЛІКАТІВ
     if (values.work_order_number && values.work_order_number.trim() !== "") {
       const { data: existingWo } = await supabase
         .from("addresses")
@@ -448,42 +453,67 @@ const AddressListPage = () => {
     }
   };
 
-  const handleScanDocument = async (event, setFieldValue) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  const handleFilesSelected = (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+    setSelectedFilesToScan((prev) => [...prev, ...files]);
+    event.target.value = null;
+  };
+
+  const handleRemoveFile = (index) => {
+    setSelectedFilesToScan((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRunScan = async (setFieldValue) => {
+    if (selectedFilesToScan.length === 0) return;
 
     setIsScanning(true);
-    const toastId = toast.loading("Uploading and analyzing document...");
+    const toastId = toast.loading(
+      `Uploading & analyzing ${selectedFilesToScan.length} document(s)...`,
+    );
 
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const imagesBase64 = [];
+      const uploadedFilePaths = [];
 
-      const { error: uploadError } = await supabase.storage
-        .from("original-photos")
-        .upload(fileName, file);
+      for (let i = 0; i < selectedFilesToScan.length; i++) {
+        const file = selectedFilesToScan[i];
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
 
-      if (uploadError)
-        throw new Error(
-          "Failed to upload original photo: " + uploadError.message,
-        );
+        const { error: uploadError } = await supabase.storage
+          .from("original-photos")
+          .upload(fileName, file);
 
-      const { data: publicUrlData } = supabase.storage
-        .from("original-photos")
-        .getPublicUrl(fileName);
+        if (uploadError) {
+          throw new Error("Failed to upload photo: " + uploadError.message);
+        }
 
-      setFieldValue("original_photo_url", publicUrlData.publicUrl);
+        const { data: publicUrlData } = supabase.storage
+          .from("original-photos")
+          .getPublicUrl(fileName);
 
-      const base64Image = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result.split(",")[1]);
-        reader.onerror = (error) => reject(error);
-      });
+        uploadedFilePaths.push(publicUrlData.publicUrl);
+
+        if (i === 0) {
+          setFieldValue("original_photo_url", publicUrlData.publicUrl);
+        }
+
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = (error) => reject(error);
+        });
+
+        imagesBase64.push(base64);
+      }
+
+      setFieldValue("scanned_files_array", uploadedFilePaths);
 
       const { data, error } = await supabase.functions.invoke(
         "scan-work-order",
-        { body: { imageBase64: base64Image } },
+        { body: { imagesBase64 } },
       );
 
       if (error) throw new Error(error.message || "Помилка зв'язку з сервером");
@@ -516,11 +546,14 @@ const AddressListPage = () => {
         }));
 
         setFieldValue("pending_work_types", processedWorks);
-        toast.success(`Found ${extractedWorks.length} work items!`, {
-          id: toastId,
-        });
+        toast.success(
+          `Found ${extractedWorks.length} work items across all pages!`,
+          {
+            id: toastId,
+          },
+        );
       } else {
-        toast.success("Document analyzed successfully!", { id: toastId });
+        toast.success("Documents analyzed successfully!", { id: toastId });
       }
 
       if (data.builder_name && builders) {
@@ -541,7 +574,6 @@ const AddressListPage = () => {
       toast.error(`Scan failed: ${error.message}`, { id: toastId });
     } finally {
       setIsScanning(false);
-      event.target.value = null;
     }
   };
 
@@ -926,7 +958,8 @@ const AddressListPage = () => {
                 total_amount: "",
                 ai_translation: "",
                 original_photo_url: "",
-                additional_photo_url: "", // Поле для другої фотки
+                additional_photo_url: "",
+                scanned_files_array: [],
                 pending_work_types: [],
               }}
               validationSchema={AddProjectSchema}
@@ -1051,11 +1084,164 @@ const AddressListPage = () => {
                     />
                   </div>
 
-                  {/* ВІДОБРАЖЕННЯ ДВОХ ФОТОГРАФІЙ */}
                   <div
-                    style={{ display: "flex", gap: "10px", marginTop: "10px" }}
+                    className={styles.inputGroup}
+                    style={{ marginTop: "10px" }}
                   >
-                    {values.original_photo_url && (
+                    <label>
+                      Scan Documents (Select 1 or more photos as Originals)
+                    </label>
+
+                    <input
+                      type="file"
+                      id="multiCameraInput"
+                      multiple
+                      accept="image/*, application/pdf"
+                      style={{ display: "none" }}
+                      onChange={handleFilesSelected}
+                    />
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          document.getElementById("multiCameraInput").click()
+                        }
+                        className={commonStyles.buttonSecondary}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <FaPlus /> Додати фото до сканування
+                      </button>
+
+                      {selectedFilesToScan.length > 0 && (
+                        <button
+                          type="button"
+                          disabled={isScanning}
+                          onClick={() => handleRunScan(setFieldValue)}
+                          className={commonStyles.buttonPrimary}
+                          style={{ backgroundColor: "#10b981", color: "#fff" }}
+                        >
+                          {isScanning
+                            ? "Scanning..."
+                            : `🚀 Запустити сканування (${selectedFilesToScan.length})`}
+                        </button>
+                      )}
+                    </div>
+
+                    {selectedFilesToScan.length > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "10px",
+                          flexWrap: "wrap",
+                          marginTop: "10px",
+                        }}
+                      >
+                        {selectedFilesToScan.map((file, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              position: "relative",
+                              width: "80px",
+                              height: "80px",
+                              border: "1px solid #ccc",
+                              borderRadius: "6px",
+                              overflow: "hidden",
+                              background: "#f3f4f6",
+                            }}
+                          >
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt="preview"
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFile(idx)}
+                              style={{
+                                position: "absolute",
+                                top: "2px",
+                                right: "2px",
+                                background: "rgba(0,0,0,0.6)",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: "50%",
+                                width: "20px",
+                                height: "20px",
+                                fontSize: "10px",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "10px",
+                      marginTop: "10px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {values.scanned_files_array &&
+                    values.scanned_files_array.length > 0 ? (
+                      <div
+                        className={styles.inputGroup}
+                        style={{ width: "100%" }}
+                      >
+                        <label>
+                          Original Scanned Documents (
+                          {values.scanned_files_array.length})
+                        </label>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "10px",
+                            flexWrap: "wrap",
+                            marginTop: "8px",
+                          }}
+                        >
+                          {values.scanned_files_array.map((url, idx) => (
+                            <img
+                              key={idx}
+                              src={url}
+                              alt={`Original Scanned ${idx + 1}`}
+                              style={{
+                                height: "120px",
+                                width: "120px",
+                                objectFit: "cover",
+                                borderRadius: "8px",
+                                border: "1px solid var(--color-border)",
+                                backgroundColor: "#fff",
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : values.original_photo_url ? (
                       <div className={styles.inputGroup} style={{ flex: 1 }}>
                         <label>Original Document</label>
                         <img
@@ -1064,31 +1250,7 @@ const AddressListPage = () => {
                           className={styles.previewImageDoc}
                         />
                       </div>
-                    )}
-
-                    {values.additional_photo_url && (
-                      <div className={styles.inputGroup} style={{ flex: 1 }}>
-                        <label>Additional Photo</label>
-                        <div
-                          style={{
-                            padding: "10px",
-                            backgroundColor: "#e2e8f0",
-                            borderRadius: "8px",
-                            textAlign: "center",
-                            fontSize: "0.85rem",
-                            color: "#475569",
-                          }}
-                        >
-                          <FaCheckCircle
-                            color="#10b981"
-                            style={{ marginBottom: "5px" }}
-                            size={20}
-                          />
-                          <br />
-                          Додаткове фото завантажено
-                        </div>
-                      </div>
-                    )}
+                    ) : null}
                   </div>
 
                   <div
@@ -1100,34 +1262,6 @@ const AddressListPage = () => {
                       flexWrap: "wrap",
                     }}
                   >
-                    {/* КНОПКА 1: Сканування (з AI) */}
-                    <input
-                      type="file"
-                      id="cameraInput"
-                      accept="image/*, application/pdf"
-                      style={{ display: "none" }}
-                      onChange={(e) => handleScanDocument(e, setFieldValue)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        document.getElementById("cameraInput").click()
-                      }
-                      className={commonStyles.buttonSecondary}
-                      disabled={isScanning || isSubmitting}
-                      style={{
-                        flex: 1,
-                        minWidth: "120px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      {isScanning ? "Scanning..." : "📷 Scan WO"}
-                    </button>
-
-                    {/* КНОПКА 2: Додаткове фото (просто збереження) */}
                     <input
                       type="file"
                       id="additionalPhotoInput"
@@ -1153,7 +1287,7 @@ const AddressListPage = () => {
                         gap: "8px",
                       }}
                     >
-                      + Add Photo
+                      + Add Extra File
                     </button>
 
                     <button

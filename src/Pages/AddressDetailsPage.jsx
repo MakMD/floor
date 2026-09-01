@@ -53,20 +53,28 @@ const FileListItem = ({
     const getUrl = async () => {
       setIsLoading(true);
       let path = fileIdentifier;
+
       try {
-        const url = new URL(fileIdentifier);
-        path = url.pathname.substring(
-          url.pathname.indexOf(bucketName) + bucketName.length + 1,
-        );
+        if (fileIdentifier.startsWith("http")) {
+          const url = new URL(fileIdentifier);
+          const marker = `/${bucketName}/`;
+          const index = url.pathname.indexOf(marker);
+          if (index !== -1) {
+            path = url.pathname.substring(index + marker.length);
+          } else {
+            path = url.pathname.split("/").pop();
+          }
+        }
       } catch (e) {
-        /* ignore */
+        path = fileIdentifier;
       }
 
       const { data, error } = await supabase.storage
         .from(bucketName)
         .createSignedUrl(path, 3600);
+
       if (error) {
-        toast.error(`Could not get URL for ${path.split("/").pop()}`);
+        setSignedUrl(fileIdentifier);
       } else {
         setSignedUrl(data.signedUrl);
       }
@@ -82,18 +90,18 @@ const FileListItem = ({
       return;
     }
 
-    if (isImage(signedUrl)) {
+    if (isImage(signedUrl) || isImage(fileIdentifier)) {
       e.preventDefault();
-      onImageClick(signedUrl);
+      onImageClick(signedUrl || fileIdentifier);
     }
   };
 
-  const fileName = fileIdentifier.split("/").pop();
+  const fileName = fileIdentifier.split("/").pop().split("?")[0];
 
   return (
     <li className={styles.fileItem}>
       <a
-        href={signedUrl || "#"}
+        href={signedUrl || fileIdentifier}
         target="_blank"
         rel="noopener noreferrer"
         className={`${styles.fileLink} ${isLoading ? styles.disabledLink : ""}`}
@@ -387,6 +395,20 @@ const AddressDetailsPage = () => {
 
   const statusStyle = getStatusStyle(editedData.status);
 
+  // ВИДІЛЯЄМО ВСІ ФОТОГРАФІЇ ЯКІ БУЛИ СКАНОВАНІ
+  const originalPhotos = [
+    addressData.original_photo_url,
+    ...(addressData.files || []).filter(
+      (f) => f && f.includes("original-photos"),
+    ),
+  ].filter(Boolean);
+  const uniqueOriginals = [...new Set(originalPhotos)];
+
+  // ВСІ ІНШІ ФАЙЛИ ЙДУТЬ У ВНИЗ "FILES & PHOTOS"
+  const standardFiles = (addressData.files || []).filter(
+    (f) => f && !f.includes("original-photos"),
+  );
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.mobileLayout}>
@@ -574,39 +596,57 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* БЛОК 2: AI TRANSLATION */}
-            {(addressData.original_photo_url ||
+            {/* БЛОК 2: AI TRANSLATION ТА ВІДОБРАЖЕННЯ ВСІХ ОРИГІНАЛІВ */}
+            {(uniqueOriginals.length > 0 ||
               addressData.ai_translation ||
               isEditing) && (
               <div className={styles.detailCard}>
                 <h3>Scanned Document & AI Notes</h3>
                 <div className={styles.cardContentWrapper}>
-                  {addressData.original_photo_url && (
+                  {uniqueOriginals.length > 0 && (
                     <div
                       className={styles.detailItem}
                       style={{ gridTemplateColumns: "1fr", gap: "8px" }}
                     >
-                      <label>Original Document</label>
-                      {isImage(addressData.original_photo_url) ? (
-                        <img
-                          src={addressData.original_photo_url}
-                          alt="Scanned Document"
-                          className={styles.originalPhoto}
-                          onClick={() =>
-                            setSelectedImage(addressData.original_photo_url)
-                          }
-                        />
-                      ) : (
-                        <a
-                          href={addressData.original_photo_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.pdfLinkBox}
-                        >
-                          <FaFilePdf size={30} color="#dc3545" />
-                          <span>View PDF Document</span>
-                        </a>
-                      )}
+                      <label>
+                        Original Documents ({uniqueOriginals.length})
+                      </label>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "10px",
+                          flexWrap: "wrap",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {uniqueOriginals.map((url, idx) => (
+                          <div key={idx} style={{ position: "relative" }}>
+                            {isImage(url) ? (
+                              <img
+                                src={url}
+                                alt={`Scanned Document ${idx + 1}`}
+                                className={styles.originalPhoto}
+                                style={{
+                                  width: "120px",
+                                  height: "160px",
+                                  objectFit: "cover",
+                                }}
+                                onClick={() => setSelectedImage(url)}
+                              />
+                            ) : (
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.pdfLinkBox}
+                              >
+                                <FaFilePdf size={30} color="#dc3545" />
+                                <span>View PDF {idx + 1}</span>
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -944,9 +984,9 @@ const AddressDetailsPage = () => {
                   bucketName={BUCKET_NAME}
                   onUploadSuccess={handleFileUploaded}
                 />
-                {addressData.files?.length > 0 ? (
+                {standardFiles.length > 0 ? (
                   <ul className={styles.fileList}>
-                    {addressData.files.map((id) => (
+                    {standardFiles.map((id) => (
                       <FileListItem
                         key={id}
                         bucketName={BUCKET_NAME}

@@ -8,11 +8,9 @@ import PhotoUploader from "../components/PhotoUploader/PhotoUploader";
 import {
   FaClipboardList,
   FaUser,
-  FaFileInvoiceDollar,
   FaBell,
   FaArrowLeft,
   FaMapMarkerAlt,
-  FaCalendarAlt,
   FaSearch,
   FaCheckDouble,
   FaCopy,
@@ -20,6 +18,7 @@ import {
   FaChevronUp,
   FaWrench,
   FaInfoCircle,
+  FaBuilding,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
 import styles from "./WorkerPortal.module.css";
@@ -141,6 +140,7 @@ const WorkerPortal = () => {
 
       const workerId = personRecords[0].id;
 
+      // 1. Отримуємо всі завдання працівника
       const { data: tasks, error: tasksError } = await supabase
         .from("work_types")
         .select(
@@ -157,7 +157,8 @@ const WorkerPortal = () => {
             status,
             is_deleted,
             ai_translation,
-            work_order_number
+            work_order_number,
+            builder_id
           )
         `,
         )
@@ -165,25 +166,55 @@ const WorkerPortal = () => {
         .eq("addresses.is_deleted", false);
 
       if (tasksError) {
-        console.error("Помилка Supabase:", tasksError);
+        console.error("Supabase Error (tasks):", tasksError);
+        toast.error("Помилка бази даних: " + tasksError.message);
         throw tasksError;
       }
 
-      const formattedTasks = tasks.map((task) => ({
-        id: task.id,
-        address_id: task.addresses.id,
-        address: task.addresses.address,
-        date: task.addresses.date,
-        work_order_number: task.addresses.work_order_number,
-        task_name: task.work_type_templates?.name || "Невідома робота",
-        payment_amount: task.payment_amount,
-        notes: task.notes,
-        ai_translation: task.addresses.ai_translation,
-        status: task.status || "Assigned",
-      }));
+      if (!tasks) {
+        setMyTasks([]);
+        return;
+      }
+
+      // 2. Окремо отримуємо всіх білдерів стандартним способом (без .catch)
+      const { data: buildersData, error: buildersError } = await supabase
+        .from("builders")
+        .select("*");
+
+      if (buildersError) {
+        console.warn(
+          "Не вдалося завантажити нотатки білдерів:",
+          buildersError.message,
+        );
+      }
+
+      const formattedTasks = tasks.map((task) => {
+        const builder = buildersData?.find(
+          (b) => b.id === task.addresses?.builder_id,
+        );
+
+        const builderNotes =
+          builder?.notes ||
+          builder?.instructions ||
+          builder?.description ||
+          null;
+
+        return {
+          id: task.id,
+          address_id: task.addresses?.id,
+          address: task.addresses?.address,
+          date: task.addresses?.date,
+          work_order_number: task.addresses?.work_order_number,
+          task_name: task.work_type_templates?.name || "Невідома робота",
+          payment_amount: task.payment_amount,
+          notes: task.notes, // Загальні нотатки з таблиці work_types
+          builder_instructions: builderNotes, // Авто-підтягнута інструкція білдера
+          ai_translation: task.addresses?.ai_translation,
+          status: task.addresses?.status || "Assigned",
+        };
+      });
 
       formattedTasks.sort((a, b) => new Date(a.date) - new Date(b.date));
-
       setMyTasks(formattedTasks);
     } catch (error) {
       console.error("Помилка завантаження завдань:", error.message);
@@ -319,6 +350,7 @@ const WorkerPortal = () => {
     try {
       const finalNotes = `[Завдання: ${selectedTask.task_name}]\n[Статус від працівника: ${formData.workerStatus}]\n${formData.notes ? formData.notes : "Без додаткових коментарів."}`;
 
+      // 1. Зберігаємо звіт у daily_reports
       const { error: reportError } = await supabase
         .from("daily_reports")
         .insert([
@@ -334,6 +366,21 @@ const WorkerPortal = () => {
         ]);
 
       if (reportError) throw reportError;
+
+      // 2. ДОДАТКОВО ОНОВЛЮЄМО НОТАТКУ БЕЗПОСЕРЕДНЯ В ТАБЛИЦІ work_types (синхронізація з адміном)
+      const { error: updateWorkTypeError } = await supabase
+        .from("work_types")
+        .update({
+          notes: formData.notes ? formData.notes : selectedTask.notes,
+        })
+        .eq("id", selectedTask.id);
+
+      if (updateWorkTypeError) {
+        console.error(
+          "Не вдалося оновити нотатку у work_types:",
+          updateWorkTypeError.message,
+        );
+      }
 
       toast.success("Звіт успішно надіслано на перевірку!");
       setSelectedTask(null);
@@ -437,11 +484,6 @@ const WorkerPortal = () => {
 
   const activeCount = myTasks.filter((t) => t.status !== "Ready").length;
   const completedCount = myTasks.filter((t) => t.status === "Ready").length;
-
-  const folderTotal = tableInvoices.reduce((sum, inv) => {
-    const val = parseFloat(inv.total_income || inv.total || 0);
-    return sum + (isNaN(val) ? 0 : val);
-  }, 0);
 
   const renderTaskCard = (task) => (
     <div
@@ -739,6 +781,37 @@ const WorkerPortal = () => {
                     </div>
                   </div>
 
+                  {/* БЛОК ІНСТРУКЦІЙ ВІД БІЛДЕРА */}
+                  {selectedTask.builder_instructions && (
+                    <div
+                      className={styles.instructionBlock}
+                      style={{
+                        backgroundColor: "#e0f2fe",
+                        borderColor: "#38bdf8",
+                      }}
+                    >
+                      <div
+                        className={styles.instructionHeader}
+                        style={{ color: "#0284c7" }}
+                      >
+                        <FaBuilding className={styles.instructionIcon} />
+                        <h3>Інструкція від Білдера:</h3>
+                      </div>
+                      <div
+                        style={{
+                          padding: "10px",
+                          backgroundColor: "#fff",
+                          borderRadius: "8px",
+                          border: "1px solid #38bdf8",
+                          whiteSpace: "pre-wrap",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        {selectedTask.builder_instructions}
+                      </div>
+                    </div>
+                  )}
+
                   {selectedTask.ai_translation && (
                     <div
                       className={styles.instructionBlock}
@@ -752,7 +825,7 @@ const WorkerPortal = () => {
                         style={{ color: "#d97706" }}
                       >
                         <FaInfoCircle className={styles.instructionIcon} />
-                        <h3>Інструкція до завдання:</h3>
+                        <h3>Інструкція з ворк-ордера:</h3>
                       </div>
                       <div
                         style={{
@@ -1000,7 +1073,6 @@ const WorkerPortal = () => {
             <FaUser size={20} />
             <span>Профіль</span>
           </button>
-          {/* Кнопку "Виплати" прибрано */}
           <button
             className={`${styles.navItem} ${activeTab === "notifications" ? styles.activeNav : ""}`}
             onClick={() => setActiveTab("notifications")}

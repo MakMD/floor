@@ -14,20 +14,37 @@ serve(async (req: Request) => {
   try {
     console.log("=== СТАРТ СКАНУВАННЯ ДОКУМЕНТА ===");
 
-    const { imageBase64 } = await req.json();
+    const { imageBase64, imagesBase64 } = await req.json();
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
     if (!OPENAI_API_KEY) {
       throw new Error("API ключ OpenAI не знайдено на сервері");
     }
-    if (!imageBase64) {
-      throw new Error("Фотографія не була передана");
+
+    // Підтримуємо як одне фото, так і масив кількох фотографій
+    let photosArray: string[] = [];
+    if (imagesBase64 && Array.isArray(imagesBase64)) {
+      photosArray = imagesBase64;
+    } else if (imageBase64) {
+      photosArray = [imageBase64];
+    } else {
+      throw new Error("Фотографії не були передані");
     }
 
-    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-    console.log(`Розмір зображення: ${cleanBase64.length} символів.`);
+    const imageContentParts = photosArray.map((b64: string) => {
+      const cleanB64 = b64.replace(/^data:image\/\w+;base64,/, "");
+      return {
+        type: "image_url",
+        image_url: {
+          url: `data:image/jpeg;base64,${cleanB64}`,
+          detail: "high",
+        },
+      };
+    });
 
-    console.log("Відправляємо запит до OpenAI API (gpt-4o)...");
+    console.log(
+      `Відправляємо ${photosArray.length} зображень до OpenAI API (gpt-4o)...`,
+    );
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -150,29 +167,23 @@ serve(async (req: Request) => {
           {
             role: "system",
             content:
-              "You are an OCR and data extraction specialist for construction work orders. You extract data exactly as seen. CRITICAL RULE FOR TRANSLATIONS: Whenever you translate text to Ukrainian (for 'line_notes' or 'ai_translation'), you MUST ALWAYS append the exact original English text in parentheses. Example output format: 'Весь головний поверх (WHOLE MAIN FLOOR)'. Never output only Ukrainian.",
+              "You are an OCR and data extraction specialist for construction work orders. Combine information from all provided sequential images of the same document into a single result. CRITICAL RULE FOR TRANSLATIONS: Whenever you translate text to Ukrainian (for 'line_notes' or 'ai_translation'), you MUST ALWAYS append the exact original English text in parentheses. Example output format: 'Весь головний поверх (WHOLE MAIN FLOOR)'.",
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: `Analyze this work order and extract the data according to the schema. 
+                text: `Analyze these sequential images of a work order / job tracker. Combine all items and data across all images into a single JSON response.
                 
                 CRITICAL INSTRUCTIONS FOR 'line_notes' EXTRACTION:
                 1. Identifying Items: Every new work item starts with the text "Customer Order Line Number:".
                 2. Finding Notes: Look directly BENEATH the item description.
                 3. The Problem: Line notes DO NOT have numbers in the Quantity/Rate/Labor columns.
                 4. The Rule: Any text physically located between one "Customer Order Line Number" and the next one (or the final subtotal line), which lacks its own price/quantity, MUST be captured and concatenated into the 'line_notes' field of the item immediately above it.
-                5. Translation & Formatting: Translate ALL 'line_notes' and 'ai_translation' notes into Ukrainian. YOU MUST USE THIS EXACT FORMAT: [Ukrainian Translation] ([ORIGINAL ENGLISH TEXT]). If you fail to include the English text in parentheses, the system will break.`,
+                5. Translation & Formatting: Translate ALL 'line_notes' and 'ai_translation' notes into Ukrainian. YOU MUST USE THIS EXACT FORMAT: [Ukrainian Translation] ([ORIGINAL ENGLISH TEXT]).`,
               },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${cleanBase64}`,
-                  detail: "high",
-                },
-              },
+              ...imageContentParts,
             ],
           },
         ],

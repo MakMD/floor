@@ -1,3 +1,4 @@
+// src/components/WorkTypesManager/WorkTypesManager.jsx
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
@@ -13,7 +14,6 @@ import {
 import { useAdminLists } from "../../hooks/useAdminLists";
 import {
   addWorkTypeAndInvoice,
-  updateWorkTypeAndInvoice,
   deleteWorkTypeAndInvoice,
 } from "../../services/workTypeService";
 
@@ -23,7 +23,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
   const { workTypeTemplates, loading: listsLoading } = useAdminLists();
   const [loading, setLoading] = useState(true);
 
-  // Стан для відображення поля вводу нотатки для кожної роботи
   const [visibleNoteIds, setVisibleNoteIds] = useState({});
 
   const [newWorkType, setNewWorkType] = useState({
@@ -117,12 +116,11 @@ const WorkTypesManager = ({ addressId, addressData }) => {
     setVisibleNoteIds((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // ФУНКЦІЯ ДУБЛЮВАННЯ РОБОТИ
   const handleDuplicateWorkType = async (wt) => {
     const payload = {
       address_id: addressId,
       work_type_template_id: wt.work_type_template_id,
-      person_id: null, // Скидаємо працівника при дублюванні
+      person_id: null,
       payment_amount: wt.payment_amount ? parseFloat(wt.payment_amount) : 0,
       notes: wt.notes || wt.line_notes || null,
     };
@@ -169,8 +167,10 @@ const WorkTypesManager = ({ addressId, addressData }) => {
     }
   };
 
+  // ПРЯМЕ ОНОВЛЕННЯ ЧЕРЕЗ SUPABASE (ГАРАНТОВАНО ЗБЕРІГАЄ НОТАТКИ)
   const handleUpdateWorkType = async (id) => {
     const workTypeToUpdate = workTypes.find((wt) => wt.id === id);
+    if (!workTypeToUpdate) return;
 
     const { data: originalWorkType } = await supabase
       .from("work_types")
@@ -180,28 +180,34 @@ const WorkTypesManager = ({ addressId, addressData }) => {
 
     const oldPersonId = originalWorkType?.person_id;
 
-    const payload = {
-      ...workTypeToUpdate,
-      person_id: workTypeToUpdate.person_id || null,
+    const noteToSave =
+      workTypeToUpdate.notes !== undefined && workTypeToUpdate.notes !== null
+        ? workTypeToUpdate.notes
+        : workTypeToUpdate.line_notes || null;
+
+    const updatePayload = {
       work_type_template_id: workTypeToUpdate.work_type_template_id || null,
+      person_id: workTypeToUpdate.person_id || null,
       payment_amount: workTypeToUpdate.payment_amount
         ? parseFloat(workTypeToUpdate.payment_amount)
         : 0,
-      // Зберігаємо нотатку
-      notes:
-        workTypeToUpdate.notes !== undefined
-          ? workTypeToUpdate.notes
-          : workTypeToUpdate.line_notes || null,
+      notes: noteToSave,
     };
 
-    await updateWorkTypeAndInvoice(payload);
-    toast.success("Work type updated");
+    const { error } = await supabase
+      .from("work_types")
+      .update(updatePayload)
+      .eq("id", id);
 
-    // Закриваємо поле вводу нотатки після збереження
-    setVisibleNoteIds((prev) => ({ ...prev, [id]: false }));
+    if (error) {
+      toast.error(`Failed to update: ${error.message}`);
+    } else {
+      toast.success("Work type updated successfully!");
+      setVisibleNoteIds((prev) => ({ ...prev, [id]: false }));
 
-    if (payload.person_id && payload.person_id !== oldPersonId) {
-      await sendNotification(payload.person_id);
+      if (updatePayload.person_id && updatePayload.person_id !== oldPersonId) {
+        await sendNotification(updatePayload.person_id);
+      }
     }
   };
 
@@ -296,7 +302,9 @@ const WorkTypesManager = ({ addressId, addressData }) => {
                 <textarea
                   name="notes"
                   value={
-                    wt.notes !== undefined ? wt.notes : wt.line_notes || ""
+                    wt.notes !== undefined && wt.notes !== null
+                      ? wt.notes
+                      : wt.line_notes || ""
                   }
                   onChange={(e) => handleInputChange(e, wt.id)}
                   placeholder="Введіть інструкцію для працівника тут..."
