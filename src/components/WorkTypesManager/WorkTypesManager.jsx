@@ -14,6 +14,7 @@ import {
 import { useAdminLists } from "../../hooks/useAdminLists";
 import {
   addWorkTypeAndInvoice,
+  updateWorkTypeAndInvoice, // ПОВЕРНУТО
   deleteWorkTypeAndInvoice,
 } from "../../services/workTypeService";
 
@@ -125,6 +126,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       notes: wt.notes || wt.line_notes || null,
     };
 
+    // Сервісна функція створює запис у work_types, і оскільки person_id = null, інвойс не створюється (що логічно)
     const addedWorkType = await addWorkTypeAndInvoice(payload);
 
     if (addedWorkType) {
@@ -150,6 +152,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
         : 0,
     };
 
+    // Сервісна функція створює запис, і якщо person_id вказаний - одразу генерує інвойс
     const addedWorkType = await addWorkTypeAndInvoice(payload);
 
     if (addedWorkType) {
@@ -167,7 +170,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
     }
   };
 
-  // ПРЯМЕ ОНОВЛЕННЯ ЧЕРЕЗ SUPABASE (ГАРАНТОВАНО ЗБЕРІГАЄ НОТАТКИ)
   const handleUpdateWorkType = async (id) => {
     const workTypeToUpdate = workTypes.find((wt) => wt.id === id);
     if (!workTypeToUpdate) return;
@@ -186,6 +188,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
         : workTypeToUpdate.line_notes || null;
 
     const updatePayload = {
+      ...workTypeToUpdate, // Передаємо весь об'єкт, щоб сервіс мав id та address_id
       work_type_template_id: workTypeToUpdate.work_type_template_id || null,
       person_id: workTypeToUpdate.person_id || null,
       payment_amount: workTypeToUpdate.payment_amount
@@ -194,20 +197,18 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       notes: noteToSave,
     };
 
-    const { error } = await supabase
-      .from("work_types")
-      .update(updatePayload)
-      .eq("id", id);
+    // ВИКЛИКАЄМО СЕРВІС: Він оновлює таблицю work_types ТА одразу створює/оновлює інвойси!
+    const success = await updateWorkTypeAndInvoice(updatePayload);
 
-    if (error) {
-      toast.error(`Failed to update: ${error.message}`);
-    } else {
-      toast.success("Work type updated successfully!");
+    if (success !== false) {
+      toast.success("Work type & invoice updated successfully!");
       setVisibleNoteIds((prev) => ({ ...prev, [id]: false }));
 
       if (updatePayload.person_id && updatePayload.person_id !== oldPersonId) {
         await sendNotification(updatePayload.person_id);
       }
+    } else {
+      toast.error("Failed to update work type.");
     }
   };
 

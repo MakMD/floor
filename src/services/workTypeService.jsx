@@ -23,7 +23,6 @@ const findOrCreateInvoiceTable = async (personId, date) => {
   const year = date.getFullYear();
   const day = date.getDate();
 
-  // ОНОВЛЕНО: Додано коректний розрахунок останнього дня місяця
   let tableName;
   if (day <= 15) {
     tableName = `${month} 1-15 ${year}`;
@@ -31,7 +30,7 @@ const findOrCreateInvoiceTable = async (personId, date) => {
     const lastDay = new Date(
       date.getFullYear(),
       date.getMonth() + 1,
-      0
+      0,
     ).getDate();
     tableName = `${month} 16-${lastDay} ${year}`;
   }
@@ -44,7 +43,6 @@ const findOrCreateInvoiceTable = async (personId, date) => {
     .single();
 
   if (findError && findError.code !== "PGRST116") {
-    // PGRST116 means no rows found, which is fine.
     throw findError;
   }
 
@@ -88,10 +86,9 @@ export const addWorkTypeAndInvoice = async (workTypeData) => {
       .eq("id", newWorkType.address_id)
       .single();
 
-    // ВИПРАВЛЕНО: Використовуємо createLocalDate
     const table = await findOrCreateInvoiceTable(
       newWorkType.person_id,
-      createLocalDate(address.date)
+      createLocalDate(address.date),
     );
 
     const { error: invoiceError } = await supabase.from("invoices").insert({
@@ -99,7 +96,7 @@ export const addWorkTypeAndInvoice = async (workTypeData) => {
       address: address.address,
       date: address.date,
       total_income: newWorkType.payment_amount,
-      work_type_id: newWorkType.id, // Link to the work type
+      work_type_id: newWorkType.id,
       store_id: address.store_id,
     });
 
@@ -115,54 +112,94 @@ export const addWorkTypeAndInvoice = async (workTypeData) => {
  * Updates a work type and its corresponding invoice.
  */
 export const updateWorkTypeAndInvoice = async (workType) => {
-  // 1. Update the work type
+  // 1. Оновлюємо саму роботу (включно з НОТАТКАМИ, щоб вони не губилися)
   const { error: workTypeError } = await supabase
     .from("work_types")
     .update({
       work_type_template_id: workType.work_type_template_id,
       person_id: workType.person_id || null,
       payment_amount: workType.payment_amount,
+      notes: workType.notes,
     })
     .eq("id", workType.id);
 
   if (workTypeError) {
     toast.error(workTypeError.message);
-    return;
+    return false;
   }
 
-  // 2. Find the existing invoice linked to this work type
+  // 2. Шукаємо існуючий інвойс для цієї роботи
   const { data: existingInvoice, error: findError } = await supabase
     .from("invoices")
     .select("id")
     .eq("work_type_id", workType.id)
-    .maybeSingle(); // Use maybeSingle to not error if not found
+    .maybeSingle();
 
   if (findError) {
-    toast.error(`Error finding invoice: ${findError.message}`);
-    return;
+    console.error("Error finding invoice:", findError);
   }
 
-  // 3. Update the invoice
-  if (existingInvoice) {
-    const { error: updateInvoiceError } = await supabase
-      .from("invoices")
-      .update({ total_income: workType.payment_amount })
-      .eq("id", existingInvoice.id);
+  // 3. Логіка створення / оновлення / видалення інвойсу
+  if (!workType.person_id) {
+    // Якщо працівника відкріпили, але інвойс був — видаляємо його
+    if (existingInvoice) {
+      await supabase.from("invoices").delete().eq("id", existingInvoice.id);
+    }
+  } else {
+    // Працівник прикріплений (новий або існуючий)
+    const { data: address } = await supabase
+      .from("addresses")
+      .select("date, address, store_id")
+      .eq("id", workType.address_id)
+      .single();
 
-    if (updateInvoiceError) {
-      toast.error(`Invoice update failed: ${updateInvoiceError.message}`);
+    // Знаходимо або створюємо папку (таблицю інвойсів) для ЦІЄЇ людини і ЦІЄЇ дати
+    const table = await findOrCreateInvoiceTable(
+      workType.person_id,
+      createLocalDate(address.date),
+    );
+
+    if (existingInvoice) {
+      // Якщо інвойс був — оновлюємо папку (на випадок зміни працівника) та суму
+      const { error: updateInvoiceError } = await supabase
+        .from("invoices")
+        .update({
+          invoice_table_id: table.id,
+          total_income: workType.payment_amount,
+        })
+        .eq("id", existingInvoice.id);
+
+      if (updateInvoiceError) {
+        toast.error(`Invoice update failed: ${updateInvoiceError.message}`);
+        return false;
+      }
+    } else {
+      // Якщо інвойсу не було (додали людину до роботи вперше) — створюємо його!
+      const { error: insertInvoiceError } = await supabase
+        .from("invoices")
+        .insert({
+          invoice_table_id: table.id,
+          address: address.address,
+          date: address.date,
+          total_income: workType.payment_amount,
+          work_type_id: workType.id,
+          store_id: address.store_id,
+        });
+
+      if (insertInvoiceError) {
+        toast.error(`Invoice creation failed: ${insertInvoiceError.message}`);
+        return false;
+      }
     }
   }
 
-  toast.success("Work type saved!");
+  return true;
 };
 
 /**
  * Deletes a work type and its corresponding invoice.
  */
 export const deleteWorkTypeAndInvoice = async (workTypeId) => {
-  // The foreign key on `invoices` is ON DELETE SET NULL, so we delete manually.
-
   const { error: invoiceError } = await supabase
     .from("invoices")
     .delete()
