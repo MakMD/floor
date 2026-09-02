@@ -216,6 +216,14 @@ const AddressListPage = () => {
     fetchAddresses(nextPage, false);
   };
 
+  const toggleAddForm = () => {
+    if (isAddFormOpen) {
+      setSelectedFilesToScan([]);
+      setDuplicateWarning(null);
+    }
+    setIsAddFormOpen(!isAddFormOpen);
+  };
+
   const groupedAddresses = useMemo(() => {
     const todayList = [];
     const tomorrowList = [];
@@ -280,11 +288,14 @@ const AddressListPage = () => {
   }, [addresses]);
 
   const saveProjectToDatabase = async (values, setSubmitting, resetForm) => {
-    // Формуємо масив усіх файлів (скановані + додаткові)
     const combinedFiles = [
       ...(values.scanned_files_array || []),
       ...(values.additional_photo_url ? [values.additional_photo_url] : []),
     ];
+
+    // ЖОРСТКИЙ ЗАПОБІЖНИК: Завжди записуємо "Address", якщо тільки це не явно "Service"
+    const safeProjectType =
+      values.project_type === "Service" ? "Service" : "Address";
 
     const newAddressObject = {
       work_order_number: values.work_order_number?.trim() || null,
@@ -296,12 +307,12 @@ const AddressListPage = () => {
       store_id: values.store_id ? parseInt(values.store_id) : null,
       builder_id: values.builder_id ? parseInt(values.builder_id) : null,
       status: "In Process",
-      project_type: values.project_type,
-      service_time: values.project_type === "Service" ? values.time : null,
+      project_type: safeProjectType,
+      service_time: safeProjectType === "Service" ? values.time : null,
       original_photo_url:
         values.scanned_files_array?.[0] || values.original_photo_url || null,
       ai_translation: values.ai_translation || null,
-      files: combinedFiles, // Записуємо всі файли в базу
+      files: combinedFiles,
     };
 
     const { data: newAddressData, error: addressError } = await supabase
@@ -521,7 +532,13 @@ const AddressListPage = () => {
 
       if (data.work_order_number)
         setFieldValue("work_order_number", data.work_order_number);
-      if (data.type) setFieldValue("project_type", data.type);
+
+      // Запобіжник для форми: якщо ШІ повертає брєд (не Service і не Address), ставимо Address
+      if (data.type) {
+        const safeType = data.type === "Service" ? "Service" : "Address";
+        setFieldValue("project_type", safeType);
+      }
+
       if (data.address) setFieldValue("address", data.address);
       if (data.date) setFieldValue("date", data.date);
       if (data.total_amount) setFieldValue("total_amount", data.total_amount);
@@ -755,7 +772,7 @@ const AddressListPage = () => {
           <h1 className={styles.pageTitle}>Projects</h1>
           <div style={{ display: "flex", gap: "8px" }}>
             <button
-              onClick={() => setIsAddFormOpen(!isAddFormOpen)}
+              onClick={toggleAddForm}
               className={commonStyles.buttonPrimary}
             >
               {isAddFormOpen ? <FaTimes /> : <FaPlus />}{" "}

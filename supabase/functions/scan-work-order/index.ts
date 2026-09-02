@@ -67,7 +67,7 @@ serve(async (req: Request) => {
                   type: "string",
                   enum: ["Address", "Service"],
                   description:
-                    "Strictly return 'Address' for standard installs, or 'Service' if it's a repair/service ticket.",
+                    "Strictly return 'Address' for standard installs, or 'Service' if it's a repair/service ticket. DO NOT RETURN 'object'.",
                 },
                 work_order_number: {
                   type: "string",
@@ -76,26 +76,27 @@ serve(async (req: Request) => {
                 builder_name: {
                   type: "string",
                   description:
-                    "Extract the builder/client name from 'Reference' or 'Sold To'.",
+                    "Extract the builder/client name from 'Reference', 'Sold To', or 'Job:' section.",
                 },
                 store_name: {
                   type: "string",
-                  description: "Identify the store issuing the ticket",
+                  description:
+                    "Identify the store issuing the ticket, or empty string.",
                 },
                 address: {
                   type: "string",
                   description:
-                    "Full job site address from 'Ship To' or 'Install At'",
+                    "Full job site address from 'Ship To' or 'Install At' or below Job number.",
                 },
                 date: {
                   type: "string",
                   description:
-                    "Extract the date. Format strictly as YYYY-MM-DD. Ensure year is 2026.",
+                    "Extract the date. Format strictly as YYYY-MM-DD. Return empty string if missing.",
                 },
                 total_amount: {
                   type: "number",
                   description:
-                    "Total labor amount at the bottom of the document",
+                    "Total labor amount at the bottom of the document. Return 0 if missing.",
                 },
                 ai_translation: {
                   type: "string",
@@ -110,12 +111,12 @@ serve(async (req: Request) => {
                       name: {
                         type: "string",
                         description:
-                          "Clean name of the work (e.g., 'LVP CLICK INSTALL')",
+                          "Clean name of the work (e.g., 'Main Floor - Floor', 'LVP CLICK INSTALL')",
                       },
                       area: {
                         type: "string",
                         description:
-                          "Specific zone if mentioned on the same line. Empty string if not.",
+                          "Specific zone if mentioned. Empty string if not.",
                       },
                       sq_ft: {
                         type: "number",
@@ -175,13 +176,12 @@ serve(async (req: Request) => {
               {
                 type: "text",
                 text: `Analyze these sequential images of a work order / job tracker. Combine all items and data across all images into a single JSON response.
-                
-                CRITICAL INSTRUCTIONS FOR 'line_notes' EXTRACTION:
-                1. Identifying Items: Every new work item starts with the text "Customer Order Line Number:".
-                2. Finding Notes: Look directly BENEATH the item description.
-                3. The Problem: Line notes DO NOT have numbers in the Quantity/Rate/Labor columns.
-                4. The Rule: Any text physically located between one "Customer Order Line Number" and the next one (or the final subtotal line), which lacks its own price/quantity, MUST be captured and concatenated into the 'line_notes' field of the item immediately above it.
-                5. Translation & Formatting: Translate ALL 'line_notes' and 'ai_translation' notes into Ukrainian. YOU MUST USE THIS EXACT FORMAT: [Ukrainian Translation] ([ORIGINAL ENGLISH TEXT]).`,
+
+CRITICAL INSTRUCTIONS FOR EXTRACTION:
+1. Identifying Items: Work items might start with "Customer Order Line Number:" OR they might just be listed with an arrow/bullet point (e.g., "> Main Floor - Floor"). Capture all distinct work areas/items.
+2. Finding Notes: Look directly BENEATH the item description. Any text physically located below an item (like "Grout Type", "Directional Layout") MUST be captured into the 'line_notes' field of that item.
+3. Project Type: MUST be strictly "Address" or "Service".
+4. Translation & Formatting: Translate ALL 'line_notes' and 'ai_translation' notes into Ukrainian using THIS EXACT FORMAT: [Ukrainian Translation] ([ORIGINAL ENGLISH TEXT]).`,
               },
               ...imageContentParts,
             ],
