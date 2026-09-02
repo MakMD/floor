@@ -15,13 +15,15 @@ import {
   FaCheckDouble,
   FaCopy,
   FaChevronDown,
-  FaChevronUp,
+  FaChevronRight,
   FaWrench,
   FaInfoCircle,
   FaBuilding,
+  FaCalendarAlt,
 } from "react-icons/fa";
 import { MdOutlineChevronRight } from "react-icons/md";
 import styles from "./WorkerPortal.module.css";
+import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
 
 const WorkerPortal = () => {
   const { user, role, loading: authLoading } = useAuth();
@@ -37,18 +39,7 @@ const WorkerPortal = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [workFilter, setWorkFilter] = useState("active");
 
-  const [expandedGroups, setExpandedGroups] = useState({
-    today: true,
-    tomorrow: true,
-    upcoming: true,
-    past: false,
-  });
-
-  const [myTables, setMyTables] = useState([]);
-  const [loadingTables, setLoadingTables] = useState(false);
-  const [selectedTable, setSelectedTable] = useState(null);
-  const [tableInvoices, setTableInvoices] = useState([]);
-  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState({});
 
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -140,7 +131,6 @@ const WorkerPortal = () => {
 
       const workerId = personRecords[0].id;
 
-      // 1. Отримуємо всі завдання працівника
       const { data: tasks, error: tasksError } = await supabase
         .from("work_types")
         .select(
@@ -176,7 +166,6 @@ const WorkerPortal = () => {
         return;
       }
 
-      // 2. Окремо отримуємо всіх білдерів стандартним способом (без .catch)
       const { data: buildersData, error: buildersError } = await supabase
         .from("builders")
         .select("*");
@@ -207,52 +196,24 @@ const WorkerPortal = () => {
           work_order_number: task.addresses?.work_order_number,
           task_name: task.work_type_templates?.name || "Невідома робота",
           payment_amount: task.payment_amount,
-          notes: task.notes, // Загальні нотатки з таблиці work_types
-          builder_instructions: builderNotes, // Авто-підтягнута інструкція білдера
+          notes: task.notes,
+          builder_name: builder?.name || "Невідомий білдер",
+          builder_instructions: builderNotes,
           ai_translation: task.addresses?.ai_translation,
           status: task.addresses?.status || "Assigned",
         };
       });
 
-      formattedTasks.sort((a, b) => new Date(a.date) - new Date(b.date));
+      formattedTasks.sort((a, b) => {
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+      });
       setMyTasks(formattedTasks);
     } catch (error) {
       console.error("Помилка завантаження завдань:", error.message);
     } finally {
       setLoading(false);
-    }
-  }, [userId]);
-
-  const fetchMyTables = useCallback(async () => {
-    if (!userId) return;
-    setLoadingTables(true);
-    try {
-      const { data: personRecords, error: personError } = await supabase
-        .from("people")
-        .select("id")
-        .eq("user_id", userId)
-        .limit(1);
-
-      if (personError) throw personError;
-      if (!personRecords || personRecords.length === 0) {
-        setMyTables([]);
-        return;
-      }
-
-      const workerId = personRecords[0].id;
-
-      const { data, error } = await supabase
-        .from("invoice_tables")
-        .select(`*, invoices (address, total_income, total)`)
-        .eq("person_id", workerId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setMyTables(data || []);
-    } catch (error) {
-      console.error("Помилка завантаження папок:", error.message);
-    } finally {
-      setLoadingTables(false);
     }
   }, [userId]);
 
@@ -282,29 +243,6 @@ const WorkerPortal = () => {
     if (isInitialized && activeTab === "profile") fetchWorkerDocuments();
   }, [activeTab, isInitialized, fetchWorkerDocuments]);
 
-  useEffect(() => {
-    if (isInitialized && activeTab === "invoices" && !selectedTable)
-      fetchMyTables();
-  }, [activeTab, isInitialized, selectedTable, fetchMyTables]);
-
-  const fetchInvoicesForTable = async (tableId) => {
-    setLoadingInvoices(true);
-    try {
-      const { data, error } = await supabase
-        .from("invoices")
-        .select("*")
-        .eq("invoice_table_id", tableId)
-        .order("date", { ascending: true });
-
-      if (error) throw error;
-      setTableInvoices(data || []);
-    } catch (error) {
-      console.error("Помилка завантаження інвойсів:", error.message);
-    } finally {
-      setLoadingInvoices(false);
-    }
-  };
-
   const markNotificationAsRead = async (id) => {
     await supabase.from("notifications").update({ is_read: true }).eq("id", id);
     fetchNotifications();
@@ -317,6 +255,34 @@ const WorkerPortal = () => {
       .eq("user_id", userId);
     fetchNotifications();
     toast.success("Всі сповіщення прочитані");
+  };
+
+  // --- РОЗУМНИЙ КЛІК ПО СПОВІЩЕННЮ ---
+  const handleNotificationClick = (notification) => {
+    // 1. Позначаємо як прочитане
+    if (!notification.is_read) {
+      markNotificationAsRead(notification.id);
+    }
+
+    // 2. Шукаємо завдання за адресою, яка міститься у тексті сповіщення
+    const matchedTask = myTasks.find(
+      (task) =>
+        task.address &&
+        (notification.message?.includes(task.address) ||
+          notification.title?.includes(task.address)),
+    );
+
+    // 3. Відкриваємо вкладку робіт
+    setActiveTab("work");
+
+    if (matchedTask) {
+      // Якщо знайшли — одразу відкриваємо деталі об'єкта
+      setSelectedTask(matchedTask);
+    } else {
+      // Якщо об'єкта вже немає (видалений або завершений і прихований фільтрами)
+      setSelectedTask(null);
+      toast("Перенаправлено до загального списку завдань", { icon: "ℹ️" });
+    }
   };
 
   const handleDocumentUploadComplete = async (urls) => {
@@ -350,7 +316,6 @@ const WorkerPortal = () => {
     try {
       const finalNotes = `[Завдання: ${selectedTask.task_name}]\n[Статус від працівника: ${formData.workerStatus}]\n${formData.notes ? formData.notes : "Без додаткових коментарів."}`;
 
-      // 1. Зберігаємо звіт у daily_reports
       const { error: reportError } = await supabase
         .from("daily_reports")
         .insert([
@@ -367,7 +332,6 @@ const WorkerPortal = () => {
 
       if (reportError) throw reportError;
 
-      // 2. ДОДАТКОВО ОНОВЛЮЄМО НОТАТКУ БЕЗПОСЕРЕДНЯ В ТАБЛИЦІ work_types (синхронізація з адміном)
       const { error: updateWorkTypeError } = await supabase
         .from("work_types")
         .update({
@@ -446,41 +410,61 @@ const WorkerPortal = () => {
     return matchesSearch && matchesTab;
   });
 
-  const groupedActiveTasks = useMemo(() => {
-    const todayList = [];
-    const tomorrowList = [];
-    const upcomingList = [];
-    const pastList = [];
-
-    const todayStr = new Date().toISOString().split("T")[0];
-    const tomorrowDate = new Date();
-    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-    const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
+  const groupedTasks = useMemo(() => {
+    const groups = {};
 
     filteredTasks.forEach((task) => {
-      if (!task.date) {
-        upcomingList.push(task);
-        return;
+      let groupKey = "Без дати";
+      let groupTitle = "Без дати";
+      let sortOrder = 9999999999999;
+
+      if (task.date) {
+        const taskDate = parseISO(task.date);
+        groupKey = task.date;
+        sortOrder = taskDate.getTime();
+
+        if (isToday(taskDate)) {
+          groupTitle = `🔥 Сьогодні (${format(taskDate, "dd MMM")})`;
+        } else if (isTomorrow(taskDate)) {
+          groupTitle = `📅 Завтра (${format(taskDate, "dd MMM")})`;
+        } else if (isPast(taskDate)) {
+          groupTitle = `⚠️ Минулі (${format(taskDate, "dd MMM yyyy")})`;
+        } else {
+          groupTitle = `⏳ ${format(taskDate, "dd MMMM yyyy")}`;
+        }
       }
 
-      if (task.date === todayStr) {
-        todayList.push(task);
-      } else if (task.date === tomorrowStr) {
-        tomorrowList.push(task);
-      } else if (task.date > todayStr) {
-        upcomingList.push(task);
-      } else {
-        pastList.push(task);
+      if (!groups[groupKey]) {
+        groups[groupKey] = {
+          title: groupTitle,
+          tasks: [],
+          order: sortOrder,
+        };
       }
+      groups[groupKey].tasks.push(task);
     });
 
-    return {
-      today: todayList,
-      tomorrow: tomorrowList,
-      upcoming: upcomingList,
-      past: pastList,
-    };
+    return Object.entries(groups)
+      .map(([key, value]) => ({ key, ...value }))
+      .sort((a, b) => a.order - b.order);
   }, [filteredTasks]);
+
+  useEffect(() => {
+    if (groupedTasks.length > 0 && Object.keys(expandedGroups).length === 0) {
+      const initialExpanded = {};
+      groupedTasks.forEach((group) => {
+        if (
+          group.title.includes("Сьогодні") ||
+          group.title.includes("Завтра")
+        ) {
+          initialExpanded[group.key] = true;
+        } else {
+          initialExpanded[group.key] = false;
+        }
+      });
+      setExpandedGroups(initialExpanded);
+    }
+  }, [groupedTasks, expandedGroups]);
 
   const activeCount = myTasks.filter((t) => t.status !== "Ready").length;
   const completedCount = myTasks.filter((t) => t.status === "Ready").length;
@@ -509,13 +493,21 @@ const WorkerPortal = () => {
 
       <div
         style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "12px",
           fontSize: "0.85rem",
           color: "#666",
           marginBottom: "8px",
           marginTop: "4px",
         }}
       >
-        📅 Дата об'єкта: {task.date || "Не вказано"}
+        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <FaCalendarAlt /> {task.date || "Не вказано"}
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <FaBuilding /> {task.builder_name}
+        </span>
       </div>
 
       <div className={styles.cardBottomRow}>
@@ -592,167 +584,30 @@ const WorkerPortal = () => {
                     </p>
                   ) : (
                     <div className={styles.projectList}>
-                      {workFilter === "active" ? (
-                        <>
-                          {groupedActiveTasks.today.length > 0 && (
-                            <div className={styles.dateGroup}>
-                              <div
-                                className={`${styles.dateGroupHeader} ${styles.todayHeader}`}
-                                onClick={() => toggleGroup("today")}
-                                style={{
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <span>
-                                  🔥 Сьогодні ({groupedActiveTasks.today.length}
-                                  )
-                                </span>
-                                {expandedGroups.today ? (
-                                  <FaChevronUp size={14} />
-                                ) : (
-                                  <FaChevronDown size={14} />
-                                )}
-                              </div>
-                              {expandedGroups.today && (
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "10px",
-                                    marginTop: "10px",
-                                  }}
-                                >
-                                  {groupedActiveTasks.today.map((task) =>
-                                    renderTaskCard(task),
-                                  )}
-                                </div>
-                              )}
+                      {groupedTasks.map((group) => (
+                        <div key={group.key} className={styles.dateGroup}>
+                          <div
+                            className={styles.groupAccordionHeader}
+                            onClick={() => toggleGroup(group.key)}
+                          >
+                            <span>
+                              {group.title} ({group.tasks.length})
+                            </span>
+                            {expandedGroups[group.key] ? (
+                              <FaChevronDown className={styles.accordionIcon} />
+                            ) : (
+                              <FaChevronRight
+                                className={styles.accordionIcon}
+                              />
+                            )}
+                          </div>
+                          {expandedGroups[group.key] && (
+                            <div className={styles.groupAccordionContent}>
+                              {group.tasks.map((task) => renderTaskCard(task))}
                             </div>
                           )}
-
-                          {groupedActiveTasks.tomorrow.length > 0 && (
-                            <div className={styles.dateGroup}>
-                              <div
-                                className={`${styles.dateGroupHeader} ${styles.tomorrowHeader}`}
-                                onClick={() => toggleGroup("tomorrow")}
-                                style={{
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <span>
-                                  📅 Завтра (
-                                  {groupedActiveTasks.tomorrow.length})
-                                </span>
-                                {expandedGroups.tomorrow ? (
-                                  <FaChevronUp size={14} />
-                                ) : (
-                                  <FaChevronDown size={14} />
-                                )}
-                              </div>
-                              {expandedGroups.tomorrow && (
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "10px",
-                                    marginTop: "10px",
-                                  }}
-                                >
-                                  {groupedActiveTasks.tomorrow.map((task) =>
-                                    renderTaskCard(task),
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {groupedActiveTasks.upcoming.length > 0 && (
-                            <div className={styles.dateGroup}>
-                              <div
-                                className={styles.dateGroupHeader}
-                                onClick={() => toggleGroup("upcoming")}
-                                style={{
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <span>
-                                  ⏳ Найближчі (
-                                  {groupedActiveTasks.upcoming.length})
-                                </span>
-                                {expandedGroups.upcoming ? (
-                                  <FaChevronUp size={14} />
-                                ) : (
-                                  <FaChevronDown size={14} />
-                                )}
-                              </div>
-                              {expandedGroups.upcoming && (
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "10px",
-                                    marginTop: "10px",
-                                  }}
-                                >
-                                  {groupedActiveTasks.upcoming.map((task) =>
-                                    renderTaskCard(task),
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {groupedActiveTasks.past.length > 0 && (
-                            <div className={styles.dateGroup}>
-                              <div
-                                className={`${styles.dateGroupHeader} ${styles.pastHeader}`}
-                                onClick={() => toggleGroup("past")}
-                                style={{
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <span>
-                                  ⚠️ Протерміновані / Минулі (
-                                  {groupedActiveTasks.past.length})
-                                </span>
-                                {expandedGroups.past ? (
-                                  <FaChevronUp size={14} />
-                                ) : (
-                                  <FaChevronDown size={14} />
-                                )}
-                              </div>
-                              {expandedGroups.past && (
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "10px",
-                                    marginTop: "10px",
-                                  }}
-                                >
-                                  {groupedActiveTasks.past.map((task) =>
-                                    renderTaskCard(task),
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        filteredTasks.map((task) => renderTaskCard(task))
-                      )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </>
@@ -779,9 +634,39 @@ const WorkerPortal = () => {
                         <FaCopy />
                       </button>
                     </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "16px",
+                        color: "#666",
+                        fontSize: "0.95rem",
+                        marginTop: "12px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <FaCalendarAlt />{" "}
+                        <strong>{selectedTask.date || "Не вказано"}</strong>
+                      </span>
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <FaBuilding />{" "}
+                        <strong>{selectedTask.builder_name}</strong>
+                      </span>
+                    </div>
                   </div>
 
-                  {/* БЛОК ІНСТРУКЦІЙ ВІД БІЛДЕРА */}
                   {selectedTask.builder_instructions && (
                     <div
                       className={styles.instructionBlock}
@@ -1028,9 +913,7 @@ const WorkerPortal = () => {
                     <div
                       key={n.id}
                       className={`${styles.notifCard} ${!n.is_read ? styles.notifUnread : ""}`}
-                      onClick={() => {
-                        if (!n.is_read) markNotificationAsRead(n.id);
-                      }}
+                      onClick={() => handleNotificationClick(n)}
                     >
                       <div className={styles.notifTitleRow}>
                         <span className={styles.notifTitle}>{n.title}</span>

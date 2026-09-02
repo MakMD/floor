@@ -136,6 +136,43 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+/* --- АКОРДЕОНИ ДЛЯ ГРУПУВАННЯ РОБІТ ПО ДНЯХ --- */
+.dateGroup {
+  margin-bottom: 8px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.groupAccordionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #fcfcfc;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #333;
+  transition: background-color 0.2s;
+}
+
+.groupAccordionHeader:hover {
+  background-color: #f0f0f0;
+}
+
+.accordionIcon {
+  color: #aaaaaa;
+  transition: transform 0.2s;
+}
+
+.groupAccordionContent {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-top: 1px solid #eee;
+  background-color: #ffffff;
+}
+
 /* --- КАРТКИ ОБ'ЄКТІВ --- */
 .projectList {
   display: flex;
@@ -155,8 +192,12 @@
   transition: background-color 0.2s;
 }
 
+.projectCard:last-child {
+  border-bottom: none;
+}
+
 .projectCard:hover {
-  background-color: #fcfcfc;
+  background-color: #fafafa;
 }
 
 .cardTitle {

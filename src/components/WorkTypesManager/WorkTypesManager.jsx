@@ -1,5 +1,5 @@
 // src/components/WorkTypesManager/WorkTypesManager.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../../supabaseClient";
 import toast from "react-hot-toast";
 import styles from "./WorkTypesManager.module.css";
@@ -14,9 +14,85 @@ import {
 import { useAdminLists } from "../../hooks/useAdminLists";
 import {
   addWorkTypeAndInvoice,
-  updateWorkTypeAndInvoice, // ПОВЕРНУТО
+  updateWorkTypeAndInvoice,
   deleteWorkTypeAndInvoice,
 } from "../../services/workTypeService";
+
+const SearchableSelect = ({ options, value, onChange, placeholder }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const wrapperRef = useRef(null);
+
+  // Синхронізуємо текст в інпуті з обраним значенням
+  useEffect(() => {
+    if (!isOpen) {
+      const selectedOption = options.find((opt) => opt.id === value);
+      setSearchTerm(selectedOption ? selectedOption.name : "");
+    }
+  }, [value, options, isOpen]);
+
+  // Закриття списку при кліку поза ним та скасування недодрукованого тексту
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+        const selectedOption = options.find((opt) => opt.id === value);
+        setSearchTerm(selectedOption ? selectedOption.name : "");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [options, value]);
+
+  const filteredOptions = options.filter((opt) =>
+    opt.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  return (
+    <div
+      ref={wrapperRef}
+      className={styles.searchableSelectWrapper}
+      style={{ zIndex: isOpen ? 99999 : 1 }}
+    >
+      <input
+        type="text"
+        className={styles.searchableInput}
+        placeholder={placeholder}
+        value={searchTerm}
+        onChange={(e) => {
+          setSearchTerm(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={(e) => {
+          setIsOpen(true);
+          e.target.select();
+        }}
+      />
+      {isOpen && (
+        <ul className={styles.searchableDropdown}>
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((opt) => (
+              <li
+                key={opt.id}
+                className={styles.searchableOption}
+                onClick={() => {
+                  onChange(opt.id);
+                  setSearchTerm(opt.name);
+                  setIsOpen(false);
+                }}
+                title={opt.name} // При наведенні покаже повну назву
+              >
+                {opt.name}
+              </li>
+            ))
+          ) : (
+            <li className={styles.searchableNoOptions}>Нічого не знайдено</li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 const WorkTypesManager = ({ addressId, addressData }) => {
   const [workTypes, setWorkTypes] = useState([]);
@@ -126,7 +202,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       notes: wt.notes || wt.line_notes || null,
     };
 
-    // Сервісна функція створює запис у work_types, і оскільки person_id = null, інвойс не створюється (що логічно)
     const addedWorkType = await addWorkTypeAndInvoice(payload);
 
     if (addedWorkType) {
@@ -152,7 +227,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
         : 0,
     };
 
-    // Сервісна функція створює запис, і якщо person_id вказаний - одразу генерує інвойс
     const addedWorkType = await addWorkTypeAndInvoice(payload);
 
     if (addedWorkType) {
@@ -188,7 +262,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
         : workTypeToUpdate.line_notes || null;
 
     const updatePayload = {
-      ...workTypeToUpdate, // Передаємо весь об'єкт, щоб сервіс мав id та address_id
+      ...workTypeToUpdate,
       work_type_template_id: workTypeToUpdate.work_type_template_id || null,
       person_id: workTypeToUpdate.person_id || null,
       payment_amount: workTypeToUpdate.payment_amount
@@ -197,7 +271,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       notes: noteToSave,
     };
 
-    // ВИКЛИКАЄМО СЕРВІС: Він оновлює таблицю work_types ТА одразу створює/оновлює інвойси!
     const success = await updateWorkTypeAndInvoice(updatePayload);
 
     if (success !== false) {
@@ -225,17 +298,18 @@ const WorkTypesManager = ({ addressId, addressData }) => {
         {workTypes.map((wt) => (
           <div key={wt.id} className={styles.workTypeBlock}>
             <div className={styles.workTypeItem}>
-              <select
-                name="work_type_template_id"
-                value={wt.work_type_template_id || ""}
-                onChange={(e) => handleInputChange(e, wt.id)}
-              >
-                {workTypeTemplates.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.name}
-                  </option>
-                ))}
-              </select>
+              <SearchableSelect
+                options={workTypeTemplates}
+                value={wt.work_type_template_id}
+                placeholder="Пошук роботи..."
+                onChange={(val) =>
+                  handleInputChange(
+                    { target: { name: "work_type_template_id", value: val } },
+                    wt.id,
+                  )
+                }
+              />
+
               <select
                 name="person_id"
                 value={wt.person_id || ""}
@@ -297,7 +371,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
               </div>
             </div>
 
-            {/* Блок відображення або редагування нотатки */}
             {visibleNoteIds[wt.id] ? (
               <div className={styles.noteEditBox}>
                 <textarea
@@ -330,18 +403,17 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       </div>
 
       <div className={styles.addWorkTypeForm}>
-        <select
-          name="work_type_template_id"
+        <SearchableSelect
+          options={workTypeTemplates}
           value={newWorkType.work_type_template_id}
-          onChange={handleNewInputChange}
-        >
-          <option value="">Select Work Type</option>
-          {workTypeTemplates.map((template) => (
-            <option key={template.id} value={template.id}>
-              {template.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Введіть назву роботи..."
+          onChange={(val) =>
+            handleNewInputChange({
+              target: { name: "work_type_template_id", value: val },
+            })
+          }
+        />
+
         <select
           name="person_id"
           value={newWorkType.person_id}
