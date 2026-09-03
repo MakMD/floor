@@ -23,7 +23,6 @@ const SearchableSelect = ({ options, value, onChange, placeholder }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const wrapperRef = useRef(null);
 
-  // Синхронізуємо текст в інпуті з обраним значенням
   useEffect(() => {
     if (!isOpen) {
       const selectedOption = options.find((opt) => opt.id === value);
@@ -31,7 +30,6 @@ const SearchableSelect = ({ options, value, onChange, placeholder }) => {
     }
   }, [value, options, isOpen]);
 
-  // Закриття списку при кліку поза ним та скасування недодрукованого тексту
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -80,7 +78,6 @@ const SearchableSelect = ({ options, value, onChange, placeholder }) => {
                   setSearchTerm(opt.name);
                   setIsOpen(false);
                 }}
-                title={opt.name} // При наведенні покаже повну назву
               >
                 {opt.name}
               </li>
@@ -106,6 +103,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
     work_type_template_id: "",
     person_id: "",
     payment_amount: "",
+    date: "",
   });
 
   useEffect(() => {
@@ -200,6 +198,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       person_id: null,
       payment_amount: wt.payment_amount ? parseFloat(wt.payment_amount) : 0,
       notes: wt.notes || wt.line_notes || null,
+      date: wt.date || null,
     };
 
     const addedWorkType = await addWorkTypeAndInvoice(payload);
@@ -225,6 +224,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
       payment_amount: newWorkType.payment_amount
         ? parseFloat(newWorkType.payment_amount)
         : 0,
+      date: newWorkType.date || null,
     };
 
     const addedWorkType = await addWorkTypeAndInvoice(payload);
@@ -240,6 +240,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
         work_type_template_id: "",
         person_id: "",
         payment_amount: "",
+        date: "",
       });
     }
   };
@@ -269,6 +270,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
         ? parseFloat(workTypeToUpdate.payment_amount)
         : 0,
       notes: noteToSave,
+      date: workTypeToUpdate.date || null,
     };
 
     const success = await updateWorkTypeAndInvoice(updatePayload);
@@ -314,6 +316,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
                 name="person_id"
                 value={wt.person_id || ""}
                 onChange={(e) => handleInputChange(e, wt.id)}
+                className={styles.selectWorker}
               >
                 <option value="">Unassigned</option>
                 {people.map((p) => {
@@ -327,6 +330,16 @@ const WorkTypesManager = ({ addressId, addressData }) => {
                   return null;
                 })}
               </select>
+
+              <input
+                type="date"
+                name="date"
+                title="Дата виконання цієї роботи"
+                value={wt.date || ""}
+                onChange={(e) => handleInputChange(e, wt.id)}
+                className={styles.inputDate}
+              />
+
               <input
                 type="number"
                 name="payment_amount"
@@ -335,6 +348,7 @@ const WorkTypesManager = ({ addressId, addressData }) => {
                 onChange={(e) => handleInputChange(e, wt.id)}
                 className={styles.inputAmount}
               />
+
               <div className={styles.actions}>
                 <button
                   onClick={() => toggleNoteInput(wt.id)}
@@ -389,7 +403,6 @@ const WorkTypesManager = ({ addressId, addressData }) => {
               <div
                 className={styles.lineNotesBox}
                 onClick={() => toggleNoteInput(wt.id)}
-                style={{ cursor: "pointer" }}
                 title="Натисніть щоб редагувати"
               >
                 <FaInfoCircle className={styles.infoIcon} />
@@ -402,46 +415,67 @@ const WorkTypesManager = ({ addressId, addressData }) => {
         ))}
       </div>
 
-      <div className={styles.addWorkTypeForm}>
-        <SearchableSelect
-          options={workTypeTemplates}
-          value={newWorkType.work_type_template_id}
-          placeholder="Введіть назву роботи..."
-          onChange={(val) =>
-            handleNewInputChange({
-              target: { name: "work_type_template_id", value: val },
-            })
-          }
-        />
-
-        <select
-          name="person_id"
-          value={newWorkType.person_id}
-          onChange={handleNewInputChange}
-        >
-          <option value="">Assign Worker</option>
-          {people.map((p) => {
-            if (p.status === "active") {
-              return (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              );
+      <div
+        className={styles.workTypeBlock}
+        style={{
+          borderStyle: "dashed",
+          borderColor: "#cfa85c",
+          backgroundColor: "#fcfcfc",
+        }}
+      >
+        <div className={styles.addWorkTypeForm}>
+          <SearchableSelect
+            options={workTypeTemplates}
+            value={newWorkType.work_type_template_id}
+            placeholder="Введіть назву роботи..."
+            onChange={(val) =>
+              handleNewInputChange({
+                target: { name: "work_type_template_id", value: val },
+              })
             }
-            return null;
-          })}
-        </select>
-        <input
-          type="number"
-          name="payment_amount"
-          placeholder="Amount"
-          value={newWorkType.payment_amount}
-          onChange={handleNewInputChange}
-          className={styles.inputAmount}
-        />
-        <button onClick={handleAddWorkType} className={styles.addButton}>
-          <FaPlus /> Add
-        </button>
+          />
+
+          <select
+            name="person_id"
+            value={newWorkType.person_id}
+            onChange={handleNewInputChange}
+            className={styles.selectWorker}
+          >
+            <option value="">Assign Worker</option>
+            {people.map((p) => {
+              if (p.status === "active") {
+                return (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                );
+              }
+              return null;
+            })}
+          </select>
+
+          <input
+            type="date"
+            name="date"
+            title="Дата виконання цієї роботи"
+            value={newWorkType.date || ""}
+            onChange={handleNewInputChange}
+            className={styles.inputDate}
+          />
+
+          <input
+            type="number"
+            name="payment_amount"
+            placeholder="Amount"
+            value={newWorkType.payment_amount}
+            onChange={handleNewInputChange}
+            className={styles.inputAmount}
+          />
+
+          <button onClick={handleAddWorkType} className={styles.addButton}>
+            <FaPlus /> Add
+          </button>
+        </div>
       </div>
     </div>
   );

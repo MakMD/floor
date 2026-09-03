@@ -53,7 +53,6 @@ const FileListItem = ({
     const getUrl = async () => {
       setIsLoading(true);
       let path = fileIdentifier;
-
       try {
         if (fileIdentifier.startsWith("http")) {
           const url = new URL(fileIdentifier);
@@ -68,16 +67,13 @@ const FileListItem = ({
       } catch (e) {
         path = fileIdentifier;
       }
-
       const { data, error } = await supabase.storage
         .from(bucketName)
         .createSignedUrl(path, 3600);
 
-      if (error) {
-        setSignedUrl(fileIdentifier);
-      } else {
-        setSignedUrl(data.signedUrl);
-      }
+      if (error) setSignedUrl(fileIdentifier);
+      else setSignedUrl(data.signedUrl);
+
       setIsLoading(false);
     };
     getUrl();
@@ -89,7 +85,6 @@ const FileListItem = ({
       toast("Generating file link, please wait...");
       return;
     }
-
     if (isImage(signedUrl) || isImage(fileIdentifier)) {
       e.preventDefault();
       onImageClick(signedUrl || fileIdentifier);
@@ -164,14 +159,7 @@ const AddressDetailsPage = () => {
         .single(),
       supabase
         .from("daily_reports")
-        .select(
-          `
-          *,
-          work_types (
-            work_type_templates (name)
-          )
-        `,
-        )
+        .select(`*, work_types (work_type_templates (name))`)
         .eq("address_id", addressId)
         .order("created_at", { ascending: false }),
     ]);
@@ -265,10 +253,7 @@ const AddressDetailsPage = () => {
     }
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
+  const handleMouseUp = () => setIsDragging(false);
   const closeLightbox = () => {
     setSelectedImage(null);
     setZoomScale(1);
@@ -386,16 +371,13 @@ const AddressDetailsPage = () => {
     e.stopPropagation();
     setEditedData((prev) => ({ ...prev, status: "Ready" }));
     const updated = await updateAddress({ status: "Ready" });
-    if (updated) {
-      toast.success("Project marked as Ready based on report!");
-    }
+    if (updated) toast.success("Project marked as Ready based on report!");
   };
 
   if (!addressData) return <p>Loading...</p>;
 
   const statusStyle = getStatusStyle(editedData.status);
 
-  // ВИДІЛЯЄМО ВСІ ФОТОГРАФІЇ ЯКІ БУЛИ СКАНОВАНІ
   const originalPhotos = [
     addressData.original_photo_url,
     ...(addressData.files || []).filter(
@@ -403,8 +385,6 @@ const AddressDetailsPage = () => {
     ),
   ].filter(Boolean);
   const uniqueOriginals = [...new Set(originalPhotos)];
-
-  // ВСІ ІНШІ ФАЙЛИ ЙДУТЬ У ВНИЗ "FILES & PHOTOS"
   const standardFiles = (addressData.files || []).filter(
     (f) => f && !f.includes("original-photos"),
   );
@@ -465,10 +445,10 @@ const AddressDetailsPage = () => {
           </button>
         </div>
 
+        {/* Двоколонкова сітка для верхньої частини (Деталі, Звіти, Файли) */}
         <div className={styles.detailsGrid}>
           {/* ЛІВА КОЛОНКА */}
           <div className={styles.gridColumn}>
-            {/* 1. GENERAL DETAILS */}
             <div className={styles.detailCard}>
               <h3>General Project Details</h3>
               <div className={styles.cardContentWrapper}>
@@ -596,7 +576,6 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* БЛОК 2: AI TRANSLATION ТА ВІДОБРАЖЕННЯ ВСІХ ОРИГІНАЛІВ */}
             {(uniqueOriginals.length > 0 ||
               addressData.ai_translation ||
               isEditing) && (
@@ -626,11 +605,6 @@ const AddressDetailsPage = () => {
                                 src={url}
                                 alt={`Scanned Document ${idx + 1}`}
                                 className={styles.originalPhoto}
-                                style={{
-                                  width: "120px",
-                                  height: "160px",
-                                  objectFit: "cover",
-                                }}
                                 onClick={() => setSelectedImage(url)}
                               />
                             ) : (
@@ -681,22 +655,10 @@ const AddressDetailsPage = () => {
                 </div>
               </div>
             )}
-
-            {/* 3. WORK TYPES & PAYMENTS */}
-            <div className={styles.detailCard}>
-              <h3>Work Types & Payments</h3>
-              <div className={styles.cardContentWrapper}>
-                <WorkTypesManager
-                  addressId={addressId}
-                  addressData={addressData}
-                />
-              </div>
-            </div>
           </div>
 
           {/* ПРАВА КОЛОНКА */}
           <div className={styles.gridColumn}>
-            {/* 1. WORKER REPORTS */}
             <div className={styles.detailCard}>
               <h3>Worker Daily Reports</h3>
               <div className={styles.cardContentWrapper}>
@@ -757,7 +719,6 @@ const AddressDetailsPage = () => {
                               <div style={{ marginTop: "4px" }}>
                                 {(() => {
                                   let taskName = null;
-
                                   if (
                                     report.work_types?.work_type_templates?.name
                                   ) {
@@ -771,9 +732,7 @@ const AddressDetailsPage = () => {
                                     const match = report.notes.match(
                                       /\[Завдання:\s*(.*?)\]/,
                                     );
-                                    if (match && match[1]) {
-                                      taskName = match[1];
-                                    }
+                                    if (match && match[1]) taskName = match[1];
                                   }
 
                                   if (taskName) {
@@ -793,8 +752,8 @@ const AddressDetailsPage = () => {
                                           marginTop: "6px",
                                         }}
                                       >
-                                        <FaWrench size={10} />
-                                        Виконано: {taskName}
+                                        <FaWrench size={10} /> Виконано:{" "}
+                                        {taskName}
                                       </span>
                                     );
                                   }
@@ -937,7 +896,6 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* 2. SQUARE FEET NOTES */}
             <div className={styles.detailCard}>
               <h3>Square Feet Notes</h3>
               <div className={styles.cardContentWrapper}>
@@ -976,7 +934,6 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* 3. FILES & PHOTOS */}
             <div className={styles.detailCard}>
               <h3>Files & Photos</h3>
               <div className={styles.cardContentWrapper}>
@@ -1004,12 +961,24 @@ const AddressDetailsPage = () => {
               </div>
             </div>
 
-            {/* 4. MATERIALS */}
             <div className={styles.detailCard}>
               <h3>Materials</h3>
               <div className={styles.cardContentWrapper}>
                 <MaterialsManager addressId={addressId} />
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* === ПОВНОЕКРАННИЙ БЛОК ДЛЯ РОБІТ === */}
+        <div className={styles.fullWidthSection}>
+          <div className={styles.detailCard}>
+            <h3>Work Types & Payments</h3>
+            <div className={styles.cardContentWrapper}>
+              <WorkTypesManager
+                addressId={addressId}
+                addressData={addressData}
+              />
             </div>
           </div>
         </div>

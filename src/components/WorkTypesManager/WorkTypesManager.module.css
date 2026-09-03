@@ -4,22 +4,26 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
 }
 
 .workTypeList {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
 }
 
 .workTypeBlock {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 10px;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
   transition: box-shadow 0.2s;
 }
 
@@ -27,38 +31,134 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
+/* === РЯДОК РОБОТИ ТА ФОРМА (РІВНИЙ GRID) === */
 .workTypeItem,
 .addWorkTypeForm {
   display: grid;
-  /* 2.5fr (робота), 2fr (працівник), 100px (сума), решта під кнопки */
-  grid-template-columns: 2.5fr 2fr 100px auto;
-  gap: 10px;
+  /* Чітка сітка: 2.5fr (робота) | 2fr (працівник) | 145px (дата) | 100px (сума) | auto (кнопки) */
+  grid-template-columns: 2.5fr 2fr 145px 100px auto;
+  gap: 12px;
   align-items: center;
-}
-
-.workTypeItem input,
-.workTypeItem select,
-.addWorkTypeForm input,
-.addWorkTypeForm select {
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 0.95rem;
   width: 100%;
   box-sizing: border-box;
 }
 
-.inputAmount {
-  min-width: 80px;
+/* Пошук роботи */
+.searchableSelectWrapper {
+  width: 100%;
+  position: relative;
 }
 
+.searchableInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  cursor: text;
+}
+
+.searchableInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(176, 42, 72, 0.2);
+}
+
+/* Випадаючий список пошуку */
+.searchableDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%; /* Розтягується рівно на ширину пошукового поля */
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  z-index: 2147483647; /* ГАРАНТОВАНО НАЙВИЩИЙ РІВЕНЬ */
+  box-sizing: border-box;
+}
+
+.searchableOption {
+  padding: 12px 14px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--color-border, #f0f0f0);
+  color: var(--color-text-primary, #222);
+  white-space: normal;
+  word-break: break-word;
+  transition: background-color 0.1s;
+}
+
+.searchableOption:last-child {
+  border-bottom: none;
+}
+
+.searchableOption:hover {
+  background-color: var(--color-background, #f9f9f9);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.searchableNoOptions {
+  padding: 12px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Працівник */
+.selectWorker {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+/* Дата */
+.inputDate {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+/* Сума */
+.inputAmount {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+/* Кнопки дій */
 .actions {
   display: flex;
-  gap: 2px;
+  gap: 4px;
 }
 
-.actionBtn,
-.addButton {
+.actionBtn {
   background: none;
   border: none;
   cursor: pointer;
@@ -68,19 +168,28 @@
   justify-content: center;
   border-radius: 50%;
   transition: background-color 0.2s;
+  font-size: 1.1rem;
 }
 
 .actionBtn:hover {
-  background-color: #f0f0f0;
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .addButton {
   color: #198754;
-  border: 1px dashed #198754;
-  padding: 8px 16px;
+  border: 1px solid #198754;
+  padding: 10px 16px;
   border-radius: 6px;
   font-weight: bold;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background-color 0.2s;
 }
+
 .addButton:hover {
   background-color: #d1e7dd;
 }
@@ -103,6 +212,7 @@
   box-sizing: border-box;
   background-color: #fdfdfd;
 }
+
 .noteTextarea:focus {
   outline: none;
   border: 1px solid #0dcaf0;
@@ -114,10 +224,11 @@
   align-items: flex-start;
   gap: 8px;
   background-color: #f8f9fa;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-radius: 6px;
   border-left: 3px solid #0dcaf0;
-  margin-top: 4px;
+  margin-top: 8px;
+  cursor: pointer;
 }
 
 .lineNotesBox:hover {
@@ -137,81 +248,7 @@
   white-space: pre-wrap;
 }
 
-/* --- СТИЛІ ДЛЯ НОВОГО SEARCHABLE SELECT --- */
-.searchableSelectWrapper {
-  position: relative;
-  width: 100%;
-}
-
-.searchableInput {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  background-color: var(--color-background);
-  color: var(--color-text-primary);
-  cursor: text;
-}
-
-.searchableInput:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(176, 42, 72, 0.2);
-  background-color: var(--color-surface);
-}
-
-.searchableDropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  min-width: 100%;
-  width: max-content;
-  max-width: 450px;
-  max-height: 250px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background-color: var(--color-surface, #ffffff);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.searchableOption {
-  padding: 10px 12px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  border-bottom: 1px solid var(--color-border, #f0f0f0);
-  color: var(--color-text-primary, #222);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: background-color 0.1s;
-}
-
-.searchableOption:last-child {
-  border-bottom: none;
-}
-
-.searchableOption:hover {
-  background-color: var(--color-background, #f9f9f9);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.searchableNoOptions {
-  padding: 10px 12px;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  text-align: center;
-  font-style: italic;
-}
-
-/* Темна тема для випадаючого списку */
+/* Темна тема */
 :root[data-theme="dark"] .searchableDropdown {
   background-color: #2c2c2c;
   border-color: #444;
@@ -225,24 +262,23 @@
   color: var(--color-primary);
 }
 
-/* Адаптивність */
-@media (max-width: 768px) {
+/* Адаптивність для мобільних */
+@media (max-width: 992px) {
   .workTypeItem,
   .addWorkTypeForm {
     grid-template-columns: 1fr;
   }
-  .inputAmount {
-    max-width: 100%;
+  .searchableSelectWrapper,
+  .selectWorker,
+  .inputDate,
+  .inputAmount,
+  .addButton {
+    width: 100%;
   }
   .actions {
     justify-content: flex-end;
     border-top: 1px solid #eee;
     padding-top: 8px;
     margin-top: 4px;
-  }
-  .searchableDropdown {
-    max-width: calc(
-      100vw - 40px
-    ); /* Щоб на телефонах список не вилазив за екран */
   }
 }
