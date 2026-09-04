@@ -1,4 +1,3 @@
-// src/Pages/AddressListPage.jsx
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -293,7 +292,6 @@ const AddressListPage = () => {
       ...(values.additional_photo_url ? [values.additional_photo_url] : []),
     ];
 
-    // ЖОРСТКИЙ ЗАПОБІЖНИК: Завжди записуємо "Address", якщо тільки це не явно "Service"
     const safeProjectType =
       values.project_type === "Service" ? "Service" : "Address";
 

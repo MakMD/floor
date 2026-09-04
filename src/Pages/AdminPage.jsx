@@ -8,9 +8,8 @@ import {
   FaClipboardList,
   FaBox,
 } from "react-icons/fa";
-import { MdKeyboardArrowDown } from "react-icons/md"; // Додано іконку стрілочки
+import { MdKeyboardArrowDown } from "react-icons/md";
 
-// Конфігурація всіх розділів для чистоти коду
 const SECTIONS = [
   {
     id: "builders",
@@ -50,7 +49,6 @@ const SECTIONS = [
 ];
 
 const AdminPage = () => {
-  // Стан для збереження відкритих секцій
   const [expandedSections, setExpandedSections] = useState({});
 
   const toggleSection = (id) => {

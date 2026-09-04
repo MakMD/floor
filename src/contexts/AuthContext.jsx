@@ -8,7 +8,6 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Зберігаємо ID поточного користувача, щоб ігнорувати фонові оновлення сесії
   const currentUserId = useRef(null);
 
   useEffect(() => {
@@ -72,7 +71,6 @@ export const AuthProvider = ({ children }) => {
         if (session?.user?.id === currentUserId.current) {
           setUser(session.user);
         } else {
-          // Екран завантаження показується ТІЛЬКИ при новому вході
           setLoading(true);
           fetchRoleAndSetState(session?.user);
         }

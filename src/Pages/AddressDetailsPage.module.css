@@ -1,4 +1,3 @@
-/* src/Pages/AddressDetailsPage.module.css */
 .pageContainer {
   min-height: 100vh;
   background-color: var(--color-background);
@@ -51,7 +50,6 @@
   box-sizing: border-box;
 }
 
-/* === СУВОРА ДВОКОЛОНКОВА СІТКА === */
 .detailsGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -72,7 +70,6 @@
   gap: 20px;
 }
 
-/* === ПОВНОЕКРАННИЙ БЛОК ДЛЯ РОБІТ === */
 .fullWidthSection {
   width: 100%;
   padding: 0 20px 20px 20px;
